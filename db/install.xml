@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="lib/db" VERSION="20060926" COMMENT="XMLDB file for Mahara files plugin tables"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../lib/xmldb/xmldb.xsd"
+>
+<TABLES>
+    <TABLE NAME="external_services" COMMENT="built in and custom external services">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="name"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="200" NOTNULL="true" SEQUENCE="false" PREVIOUS="id" NEXT="enabled"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="name" NEXT="restrictedusers"/>
+        <!--  FIELD NAME="requiredcapability" TYPE="char" LENGTH="150" NOTNULL="false" SEQUENCE="false" PREVIOUS="enabled" NEXT="restrictedusers"/ -->
+        <FIELD NAME="restrictedusers" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="enabled" NEXT="component"/>
+        <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" PREVIOUS="restrictedusers" NEXT="timecreated"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="component" NEXT="timemodified"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" PREVIOUS="timecreated"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="name" UNIQUE="true" FIELDS="name"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="external_functions" COMMENT="list of all external functions">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="name"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="200" NOTNULL="true" SEQUENCE="false" PREVIOUS="id" NEXT="classname"/>
+        <FIELD NAME="classname" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" PREVIOUS="name" NEXT="methodname"/>
+        <FIELD NAME="methodname" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" PREVIOUS="classname" NEXT="classpath"/>
+        <FIELD NAME="classpath" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" PREVIOUS="methodname" NEXT="component"/>
+        <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" PREVIOUS="classpath"/>
+        <!-- FIELD NAME="capabilities" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="all capabilities that are required to be run by the function (separated by comma)" PREVIOUS="component"/ -->
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="name" UNIQUE="true" FIELDS="name" COMMENT="the external function names must be globally unique"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="external_services_functions" COMMENT="lists functions available in each service group">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="externalserviceid"/>
+        <FIELD NAME="externalserviceid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="id" NEXT="functionname"/>
+        <FIELD NAME="functionname" TYPE="char" LENGTH="200" NOTNULL="true" SEQUENCE="false" PREVIOUS="externalserviceid"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="externalserviceid"/>
+        <KEY NAME="externalserviceid" TYPE="foreign" FIELDS="externalserviceid" REFTABLE="external_services" REFFIELDS="id" PREVIOUS="primary"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="external_tokens" COMMENT="Security tokens for accessing of external services">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="token"/>
+        <FIELD NAME="token" TYPE="char" LENGTH="128" NOTNULL="true" SEQUENCE="false" COMMENT="security token, aka private access key" PREVIOUS="id" NEXT="tokentype"/>
+        <FIELD NAME="tokentype" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="type of token: 0=permanent, no session; 1=linked to current browser session via sid; 2=permanent, with emulated session" PREVIOUS="token" NEXT="userid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="owner of the token" PREVIOUS="tokentype" NEXT="institution"/>
+        <FIELD NAME="institution" TYPE="char" LENGTH="255" NOTNULL="true" PREVIOUS="userid" NEXT="externalserviceid" />
+        <FIELD NAME="externalserviceid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="institution" NEXT="sid"/>
+        <FIELD NAME="sid" TYPE="char" LENGTH="128" NOTNULL="false" SEQUENCE="false" COMMENT="link to browser or emulated session" PREVIOUS="externalserviceid" NEXT="creatorid"/>
+        <!--  FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="context id where in token valid" PREVIOUS="sid" NEXT="creatorid"/ -->
+        <FIELD NAME="creatorid" TYPE="int" LENGTH="20" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" COMMENT="user id of the token creator (useful to know when the administrator created a token and so display the token to a specific administrator)" PREVIOUS="sid" NEXT="iprestriction"/>
+        <FIELD NAME="iprestriction" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="ip restriction" PREVIOUS="creatorid" NEXT="validuntil"/>
+        <FIELD NAME="validuntil" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" COMMENT="timestampt - valid until data" PREVIOUS="iprestriction" NEXT="timecreated"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="validuntil" NEXT="lastaccess"/>
+        <FIELD NAME="lastaccess" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" COMMENT="last access timestamp" PREVIOUS="timecreated"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="userid"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="usr" REFFIELDS="id" PREVIOUS="primary" NEXT="institutionfk"/>
+        <KEY NAME="institutionfk" TYPE="foreign" FIELDS="institution" REFTABLE="institution" REFFIELDS="name"  PREVIOUS="userid" NEXT="externalserviceid"/>
+        <KEY NAME="externalserviceid" TYPE="foreign" FIELDS="externalserviceid" REFTABLE="external_services" REFFIELDS="id" PREVIOUS="institutionfk" NEXT="creatorid"/>
+        <!-- KEY NAME="contextid" TYPE="foreign" FIELDS="contextid" REFTABLE="context" REFFIELDS="id" PREVIOUS="externalserviceid" NEXT="creatorid"/ -->
+        <KEY NAME="creatorid" TYPE="foreign" FIELDS="creatorid" REFTABLE="usr" REFFIELDS="id" PREVIOUS="externalserviceid"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="external_services_users" COMMENT="users allowed to use services with restricted users flag">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="externalserviceid"/>
+        <FIELD NAME="externalserviceid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="id" NEXT="userid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="externalserviceid" NEXT="institution"/>
+        <FIELD NAME="institution" TYPE="char" LENGTH="255" NOTNULL="true" PREVIOUS="userid" NEXT="iprestriction" />
+        <FIELD NAME="iprestriction" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="ip restriction" PREVIOUS="institution" NEXT="validuntil"/>
+        <FIELD NAME="validuntil" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" COMMENT="timestampt - valid until data" PREVIOUS="iprestriction" NEXT="timecreated"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="validuntil"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="externalserviceid"/>
+        <KEY NAME="externalserviceid" TYPE="foreign" FIELDS="externalserviceid" REFTABLE="external_services" REFFIELDS="id" PREVIOUS="primary" NEXT="userid"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="usr" REFFIELDS="id" PREVIOUS="externalserviceid" NEXT="institutionfk"/>
+        <KEY NAME="institutionfk" TYPE="foreign" FIELDS="institution" REFTABLE="institution" REFFIELDS="name"  PREVIOUS="userid"/>
+      </KEYS>
+    </TABLE>
+</TABLES>
+</XMLDB>

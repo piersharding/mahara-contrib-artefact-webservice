@@ -1,0 +1,27 @@
+/**
+ * CSS rules for the webservice artefact plugin
+ *
+ * Copyright (C) 2011 Catalyst IT
+ * This file is distributed under the same terms as Mahara itself
+ */
+
+
+th {
+    white-space: nowrap;
+}
+
+#pluginconfig table {
+	width: 100%;
+}
+
+td.actions {
+    white-space: nowrap;
+}
+
+span.actions {
+    white-space: nowrap;
+}
+
+img#usersearch {
+    vertical-align: middle;
+}
