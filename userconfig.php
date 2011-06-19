@@ -120,11 +120,16 @@ $serviceuser_details['elements']['institution'] = array(
 
 $searchicon = $THEME->get_url('images/btn-search.gif');
 
-
+if ($USER->is_admin_for_user($dbuser->id)) {
+    $user_url = get_config('wwwroot').'admin/users/edit.php?id='.$dbuser->id;
+}
+else {
+    $user_url = get_config('wwwroot').'user/view.php?id='.$dbuser->id;
+}
 $serviceuser_details['elements']['username'] = array(
     'type'        => 'html',
     'title'       => get_string('username'),
-    'value'       => $dbuser->username,
+    'value'       =>  '<a href="'.$user_url.'">'.$dbuser->username.'</a>',
 );
 
 $serviceuser_details['elements']['user'] = array(

@@ -692,7 +692,7 @@ class ArtefactTypeWebservice extends ArtefactType {
      * @return html
      */
     public static function service_tokens_edit_form() {
-        global $THEME;
+        global $THEME, $USER;
 
         $form = array(
             'name'            => 'webservices_tokens',
@@ -733,7 +733,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                         ),
             );
 
-        $dbtokens = get_records_sql_array('SELECT et.id as tokenid, et.externalserviceid as externalserviceid, et.institution as institution, u.username as username, et.token as token, es.name as name, es.enabled as enabled FROM external_tokens AS et LEFT JOIN usr AS u ON et.userid = u.id LEFT JOIN external_services AS es ON et.externalserviceid = es.id ORDER BY u.username', false);
+        $dbtokens = get_records_sql_array('SELECT et.id as tokenid, et.externalserviceid as externalserviceid, et.institution as institution, u.id as userid, u.username as username, et.token as token, es.name as name, es.enabled as enabled FROM external_tokens AS et LEFT JOIN usr AS u ON et.userid = u.id LEFT JOIN external_services AS es ON et.externalserviceid = es.id ORDER BY u.username', false);
         if (!empty($dbtokens)) {
             foreach ($dbtokens as $token) {
                 $dbinstitution = get_record('institution', 'name', $token->institution);
@@ -742,9 +742,14 @@ class ArtefactTypeWebservice extends ArtefactType {
                     'type'         => 'html',
                     'title'        => $token->token,
                 );
-
+                if ($USER->is_admin_for_user($token->userid)) {
+                    $user_url = get_config('wwwroot').'admin/users/edit.php?id='.$token->userid;
+                }
+                else {
+                    $user_url = get_config('wwwroot').'user/view.php?id='.$token->userid;
+                }
                 $form['elements']['id'. $token->tokenid . '_username'] = array(
-                    'value'        =>  $token->username,
+                    'value'        =>  '<a href="'.$user_url.'">'.$token->username.'</a>',
                     'type'         => 'html',
                     'title'        => $token->token,
                 );
@@ -870,7 +875,7 @@ class ArtefactTypeWebservice extends ArtefactType {
      * @return html
      */
     public static function service_users_edit_form() {
-        global $THEME;
+        global $THEME, $USER;
 
         $form = array(
             'name'            => 'webservices_users',
@@ -920,9 +925,14 @@ class ArtefactTypeWebservice extends ArtefactType {
                     'type'         => 'html',
                     'title'        => $user->id,
                 );
-
+                if ($USER->is_admin_for_user($token->userid)) {
+                    $user_url = get_config('wwwroot').'admin/users/edit.php?id='.$user->userid;
+                }
+                else {
+                    $user_url = get_config('wwwroot').'user/view.php?id='.$user->userid;
+                }
                 $form['elements']['id'. $user->id . '_username'] = array(
-                    'value'        =>  $user->username,
+                    'value'        =>  '<a href="'.$user_url.'">'.$user->username.'</a>',
                     'type'         => 'html',
                     'title'        => $user->id,
                 );

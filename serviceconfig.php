@@ -118,7 +118,7 @@ $functions =
             );
 
             $functions['elements']['id'. $function->id . '_method'] = array(
-                'value'        =>  $function->methodname,
+                'value'        =>  '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$function->id.'">'.$function->methodname.'</a>',
                 'type'         => 'html',
                 'title'        => $function->name,
             );
