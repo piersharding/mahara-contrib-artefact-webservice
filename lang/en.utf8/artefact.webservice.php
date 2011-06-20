@@ -56,6 +56,7 @@ $string['switchtousers'] = 'Switch to Users';
 $string['switchtotokens'] = 'Switch to Tokens';
 
 $string['invalidservice'] = 'Invalid Service selected';
+$string['invalidfunction'] = 'Invalid Function selected';
 
 $string['servicetokens'] = 'Manage Service Access Tokens';
 $string['stdescription'] = 'Generate access tokens, and allocate users to Service Groups';
@@ -89,6 +90,16 @@ $string['webservices'] = 'WebServices';
 $string['headingusersearchtoken'] = 'WebServices: Token user search';
 $string['headingusersearchuser'] = 'WebServices: Service User search';
 $string['usersearchinstructions'] = 'Select a user to associate with a webservice by clicking on the avatar.  You can search for users by clicking on the initials of their first and last names, or by entering a name in the search box. You can also enter an email address in the search box if you would like to search email addresses.';
+
+// wsdoc
+$string['function'] = 'Function';
+$string['description'] = 'Description';
+$string['component'] = 'Component';
+$string['method'] = 'Method';
+$string['class'] = 'Class';
+$string['arguments'] = 'Arguments';
+$string['invalidparameter'] = 'Invalid parameter value detected, execution can not continue.';
+
 
 // running webservices messages
 $string['accessexception'] = 'Access control exception';

@@ -30,73 +30,360 @@ require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 define('TITLE', get_string('pluginadmin', 'admin'));
 require_once('pieforms/pieform.php');
 
-require($CFG->dirroot . '/artefact/webservice/lib.php');
+require_once(get_config('docroot') . '/artefact/webservice/lib.php');
+require_once(get_config('docroot').'/artefact/webservice/libs/moodlelib.php');
 
-//require_login();
-//require_sesskey();
 
-//$usercontext = get_context_instance(CONTEXT_USER, $USER->id);
-$tokenid = required_param('id', PARAM_INT);
-
-//PAGE settings
-$PAGE->set_context($usercontext);
-$PAGE->set_url('/user/wsdoc.php');
-$PAGE->set_title(get_string('documentation', 'webservice'));
-$PAGE->set_heading(get_string('documentation', 'webservice'));
-$PAGE->set_pagelayout('standard');
-
-//nav bar
-$PAGE->navbar->ignore_active(true);
-$PAGE->navbar->add(get_string('usercurrentsettings'));
-$PAGE->navbar->add(get_string('securitykeys', 'webservice'),
-        new moodle_url('/user/managetoken.php',
-                array('id' => $tokenid, 'sesskey' => sesskey())));
-$PAGE->navbar->add(get_string('documentation', 'webservice'));
-
-//check web service are enabled
-if (empty($CFG->enablewsdocumentation)) {
-    echo get_string('wsdocumentationdisable', 'webservice');
-    die;
+/**
+ * override menu layout for WebServices
+ *
+ * @param arrayref $menu
+ */
+function local_main_nav_update(&$menu) {
+    $menu[]=
+    array(
+      'path' =>  'configextensions/pluginadminwebservices',
+      'url' => 'artefact/webservice/pluginconfig.php',
+      'title' => 'WebServices Administration',
+      'weight' => 30);
 }
 
-//check that the current user is the token user
-$webservice = new webservice();
-$token = $webservice->get_token_by_id($tokenid);
-if (empty($token) or empty($token->userid) or empty($USER->id)
-        or ($token->userid != $USER->id)) {
-    throw new mahara_ws_exception('docaccessrefused', 'webservice');
+$function  = param_integer('id', 0);
+$dbfunction = get_record('external_functions', 'id', $function);
+if (empty($dbfunction)) {
+    $SESSION->add_error_msg(get_string('invalidfunction', 'artefact.webservice'));
+    redirect('/artefact/webservice/pluginconfig.php');
+}
+$fdesc = external_function_info($dbfunction->name);
+
+//$service  = param_integer('service', 0);
+//$dbservice = get_record('external_services', 'id', $service);
+//if (empty($dbservice)) {
+//    $SESSION->add_error_msg(get_string('invalidservice', 'artefact.webservice'));
+//    redirect('/artefact/webservice/pluginconfig.php');
+//}
+
+$plugintype = 'artefact';
+$pluginname = 'webservice';
+
+define('SECTION_PLUGINTYPE', $plugintype);
+define('SECTION_PLUGINNAME', $pluginname);
+define('SECTION_PAGE', 'pluginconfig');
+
+safe_require($plugintype, $pluginname);
+$classname = generate_artefact_class_name($pluginname);
+if (!call_static_method($classname, 'plugin_is_active')) {
+    throw new UserException("Plugin $plugintype $pluginname is disabled");
 }
 
-// get the list of all functions related to the token
-$functions = $webservice->get_external_functions(array($token->externalserviceid));
+$smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . '/artefact/webservice/theme/raw/static/style/style.css">',));
+$smarty->assign('function', $dbfunction);
+$smarty->assign('functiondescription', $fdesc->description);
+$smarty->assign('fdesc', $fdesc);
+$smarty->assign('xmlrpcactive', webservice_protocol_is_enabled('xmlrpc'));
+$smarty->assign('restactive', webservice_protocol_is_enabled('rest'));
+$smarty->assign('soapactive', webservice_protocol_is_enabled('soap'));
+$smarty->assign('plugintype', $plugintype);
+$smarty->assign('pluginname', $pluginname);
+$heading = get_string('pluginadmin', 'admin') . ': ' . $plugintype . ': ' . $pluginname;
+$smarty->assign('PAGEHEADING', $heading);
+$smarty->display('artefact:webservice:wsdoc.tpl');
 
-// get all the function descriptions
-$functiondescs = array();
-foreach ($functions as $function) {
-    $functiondescs[$function->name] = external_function_info($function);
+die;
+
+
+
+
+/**
+ * Return documentation for a ws description object
+ * ws description object can be 'external_multiple_structure', 'external_single_structure'
+ * or 'external_value'
+ * Example of documentation for moodle_group_create_groups function:
+  list of (
+  object {
+  courseid int //id of course
+  name string //multilang compatible name, course unique
+  description string //group description text
+  enrolmentkey string //group enrol secret phrase
+  }
+  )
+ * @param object $params a part of parameter/return description
+ * @return string the html to display
+ */
+function wsdoc_detailed_description_html($params) {
+    /// retrieve the description of the description object
+    $paramdesc = "";
+    if (!empty($params->desc)) {
+        $paramdesc .= '<span style="color:#2A33A6">';
+        if ($params->required == VALUE_REQUIRED) {
+            $required = '';
+        }
+        if ($params->required == VALUE_DEFAULT) {
+            if ($params->default === null) {
+                $params->default = "null";
+            }
+            $required = '<b>' .
+                    get_string('default', 'artefact.webservice', $params->default)
+                    . '</b>';
+        }
+        if ($params->required == VALUE_OPTIONAL) {
+            $required = '<b>' .
+                    get_string('optional', 'artefact.webservice') . '</b>';
+        }
+        $paramdesc .= " " . $required . " ";
+        $paramdesc .= '<i>';
+        $paramdesc .= "//";
+
+        $paramdesc .= $params->desc;
+
+        $paramdesc .= '</i>';
+
+        $paramdesc .= '</span>';
+        $paramdesc .= '<br/>';
+    }
+
+    /// description object is a list
+    if ($params instanceof external_multiple_structure) {
+        return $paramdesc . "list of ( " . '<br/>'
+        . '    '.wsdoc_detailed_description_html($params->content) . ")";
+    } else if ($params instanceof external_single_structure) {
+        /// description object is an object
+        $singlestructuredesc = $paramdesc . "object {" . '<br/>';
+        foreach ($params->keys as $attributname => $attribut) {
+            $singlestructuredesc .= '<b>';
+            $singlestructuredesc .= $attributname;
+            $singlestructuredesc .= '</b>';
+            $singlestructuredesc .= " " .
+                    wsdoc_detailed_description_html($params->keys[$attributname]);
+        }
+        $singlestructuredesc .= "} ";
+        $singlestructuredesc .= '<br/>';
+        return $singlestructuredesc;
+    } else {
+        /// description object is a primary type (string, integer)
+        switch ($params->type) {
+            case PARAM_BOOL: // 0 or 1 only for now
+            case PARAM_INT:
+                $type = 'int';
+                break;
+            case PARAM_FLOAT;
+                $type = 'double';
+                break;
+            default:
+                $type = 'string';
+        }
+        return $type . " " . $paramdesc;
+    }
 }
 
-//get activated protocol
-$activatedprotocol = array();
-$activatedprotocol['rest'] = webservice_protocol_is_enabled('rest');
-$activatedprotocol['xmlrpc'] = webservice_protocol_is_enabled('xmlrpc');
-
-/// Check if we are in printable mode
-$printableformat = false;
-if (isset($_REQUEST['print'])) {
-    $printableformat = $_REQUEST['print'];
+/**
+ * function that starts it all off
+ *
+ * @param $paramname
+ * @param $paramdescription
+ */
+function wsdoc_xmlrpc($paramname, $paramdescription) {
+    return htmlentities('[' . $paramname . '] =>' . wsdoc_xmlrpc_param_description_html($paramdescription));
 }
 
-/// OUTPUT
-echo $OUTPUT->header();
 
-$renderer = $PAGE->get_renderer('core', 'webservice');
-echo $renderer->documentation_html($functiondescs,
-        $printableformat, $activatedprotocol, array('id' => $tokenid));
+/**
+ * Create indented XML-RPC  param description
+ * @param object $paramdescription
+ * @param string $indentation composed by space only
+ * @return string the html to diplay
+ */
+function wsdoc_xmlrpc_param_description_html($paramdescription, $indentation = "") {
+    $indentation = $indentation . "    ";
+    $brakeline = <<<EOF
 
-/// trigger browser print operation
-if (!empty($printableformat)) {
-    $PAGE->requires->js_function_call('window.print', array());
+
+EOF;
+    /// description object is a list
+    if ($paramdescription instanceof external_multiple_structure) {
+        $return = $brakeline . $indentation . "Array ";
+        $indentation = $indentation . "    ";
+        $return .= $brakeline . $indentation . "(";
+        $return .= $brakeline . $indentation . "[0] =>";
+        $return .= wsdoc_xmlrpc_param_description_html($paramdescription->content, $indentation);
+        $return .= $brakeline . $indentation . ")";
+        return $return;
+    } else if ($paramdescription instanceof external_single_structure) {
+        /// description object is an object
+        $singlestructuredesc = $brakeline . $indentation . "Array ";
+        $keyindentation = $indentation . "    ";
+        $singlestructuredesc .= $brakeline . $keyindentation . "(";
+        foreach ($paramdescription->keys as $attributname => $attribut) {
+            $singlestructuredesc .= $brakeline . $keyindentation . "[" . $attributname . "] =>" .
+                    wsdoc_xmlrpc_param_description_html(
+                            $paramdescription->keys[$attributname], $keyindentation) .
+                    $keyindentation;
+        }
+        $singlestructuredesc .= $brakeline . $keyindentation . ")";
+        return $singlestructuredesc;
+    } else {
+        /// description object is a primary type (string, integer)
+        switch ($paramdescription->type) {
+            case PARAM_BOOL: // 0 or 1 only for now
+            case PARAM_INT:
+                $type = 'int';
+                break;
+            case PARAM_FLOAT;
+                $type = 'double';
+                break;
+            default:
+                $type = 'string';
+        }
+        return " " . $type;
+    }
 }
 
-echo $OUTPUT->footer();
+
+/**
+ * function that starts it all off
+ *
+ * @param $paramname
+ * @param $paramdescription
+ */
+function wsdoc_rest($paramname, $paramdescription) {
+    return htmlentities(wsdoc_rest_param_description_html($paramdescription, $paramname));
+}
+
+
+
+/**
+ * function that starts it all off
+ *
+ * @param $paramname
+ * @param $paramdescription
+ */
+function wsdoc_rest_response($paramname, $paramdescription) {
+    $brakeline = <<<EOF
+
+
+EOF;
+    $restresponse = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+        . $brakeline . "<RESPONSE>" . $brakeline;
+    $restresponse .= wsdoc_description_in_indented_xml_format(
+                    $paramdescription);
+    $restresponse .="</RESPONSE>" . $brakeline;
+    return htmlentities($restresponse);
+}
+
+
+
+/**
+ * function that starts it all off
+ *
+ * @param $paramname
+ * @param $paramdescription
+ */
+function wsdoc_rest_exception() {
+    $errormessage = get_string('invalidparameter', 'artefact.webservice');
+    $restexceptiontext = <<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<EXCEPTION class="invalid_parameter_exception">
+    <MESSAGE>{$errormessage}</MESSAGE>
+    <DEBUGINFO></DEBUGINFO>
+</EXCEPTION>
+EOF;
+
+    return htmlentities($restexceptiontext);
+}
+
+
+/**
+ * Return indented REST param description
+ * @param object $paramdescription
+ * @param string $indentation composed by space only
+ * @return string the html to diplay
+ */
+function wsdoc_rest_param_description_html($paramdescription, $paramstring) {
+    $brakeline = <<<EOF
+
+
+EOF;
+    /// description object is a list
+    if ($paramdescription instanceof external_multiple_structure) {
+        $paramstring = $paramstring . '[0]';
+        $return = wsdoc_rest_param_description_html($paramdescription->content, $paramstring);
+        return $return;
+    } else if ($paramdescription instanceof external_single_structure) {
+        /// description object is an object
+        $singlestructuredesc = "";
+        $initialparamstring = $paramstring;
+        foreach ($paramdescription->keys as $attributname => $attribut) {
+            $paramstring = $initialparamstring . '[' . $attributname . ']';
+            $singlestructuredesc .= wsdoc_rest_param_description_html(
+                            $paramdescription->keys[$attributname], $paramstring);
+        }
+        return $singlestructuredesc;
+    } else {
+        /// description object is a primary type (string, integer)
+        $paramstring = $paramstring . '=';
+        switch ($paramdescription->type) {
+            case PARAM_BOOL: // 0 or 1 only for now
+            case PARAM_INT:
+                $type = 'int';
+                break;
+            case PARAM_FLOAT;
+                $type = 'double';
+                break;
+            default:
+                $type = 'string';
+        }
+        return $paramstring . " " . $type . $brakeline;
+    }
+}
+
+
+/**
+ * Return a description object in indented xml format (for REST response)
+ * It is indented in order to be displayed into <pre> tag
+ * @param object $returndescription
+ * @param string $indentation composed by space only
+ * @return string the html to diplay
+ */
+function wsdoc_description_in_indented_xml_format($returndescription, $indentation = "") {
+    $indentation = $indentation . "    ";
+    $brakeline = <<<EOF
+
+
+EOF;
+    /// description object is a list
+    if ($returndescription instanceof external_multiple_structure) {
+        $return = $indentation . "<MULTIPLE>" . $brakeline;
+        $return .= wsdoc_description_in_indented_xml_format($returndescription->content,
+                        $indentation);
+        $return .= $indentation . "</MULTIPLE>" . $brakeline;
+        return $return;
+    } else if ($returndescription instanceof external_single_structure) {
+        /// description object is an object
+        $singlestructuredesc = $indentation . "<SINGLE>" . $brakeline;
+        $keyindentation = $indentation . "    ";
+        foreach ($returndescription->keys as $attributname => $attribut) {
+            $singlestructuredesc .= $keyindentation . "<KEY name=\"" . $attributname . "\">"
+                    . $brakeline .
+                    wsdoc_description_in_indented_xml_format(
+                            $returndescription->keys[$attributname], $keyindentation) .
+                    $keyindentation . "</KEY>" . $brakeline;
+        }
+        $singlestructuredesc .= $indentation . "</SINGLE>" . $brakeline;
+        return $singlestructuredesc;
+    } else {
+        /// description object is a primary type (string, integer)
+        switch ($returndescription->type) {
+            case PARAM_BOOL: // 0 or 1 only for now
+            case PARAM_INT:
+                $type = 'int';
+                break;
+            case PARAM_FLOAT;
+                $type = 'double';
+                break;
+            default:
+                $type = 'string';
+        }
+        return $indentation . "<VALUE>" . $type . "</VALUE>" . $brakeline;
+    }
+}
+

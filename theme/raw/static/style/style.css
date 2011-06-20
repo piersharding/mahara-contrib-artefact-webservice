@@ -25,3 +25,40 @@ span.actions {
 img#usersearch {
     vertical-align: middle;
 }
+
+.arguments {
+	color: #EA33A6;
+}
+
+div.detaildescription {
+	margin: 0px;
+    border:solid 1px #DEDEDE;
+    background:#FFF1BC; 
+    color:#222222;
+    padding:4px;
+}
+
+pre.detaildescription {
+    margin: 0px;
+}
+
+div.xmlrpcdescription {
+	margin: 0px;
+    border:solid 1px #DEDEDE;
+    background:#DFEEE7; 
+    color:#222222;
+    padding:4px;
+}
+
+div.restdescription {
+	margin: 0px;
+    border:solid 1px #DEDEDE;
+    background:#FEEBE5; 
+    color:#222222;
+    padding:4px;
+}
+
+
+span.response {
+    color: #EA33A6;
+}

@@ -100,29 +100,28 @@ $functions =
         );
 
 
+$dbfunctions = get_records_array('external_functions', null, null, 'name');
+foreach ($dbfunctions as $function) {
+    $sfexists = record_exists('external_services_functions', 'externalserviceid', $dbservice->id, 'functionname', $function->name);
+    $functions['elements']['id'. $function->id . '_enabled'] = array(
+        'defaultvalue' => ($sfexists ? 'checked' : ''),
+        'type'         => 'checkbox',
+        'disabled'     => false,
+        'title'        => $function->name,
+    );
 
-        $dbfunctions = get_records_array('external_functions', null, null, 'name');
-        foreach ($dbfunctions as $function) {
-            $sfexists = record_exists('external_services_functions', 'externalserviceid', $dbservice->id, 'functionname', $function->name);
-            $functions['elements']['id'. $function->id . '_enabled'] = array(
-                'defaultvalue' => ($sfexists ? 'checked' : ''),
-                'type'         => 'checkbox',
-                'disabled'     => false,
-                'title'        => $function->name,
-            );
+    $functions['elements']['id'. $function->id . '_class'] = array(
+        'value'        =>  $function->classname,
+        'type'         => 'html',
+        'title'        => $function->name,
+    );
 
-            $functions['elements']['id'. $function->id . '_class'] = array(
-                'value'        =>  $function->classname,
-                'type'         => 'html',
-                'title'        => $function->name,
-            );
-
-            $functions['elements']['id'. $function->id . '_method'] = array(
-                'value'        =>  '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$function->id.'">'.$function->methodname.'</a>',
-                'type'         => 'html',
-                'title'        => $function->name,
-            );
-        }
+    $functions['elements']['id'. $function->id . '_method'] = array(
+        'value'        =>  '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$function->id.'">'.$function->methodname.'</a>',
+        'type'         => 'html',
+        'title'        => $function->name,
+    );
+}
 
 $functions['elements']['submit'] = array(
             'type'  => 'submitcancel',
