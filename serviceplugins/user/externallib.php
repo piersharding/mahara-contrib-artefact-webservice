@@ -124,7 +124,6 @@ class mahara_user_external extends external_api {
         // Do basic automatic PARAM checks on incoming data, using params description
         // If any problems are found then exceptions are thrown with helpful error messages
         $params = self::validate_parameters(self::create_users_parameters(), array('users'=>$users));
-        log_info('Inserting users from the webservice');
         db_begin();
         $userids = array();
         foreach ($params['users'] as $user) {
@@ -155,7 +154,6 @@ class mahara_user_external extends external_api {
                     throw new invalid_parameter_exception('Institution exceeded max allowed: '.$institution->name);
                 }
             }
-            log_info('adding user ' . $user['username']);
 
             $new_user = new StdClass;
             $new_user->authinstance = $authinstance->id;
@@ -384,7 +382,6 @@ class mahara_user_external extends external_api {
                 throw new invalid_parameter_exception('update_users: access denied for institution: '.$authinstance->institution.' on user: '.$userid);
             }
 
-            log_info('updating user ' . $dbuser->username);
             $updated_user = $dbuser;
             $updated_user->id = $dbuser->id;
             foreach (array('username', 'firstname', 'lastname', 'email', 'quota', 'studentid', 'preferredname', 'password') as $field) {
