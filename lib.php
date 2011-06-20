@@ -925,7 +925,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                     'type'         => 'html',
                     'title'        => $user->id,
                 );
-                if ($USER->is_admin_for_user($token->userid)) {
+                if ($USER->is_admin_for_user($user->id)) {
                     $user_url = get_config('wwwroot').'admin/users/edit.php?id='.$user->userid;
                 }
                 else {
