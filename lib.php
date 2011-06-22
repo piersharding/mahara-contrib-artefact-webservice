@@ -63,13 +63,14 @@ function external_upgrade_webservices() {
     foreach (array('webservice', 'admin', 'api', 'local') as $component) {
         // are there service plugins
         $basepath = get_component_directory($component).'/serviceplugins';
-        if (!file_exists($basepath)) {
-            external_delete_descriptions($component);
-            continue;
-        }
 
         // are there any plugin directories
         $plugindirs = array();
+        if (!file_exists($basepath)) {
+            continue;
+        }
+        error_log('basepath: '.$basepath);
+
         $items = new DirectoryIterator($basepath);
         foreach ($items as $item) {
             if ($item->isDot() or !$item->isDir()) {
@@ -89,11 +90,11 @@ function external_upgrade_webservices() {
         unset($items);
 
         foreach ($plugindirs as $plugin) {
+            $module = $component.'/'.$plugin; // needs to be specific to plugin
 
             $defpath = $basepath.'/'.$plugin.'/services.php';
-
             if (!file_exists($defpath)) {
-                external_delete_descriptions($component);
+                external_delete_descriptions($module);
                 continue;
             }
 
@@ -103,7 +104,7 @@ function external_upgrade_webservices() {
             include($defpath);
 
             // update all function first
-            $dbfunctions = get_records_array('external_functions', 'component', $component);
+            $dbfunctions = get_records_array('external_functions', 'component', $module);
             if (!empty($dbfunctions)) {
                 foreach ($dbfunctions as $dbfunction) {
                     if (empty($functions[$dbfunction->name])) {
@@ -141,13 +142,13 @@ function external_upgrade_webservices() {
                 $dbfunction->classname  = $function['classname'];
                 $dbfunction->methodname = $function['methodname'];
                 $dbfunction->classpath  = empty($function['classpath']) ? null : $function['classpath'];
-                $dbfunction->component  = $component;
+                $dbfunction->component  = $module;
                 $dbfunction->id = insert_record('external_functions', $dbfunction);
             }
             unset($functions);
 
             // now deal with services
-            $dbservices = get_records_array('external_services', 'component', $component);
+            $dbservices = get_records_array('external_services', 'component', $module);
 
             if (!empty($dbservices)) {
                 foreach ($dbservices as $dbservice) {
@@ -201,7 +202,7 @@ function external_upgrade_webservices() {
                 $dbservice->name               = $name;
                 $dbservice->enabled            = empty($service['enabled']) ? 0 : $service['enabled'];
                 $dbservice->restrictedusers    = !isset($service['restrictedusers']) ? 1 : $service['restrictedusers'];
-                $dbservice->component          = $component;
+                $dbservice->component          = $module;
                 $dbservice->timecreated        = time();
                 $dbservice->id = insert_record('external_services', $dbservice, 'id', true);
                 foreach ($service['functions'] as $fname) {

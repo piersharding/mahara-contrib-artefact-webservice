@@ -32,9 +32,13 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
 
     $status = true;
 
-    if ($oldversion < 2010012702) {
-        // update the service list
-
+    if ($oldversion < 2010012703) {
+        // delete everything as we changed the component name
+        delete_records('external_services_users');
+        delete_records('external_tokens');
+        delete_records('external_services_functions');
+        delete_records('external_services');
+        delete_records('external_functions');
     }
 
     // sweep for webservice updates everytime
