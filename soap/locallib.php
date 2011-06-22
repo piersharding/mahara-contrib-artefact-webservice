@@ -161,7 +161,10 @@ class webservice_soap_server extends webservice_zend_server {
             //TODO: the error handling in Zend Soap server is useless, XML-RPC is much, much better :-(
             $this->zend_server->registerFaultException('MaharaException');
             $this->zend_server->registerFaultException('UserException');
+            $this->zend_server->registerFaultException('NotFoundException');
             $this->zend_server->registerFaultException('SystemException');
+            $this->zend_server->registerFaultException('InvalidArgumentException');
+            $this->zend_server->registerFaultException('AccessDeniedException');
             $this->zend_server->registerFaultException('ParameterException');
             $this->zend_server->registerFaultException('mahara_ws_exception');
             $this->zend_server->registerFaultException('webservice_parameter_exception');

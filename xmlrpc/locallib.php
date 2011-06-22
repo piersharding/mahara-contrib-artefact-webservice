@@ -56,13 +56,15 @@ class webservice_xmlrpc_server extends webservice_zend_server {
         Zend_XmlRpc_Server_Fault::attachFaultException('mahara_ws_exception');
         Zend_XmlRpc_Server_Fault::attachFaultException('MaharaException');
         Zend_XmlRpc_Server_Fault::attachFaultException('UserException');
+        Zend_XmlRpc_Server_Fault::attachFaultException('NotFoundException');
         Zend_XmlRpc_Server_Fault::attachFaultException('SystemException');
+        Zend_XmlRpc_Server_Fault::attachFaultException('InvalidArgumentException');
+        Zend_XmlRpc_Server_Fault::attachFaultException('AccessDeniedException');
         Zend_XmlRpc_Server_Fault::attachFaultException('ParameterException');
         Zend_XmlRpc_Server_Fault::attachFaultException('webservice_parameter_exception');
         Zend_XmlRpc_Server_Fault::attachFaultException('invalid_parameter_exception');
         Zend_XmlRpc_Server_Fault::attachFaultException('invalid_response_exception');
     }
-
 }
 
 /**
