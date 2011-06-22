@@ -89,12 +89,12 @@ $services = array(
         'Simple Group Provisioning' => array(
                 'functions' => array ('mahara_group_get_groups', 'mahara_group_get_groups_by_id', 'mahara_group_create_groups', 'mahara_group_delete_groups', 'mahara_group_update_groups'),
                 'enabled'=>1,
-                'restrictedgroups'=>1,
+                'restrictedusers'=>1,
         ),
         'Simple Group Query' => array(
                 'functions' => array ('mahara_group_get_groups', 'mahara_group_get_groups_by_id'),
                 'enabled'=>1,
-                'restrictedgroups'=>1,
+                'restrictedusers'=>1,
         ),
 );
 

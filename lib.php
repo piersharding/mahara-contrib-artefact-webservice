@@ -162,7 +162,7 @@ function external_upgrade_webservices() {
                     $service = $services[$dbservice->name];
                     unset($services[$dbservice->name]);
                     $service['enabled'] = empty($service['enabled']) ? 0 : $service['enabled'];
-                    $service['restrictedusers'] = !isset($service['restrictedusers']) ? 0 : $service['restrictedusers'];
+                    $service['restrictedusers'] = ((isset($service['restrictedusers']) && $service['restrictedusers'] == 1) ? 1 : 0);
 
                     $update = false;
                     if ($dbservice->enabled != $service['enabled']) {
@@ -201,7 +201,7 @@ function external_upgrade_webservices() {
                 $dbservice = new stdClass();
                 $dbservice->name               = $name;
                 $dbservice->enabled            = empty($service['enabled']) ? 0 : $service['enabled'];
-                $dbservice->restrictedusers    = !isset($service['restrictedusers']) ? 1 : $service['restrictedusers'];
+                $dbservice->restrictedusers    = ((isset($service['restrictedusers']) && $service['restrictedusers'] == 1) ? 1 : 0);
                 $dbservice->component          = $module;
                 $dbservice->timecreated        = time();
                 $dbservice->id = insert_record('external_services', $dbservice, 'id', true);
