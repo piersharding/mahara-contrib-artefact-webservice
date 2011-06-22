@@ -74,25 +74,50 @@ $functions = array(
         'description' => 'Delete users by id.',
         'type'        => 'write',
     ),
+
+    'mahara_user_get_favourites' => array(
+        'classname'   => 'mahara_user_external',
+        'methodname'  => 'get_favourites',
+        'classpath'   => 'artefact/webservice/serviceplugins/user',
+        'description' => 'Get favourites for a user',
+        'type'        => 'read',
+    ),
+
+    'mahara_user_get_all_favourites' => array(
+        'classname'   => 'mahara_user_external',
+        'methodname'  => 'get_all_favourites',
+        'classpath'   => 'artefact/webservice/serviceplugins/user',
+        'description' => 'Get all user favourites',
+        'type'        => 'read',
+    ),
+
+    'mahara_user_update_favourites' => array(
+        'classname'   => 'mahara_user_external',
+        'methodname'  => 'update_favourites',
+        'classpath'   => 'artefact/webservice/serviceplugins/user',
+        'description' => 'Update user favourites',
+        'type'        => 'write',
+    ),
+
 );
 
 
 $services = array(
         'User Provisioning' => array(
-                'functions' => array ('mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_create_users', 'mahara_user_delete_users', 'mahara_user_update_users'),
+                'functions' => array ('mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_update_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_create_users', 'mahara_user_delete_users', 'mahara_user_update_users'),
                 'enabled'=>1,
         ),
         'User Query' => array(
-                'functions' => array ('mahara_user_get_users', 'mahara_user_get_users_by_id'),
+                'functions' => array ('mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id'),
                 'enabled'=>1,
         ),
         'Simple User Provisioning' => array(
-                'functions' => array ('mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_create_users', 'mahara_user_delete_users', 'mahara_user_update_users'),
+                'functions' => array ('mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_update_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_create_users', 'mahara_user_delete_users', 'mahara_user_update_users'),
                 'enabled'=>1,
                 'restrictedusers'=>1,
         ),
         'Simple User Query' => array(
-                'functions' => array ('mahara_user_get_users', 'mahara_user_get_users_by_id'),
+                'functions' => array ('mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id'),
                 'enabled'=>1,
                 'restrictedusers'=>1,
         ),

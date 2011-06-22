@@ -32,6 +32,7 @@
  */
 
 require_once("$CFG->docroot/artefact/webservice/libs/externallib.php");
+require_once($CFG->docroot.'/lib/user.php');
 require_once('institution.php');
 
 
@@ -119,7 +120,6 @@ class mahara_user_external extends external_api {
      */
     public static function create_users($users) {
         global $USER, $WEBSERVICE_INSTITUTION;
-        require_once(get_config('docroot') . "/lib/user.php");
 
         // Do basic automatic PARAM checks on incoming data, using params description
         // If any problems are found then exceptions are thrown with helpful error messages
@@ -191,7 +191,6 @@ class mahara_user_external extends external_api {
             $addedusers[] = $new_user;
             $userids[] = array('id'=> $new_user->id, 'username'=>$user['username']);
         }
-        db_commit();
 
         // now sort out the passwords
         foreach ($addedusers as $user) {
@@ -208,6 +207,7 @@ class mahara_user_external extends external_api {
             }
         }
         unset($authobj_tmp, $userobj);
+        db_commit();
 
         return $userids;
     }
@@ -248,7 +248,6 @@ class mahara_user_external extends external_api {
      */
     public static function delete_users($userids) {
         global $USER, $WEBSERVICE_INSTITUTION;
-        require_once(get_config('docroot') . "/lib/user.php");
         require_once(get_config('docroot').'/artefact/lib.php');
 
         $params = self::validate_parameters(self::delete_users_parameters(), array('userids'=>$userids));
@@ -354,10 +353,10 @@ class mahara_user_external extends external_api {
      */
     public static function update_users($users) {
         global $USER, $WEBSERVICE_INSTITUTION;
-        require_once(get_config('docroot') . "/lib/user.php");
 
         $params = self::validate_parameters(self::update_users_parameters(), array('users'=>$users));
 
+        db_begin();
         foreach ($params['users'] as $user) {
             if (!empty($user['id'])) {
                 $dbuser = get_record('usr', 'id', $user['id'], 'deleted', 0);
@@ -379,7 +378,7 @@ class mahara_user_external extends external_api {
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
-                throw new invalid_parameter_exception('update_users: access denied for institution: '.$authinstance->institution.' on user: '.$userid);
+                throw new invalid_parameter_exception('update_users: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->id);
             }
 
             $updated_user = $dbuser;
@@ -406,6 +405,7 @@ class mahara_user_external extends external_api {
             }
             update_user($updated_user, $profilefields, $remoteuser);
         }
+        db_commit();
 
         return null;
     }
@@ -438,7 +438,6 @@ class mahara_user_external extends external_api {
      */
     public static function get_users_by_id($userids) {
         global $CFG, $WEBSERVICE_INSTITUTION;
-        require_once(get_config('docroot')  . "/lib/user.php");
 
         $params = self::validate_parameters(self::get_users_by_id_parameters(),
                 array('userids'=>$userids));
@@ -547,9 +546,7 @@ class mahara_user_external extends external_api {
      * @return external_function_parameters
      */
     public static function get_users_parameters() {
-        return new external_function_parameters(
-                                                array()
-        );
+        return new external_function_parameters(array());
     }
 
     /**
@@ -569,4 +566,308 @@ class mahara_user_external extends external_api {
     public static function get_users_returns() {
         return self::get_users_by_id_returns();
     }
+
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function update_favourites_parameters() {
+
+       return new external_function_parameters(
+            array(
+                'users' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the favourites owner', VALUE_OPTIONAL),
+                            'username'        => new external_value(PARAM_RAW, 'Username of the favourites owner', VALUE_OPTIONAL),
+                            'shortname'       => new external_value(PARAM_SAFEDIR, 'Favourites shorname', VALUE_DEFAULT, 'favourites', NULL_NOT_ALLOWED),
+                            'institution'     => new external_value(PARAM_SAFEDIR, 'Mahara institution', VALUE_DEFAULT, 'mahara', NULL_NOT_ALLOWED),
+                            'favourites'      => new external_multiple_structure(
+                                                            new external_single_structure(
+                                                                array(
+                                                                    'id' => new external_value(PARAM_NUMBER, 'favourite user Id', VALUE_OPTIONAL),
+                                                                    'username' => new external_value(PARAM_RAW, 'favourite username', VALUE_OPTIONAL),
+                                                                ), 'User favourites')
+                                                        ),
+                            )
+                    )
+                )
+            )
+        );
+    }
+
+
+    /**
+     * update one or more user favourites
+     *
+     * @param array $users
+     */
+    public static function update_favourites($users) {
+        global $USER, $WEBSERVICE_INSTITUTION;
+
+        $params = self::validate_parameters(self::update_favourites_parameters(), array('users'=>$users));
+
+        db_begin();
+        foreach ($params['users'] as $user) {
+            if (!empty($user['id'])) {
+                $dbuser = get_record('usr', 'id', $user['id'], 'deleted', 0);
+            }
+            else if (!empty($user['username'])) {
+                $dbuser = get_record('usr', 'username', $user['username'], 'deleted', 0);
+            }
+            else {
+                throw new invalid_parameter_exception('update_favourites: no username or id ');
+            }
+            if (empty($dbuser)) {
+                throw new invalid_parameter_exception('update_favourites: invalid user: '.$user['id'].'/'.$user['username']);
+            }
+            $ownerid = $dbuser->id;
+
+            // Make sure auth is valid
+            if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
+                throw new invalid_parameter_exception('update_favourites: Invalid authentication type: '.$dbuser->authinstance);
+            }
+            // check the institution is allowed
+            // basic check authorisation to edit for the current institution
+            if (!$USER->can_edit_institution($authinstance->institution)) {
+                throw new invalid_parameter_exception('update_favourites: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->id);
+            }
+
+            // are we allowed to delete for this institution
+            if ($WEBSERVICE_INSTITUTION != $user['institution'] || !$USER->can_edit_institution($user['institution'])) {
+                throw new invalid_parameter_exception('update_favourites: access denied for institution: '.$user['institution']);
+            }
+
+            // check that the favourites exist and we are allowed to administer them
+            $favourites = array($USER->get('id') => 'admin');
+            foreach ($user['favourites'] as $favourite) {
+                if (!empty($favourite['id'])) {
+                    $dbuser = get_record('usr', 'id', $favourite['id'], 'deleted', 0);
+                }
+                else if (!empty($favourite['username'])) {
+                    $dbuser = get_record('usr', 'username', $favourite['username'], 'deleted', 0);
+                }
+                else {
+                    throw new invalid_parameter_exception('update_favourites: no username or id for favourite  owner');
+                }
+                if (empty($dbuser)) {
+                    throw new invalid_parameter_exception('update_favourites: invalid user: '.$favourite['id'].'/'.$favourite['username']);
+                }
+
+                // Make sure auth is valid
+                if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
+                    throw new invalid_parameter_exception('update_favourites: Invalid authentication type: '.$dbuser->authinstance);
+                }
+
+                // check the institution is allowed
+                // basic check authorisation to edit for the current institution of the user
+                if (!$USER->can_edit_institution($authinstance->institution)) {
+                    throw new invalid_parameter_exception('update_favourites: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->username);
+                }
+                $favourites[]= $dbuser->id;
+            }
+
+            // now do the update
+            update_favorites($ownerid, $user['shortname'], $user['institution'], $favourites);
+        }
+        db_commit();
+
+        return null;
+    }
+
+   /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function update_favourites_returns() {
+        return null;
+    }
+
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function get_favourites_parameters() {
+        return new external_function_parameters(
+            array(
+                'users'=> new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'shortname' => new external_value(PARAM_SAFEDIR, 'Favourites shorname', VALUE_DEFAULT, 'favourites', NULL_NOT_ALLOWED),
+                            'userid' => new external_value(PARAM_INT, 'user id'),
+                        )
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * Get user favourites
+     *
+     * @param array $userids  array of user ids
+     * @return array An array of arrays describing users favourites
+     */
+    public static function get_favourites($users) {
+        global $CFG, $WEBSERVICE_INSTITUTION;
+
+        $params = self::validate_parameters(self::get_favourites_parameters(), array('users' => $users));
+//        $params = self::validate_parameters(self::get_users_by_id_parameters(), $users);
+//        // if this is a get all users - then lets get them all
+//        if (empty($params['favourites']['userids'])) {
+//            $params['favourites']['userids'] = array();
+//            $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u INNER JOIN {auth_instance} ai ON u.authinstance = ai.id WHERE u.deleted = 0 AND ai.institution = \''.$WEBSERVICE_INSTITUTION.'\'', null);
+//            foreach ($dbusers as $dbuser) {
+//                // eliminate bad uid
+//                if ($dbuser->id == 0) {
+//                    continue;
+//                }
+//                $params['favourites']['userids'][] = $dbuser->id;
+//            }
+//        }
+
+        //TODO: check if there is any performance issue: we do one DB request to retrieve
+        //  all user, then for each user the profile_load_data does at least two DB requests
+//        $users = array();
+//        foreach ($params['users'] as $user) {
+//            if ($user = get_user($user['userid'])) {
+//                $users[]= $user;
+//            }
+//            else {
+//                throw new invalid_parameter_exception('get_favourites: Invalid user id: '.$user['userid']);
+//            }
+//        }
+//        $shortname = $params['favourites']['shortname'];
+
+    // build the final results
+        $result = array();
+        foreach ($params['users'] as $user) {
+            $dbuser = get_record('usr', 'id', $user['userid'], 'deleted', 0);
+            if (empty($dbuser)) {
+                throw new invalid_parameter_exception('get_favourites: Invalid user id: '.$user['userid']);
+            }
+            // check the institution
+            $auth_instance = get_record('auth_instance', 'id', $dbuser->authinstance);
+            if (empty($auth_instance) || $WEBSERVICE_INSTITUTION != $auth_instance->institution) {
+                throw new invalid_parameter_exception('get_favourites: Not authorised for access to user id: '.$user['userid']);
+            }
+
+            // get the favourite for the shortname for this user
+            $favs = array();
+            $favourites = get_user_favorites($dbuser->id, 100);
+            $dbfavourite = get_record('favorite', 'shortname', $user['shortname'], 'institution', $WEBSERVICE_INSTITUTION, 'owner', $dbuser->id);
+            if (empty($dbfavourite)) {
+                throw new invalid_parameter_exception('get_favourites: Invalid favourite: '.$user['shortname'].'/'.$WEBSERVICE_INSTITUTION);
+            }
+            if (!empty($favourites)) {
+                foreach ($favourites as $fav) {
+                    $dbfavuser = get_record('usr', 'id', $fav->id, 'deleted', 0);
+                    $favs[]= array('id' => $fav->id, 'username' => $dbfavuser->username);
+                }
+            }
+
+            $result[] = array(
+                            'id'            => $dbuser->id,
+                            'username'      => $dbuser->username,
+                            'shortname'     => $dbfavourite->shortname,
+                            'institution'   => $dbfavourite->institution,
+                            'favourites'    => $favs,
+                            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function get_favourites_returns() {
+        return new external_multiple_structure(
+                new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the favourites owner'),
+                            'username'        => new external_value(PARAM_RAW, 'Username of the favourites owner'),
+                            'shortname'       => new external_value(PARAM_SAFEDIR, 'Favourites shorname'),
+                            'institution'     => new external_value(PARAM_SAFEDIR, 'Mahara institution'),
+                            'favourites'      => new external_multiple_structure(
+                                                            new external_single_structure(
+                                                                array(
+                                                                    'id' => new external_value(PARAM_NUMBER, 'favourite user Id', VALUE_OPTIONAL),
+                                                                    'username' => new external_value(PARAM_RAW, 'favourite username', VALUE_OPTIONAL),
+                                                                ), 'User favourites')
+                                                        ),
+                                                )
+                )
+        );
+    }
+
+
+
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function get_all_favourites_parameters() {
+        return new external_function_parameters(
+            array(
+                'shortname' => new external_value(PARAM_SAFEDIR, 'Favourites shorname', VALUE_DEFAULT, 'favourites', NULL_NOT_ALLOWED),
+                )
+        );
+    }
+
+    /**
+     * Get all user favourites
+     *
+     * @param string $shortname  shortname of the favourites
+     */
+    public static function get_all_favourites($shortname) {
+        global $CFG, $WEBSERVICE_INSTITUTION;
+
+        $params = self::validate_parameters(self::get_all_favourites_parameters(), array('shortname' => $shortname));
+
+        $dbfavourites = get_records_sql_array('SELECT * from {favorite} WHERE shortname = ? AND institution = ?',array($shortname, $WEBSERVICE_INSTITUTION));
+        if (empty($dbfavourites)) {
+            throw new invalid_parameter_exception('get_favourites: Invalid favourite: '.$user['shortname'].'/'.$WEBSERVICE_INSTITUTION);
+        }
+
+        $result = array();
+        foreach ($dbfavourites as $dbfavourite) {
+            $dbuser = get_record('usr', 'id', $dbfavourite->owner, 'deleted', 0);
+            if (empty($dbuser)) {
+                continue;
+            }
+            $favourites = get_user_favorites($dbuser->id, 100);
+            $favs = array();
+            if (!empty($favourites)) {
+                foreach ($favourites as $fav) {
+                    $dbfavuser = get_record('usr', 'id', $fav->id, 'deleted', 0);
+                    $favs[]= array('id' => $fav->id, 'username' => $dbfavuser->username);
+                }
+            }
+
+            $result[] = array(
+                            'id'            => $dbuser->id,
+                            'username'      => $dbuser->username,
+                            'shortname'     => $dbfavourite->shortname,
+                            'institution'   => $dbfavourite->institution,
+                            'favourites'    => $favs,
+                            );
+        }
+
+        return $result;
+    }
+
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function get_all_favourites_returns() {
+        return self::get_favourites_returns();
+    }
+
 }
