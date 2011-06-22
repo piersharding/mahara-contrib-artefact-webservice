@@ -64,7 +64,6 @@ class webservice_rest_client {
     public function call($functionname, $params) {
         global $CFG;
 
-//        var_dump($this->auth);
         $result = download_file_content($this->serverurl
                         . '?'.$this->auth.'&wsfunction='
                         . $functionname, null, $params);
@@ -81,15 +80,9 @@ class webservice_rest_client {
 
         $result = array();
         if (isset($raw['RESPONSE'])) {
-            if (isset($raw['RESPONSE']['MULTIPLE'])) {
-                foreach($raw['RESPONSE']['MULTIPLE']['SINGLE'] as $single) {
-                    $item = array();
-                    $single = array_shift($single);
-                    foreach ($single as $element) {
-                        $item[$element['@name']] = (isset($element['VALUE']['#text']) ? $element['VALUE']['#text'] : '');
-                    }
-                    $result[]= $item;
-                }
+            $node = $raw['RESPONSE'];
+            if (isset($node['MULTIPLE'])) {
+                $result = self::recurse_structure($node['MULTIPLE']);
             }
             else if (isset($raw['RESPONSE']['SINGLE'])) {
                 $result = $raw['RESPONSE']['SINGLE'];
@@ -97,6 +90,37 @@ class webservice_rest_client {
             else {
                 // empty result ?
                 $result = $raw['RESPONSE'];
+            }
+        }
+        return $result;
+    }
+
+    private static function recurse_structure($node) {
+        $result = array();
+        if (isset($node['SINGLE']['KEY'])) {
+            foreach ($node['SINGLE']['KEY'] as $element) {
+                if (isset($element['MULTIPLE'])) {
+                    $item[$element['@name']] = self::recurse_structure($element['MULTIPLE']);
+                }
+                else {
+                    $item[$element['@name']] = (isset($element['VALUE']['#text']) ? $element['VALUE']['#text'] : '');
+                }
+            }
+            $result[]= $item;
+        }
+        else {
+            foreach($node['SINGLE'] as $single) {
+                $item = array();
+                $single = array_shift($single);
+                foreach ($single as $element) {
+                    if (isset($element['MULTIPLE'])) {
+                        $item[$element['@name']] = self::recurse_structure($element['MULTIPLE']);
+                    }
+                    else {
+                        $item[$element['@name']] = (isset($element['VALUE']['#text']) ? $element['VALUE']['#text'] : '');
+                    }
+                }
+                $result[]= $item;
             }
         }
         return $result;
