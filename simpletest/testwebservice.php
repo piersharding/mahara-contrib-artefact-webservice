@@ -56,6 +56,7 @@ require_once(get_config('docroot').'/artefact/webservice/libs/moodlelib.php');
 require_once(get_config('docroot').'/artefact/webservice/libs/weblib.php');
 require_once(get_config('docroot').'/artefact/lib.php');
 require_once('institution.php');
+require_once('group.php');
 
 require_once(dirname(dirname(__FILE__)) . '/libs/simpletestlib/autorun.php');
 
@@ -93,11 +94,13 @@ class webservice_test extends UnitTestCase {
     public $testuser;
     public $testpasswd;
     public $created_users;
+    public $created_groups;
 
     function setUp() {
         // default current user to admin
         global $USER;
         $USER->id = 1;
+        $USER->admin = 1;
 
         //token to test
         $this->servicename = 'test webservices';
@@ -106,13 +109,15 @@ class webservice_test extends UnitTestCase {
         // clean out first
         $this->tearDown();
 
+        if (!$authinstance = get_record('auth_instance', 'institution', 'mahara', 'authname', 'webservice')) {
+            throw new Exception('missing authentication type: mahara/webservce - configure the mahara institution');
+        }
+        $this->authinstance = $authinstance;
+        $this->institution = new Institution($authinstance->institution);
+
         // create the new test user
         if (!$dbuser = get_record('usr', 'username', $this->testuser)) {
             db_begin();
-            if (!$authinstance = get_record('auth_instance', 'institution', 'mahara', 'authname', 'webservice')) {
-                throw new Exception('missing authentication type: mahara/webservce - configure the mahara institution');
-            }
-            $institution = new Institution($authinstance->institution);
 
             $new_user = new StdClass;
             $new_user->authinstance = $authinstance->id;
@@ -124,7 +129,7 @@ class webservice_test extends UnitTestCase {
             $new_user->passwordchange = 0;
             $new_user->admin        = 1;
             $profilefields = new StdClass;
-            $userid = create_user($new_user, $profilefields, $institution, $authinstance);
+            $userid = create_user($new_user, $profilefields, $this->institution, $authinstance);
             db_commit();
             $dbuser = get_record('usr', 'username', $this->testuser);
             // Add salt and encrypt the pw, if the auth instance allows for it
@@ -164,7 +169,32 @@ class webservice_test extends UnitTestCase {
                         'timecreated' => time());
         $dbserviceuser->id = insert_record('external_services_users', $dbserviceuser, 'id', true);
 
+
+        $groupcategories = get_records_array('group_category','','','displayorder');
+        if (empty($groupcategories)) {
+            throw new Exception('missing group categories: you must create atleast one group category');
+        }
+        $category = array_shift($groupcategories);
+
+        // setup test groups
+        $groupid = group_create(array(
+            'shortname'      => 'mytestgroup1',
+            'name'           => 'The test group 1',
+            'description'    => 'a description for test group 1',
+            'institution'    => 'mahara',
+            'grouptype'      => 'standard',
+            'category'       => $category->id,
+            'jointype'       => 'invite',
+            'public'         => 0,
+            'usersautoadded' => 0,
+            'members'        => array($dbuser->id => 'admin'),
+            'viewnotify'     => 0,
+        ));
+
         //protocols to test
+//        $this->testrest = true;
+//        $this->testxmlrpc = false;
+//        $this->testsoap = false;
         $this->testrest = true;
         $this->testxmlrpc = true;
         $this->testsoap = true;
@@ -173,6 +203,8 @@ class webservice_test extends UnitTestCase {
         $this->readonlytests = array(
             'mahara_user_get_users_by_id' => true,
             'mahara_user_get_users' => true,
+            'mahara_group_get_groups_by_id' => true,
+            'mahara_group_get_groups' => true,
         );
 
         ////// WRITE DB tests ////
@@ -180,6 +212,10 @@ class webservice_test extends UnitTestCase {
             'mahara_user_create_users' => true,
             'mahara_user_update_users' => true,
             'mahara_user_delete_users' => true,
+            'mahara_user_update_favourites' => true,
+            'mahara_group_create_groups' => true,
+            'mahara_group_update_groups' => true,
+            'mahara_group_delete_groups' => true,
         );
 
         //performance testing: number of time the web service are run
@@ -187,6 +223,9 @@ class webservice_test extends UnitTestCase {
 
         // keep track of users created and deleted
         $this->created_users = array();
+
+        // keep track of groups
+        $this->created_groups = array();
 
         //DO NOT CHANGE
         //reset the timers
@@ -222,6 +261,17 @@ class webservice_test extends UnitTestCase {
         if ($this->created_users) {
             foreach ($this->created_users as $userid) {
                 delete_user($userid);
+            }
+        }
+
+        // remove left over groups
+        $dbgroup = get_record('group', 'shortname', 'mytestgroup1', 'institution', 'mahara');
+        if ($dbgroup){
+            $this->created_groups[]= $dbgroup->id;
+        }
+        if ($this->created_groups) {
+            foreach ($this->created_groups as $groupid) {
+                group_delete($groupid);
             }
         }
     }
@@ -353,6 +403,9 @@ class webservice_test extends UnitTestCase {
 
     // simple get users by ID
     function mahara_user_get_users_by_id($client) {
+
+        error_log('getting users by id');
+
         $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u INNER JOIN {auth_instance} ai ON u.authinstance = ai.id WHERE u.deleted = 0 AND ai.institution = \'mahara\'', null);
         $userids = array();
         foreach ($dbusers as $dbuser) {
@@ -370,8 +423,10 @@ class webservice_test extends UnitTestCase {
 
     // simple get all users
     function mahara_user_get_users($client) {
-        $function = 'mahara_user_get_users';
 
+        error_log('getting all users');
+
+        $function = 'mahara_user_get_users';
         $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u INNER JOIN {auth_instance} ai ON u.authinstance = ai.id WHERE u.deleted = 0 AND ai.institution = \'mahara\'', null);
         $userids = array();
         foreach ($dbusers as $dbuser) {
@@ -386,6 +441,9 @@ class webservice_test extends UnitTestCase {
 
     // create user test
     function mahara_user_create_users($client) {
+
+        error_log('creating users');
+
         //Test data
         //a full user: user1
         $user1 = new stdClass();
@@ -463,6 +521,8 @@ class webservice_test extends UnitTestCase {
     function mahara_user_delete_users($client) {
         global $DB, $CFG;
 
+        error_log('deleting users');
+
         //Set test data
         //a full user: user1
         if (!$authinstance = get_record('auth_instance', 'institution', 'mahara', 'authname', 'webservice')) {
@@ -523,18 +583,15 @@ class webservice_test extends UnitTestCase {
         }
     }
 
-    // update user test
-    function mahara_user_update_users($client) {
-        global $DB, $CFG;
 
+    /**
+     * Create test users from one place to share between update
+     * and favourites
+     */
+    function create_user1_for_update() {
         //Set test data
-        if (!$authinstance = get_record('auth_instance', 'institution', 'mahara', 'authname', 'internal')) {
-            throw new invalid_parameter_exception('Invalid authentication type: mahara/webservce');
-        }
-        $institution = new Institution($authinstance->institution);
-
         //can run this test only if test usernames don't exist
-        foreach (array( 'veryimprobabletestusername1', 'veryimprobabletestusername2', 'veryimprobabletestusername1_updated', 'veryimprobabletestusername2_updated') as $username) {
+        foreach (array( 'veryimprobabletestusername1', 'veryimprobabletestusername1_updated') as $username) {
             $existinguser = get_record('usr', 'username', $username);
             if (!empty($existinguser)) {
                 delete_user($existinguser->id);
@@ -542,10 +599,12 @@ class webservice_test extends UnitTestCase {
         }
 
         //a full user: user1
-        db_begin();
         $user1 = new stdClass();
-        $user1->authinstance = $authinstance->id;
+        $user1->authinstance = $this->authinstance->id;
         $user1->username = 'veryimprobabletestusername1';
+        if ($dbuser1 = get_record('usr', 'username', $user1->username)) {
+            return $dbuser1;
+        }
         $user1->password = 'testpassword1';
         $user1->firstname = 'testfirstname1';
         $user1->lastname = 'testlastname1';
@@ -555,7 +614,8 @@ class webservice_test extends UnitTestCase {
         $user1->city = 'testcity1';
         $user1->country = 'au';
         $profilefields = new StdClass;
-        $userid = create_user($user1, $profilefields, $institution, $authinstance);
+        db_begin();
+        $userid = create_user($user1, $profilefields, $this->institution, $this->authinstance);
         db_commit();
         $dbuser1 = get_record('usr', 'username', $user1->username);
         $this->assertTrue($dbuser1);
@@ -565,17 +625,35 @@ class webservice_test extends UnitTestCase {
         $authobj_tmp->change_password($userobj, $dbuser1->password, false);
         $this->created_users[]= $dbuser1->id;
         $dbuser1 = get_record('usr', 'username', $user1->username);
+        return $dbuser1;
+    }
 
-        db_begin();
+    /**
+     * Create test users from one place to share between update
+     * and favourites
+     */
+    function create_user2_for_update() {
+        //can run this test only if test usernames don't exist
+        foreach (array( 'veryimprobabletestusername2', 'veryimprobabletestusername2_updated') as $username) {
+            $existinguser = get_record('usr', 'username', $username);
+            if (!empty($existinguser)) {
+                delete_user($existinguser->id);
+            }
+        }
+
         $user2 = new stdClass();
-        $user2->authinstance = $authinstance->id;
+        $user2->authinstance = $this->authinstance->id;
         $user2->username = 'veryimprobabletestusername2';
+        if ($dbuser2 = get_record('usr', 'username', $user2->username)) {
+            return $dbuser2;
+        }
         $user2->password = 'testpassword2';
         $user2->firstname = 'testfirstname2';
         $user2->lastname = 'testlastname2';
         $user2->email = 'testemail1@hogwarts.school.nz';
         $profilefields = new StdClass;
-        $userid = create_user($user2, $profilefields, $institution, $authinstance);
+        db_begin();
+        $userid = create_user($user2, $profilefields, $this->institution, $this->authinstance);
         db_commit();
         $dbuser2 = get_record('usr', 'username', $user2->username);
         $this->assertTrue($dbuser2);
@@ -585,7 +663,19 @@ class webservice_test extends UnitTestCase {
         $authobj_tmp->change_password($userobj, $dbuser2->password, false);
         $this->created_users[]= $dbuser2->id;
         $dbuser2 = get_record('usr', 'username', $user2->username);
+        return $dbuser2;
+    }
 
+
+    // update user test
+    function mahara_user_update_users($client) {
+        global $DB, $CFG;
+
+        error_log('updating users');
+
+        //Set test data
+        $dbuser1 = $this->create_user1_for_update();
+        $dbuser2 = $this->create_user2_for_update();
 
         //update the test data
         $user1 = new stdClass();
@@ -636,4 +726,418 @@ class webservice_test extends UnitTestCase {
         $this->assertEqual($dbuser2->lastname, $user2->lastname);
         $this->assertEqual($dbuser2->email, $user2->email);
     }
+
+
+    // update user test
+    function mahara_user_update_favourites($client) {
+        global $DB, $CFG;
+
+        error_log('updating & reading favourites');
+        //Set test data
+        $dbuser1 = $this->create_user1_for_update();
+        $dbuser2 = $this->create_user2_for_update();
+
+        //update the test data
+        $user1 = new stdClass();
+        $user1->id = $dbuser1->id;
+        $user1->shortname = 'testshortname1';
+        $user1->institution = 'mahara';
+        $user1->favourites = array(array('id' => 1), array('username' => $dbuser2->username));
+        $user2 = new stdClass();
+        $user2->username = $dbuser2->username;
+        $user2->shortname = 'testshortname1';
+        $user2->institution = 'mahara';
+        $user2->favourites = array(array('id' => 1), array('username' => $dbuser1->username));
+        $users = array($user1, $user2);
+
+        //update the users by web service
+        $function = 'mahara_user_update_favourites';
+        $params = array('users' => $users);
+        $client->call($function, $params);
+
+        // check the new favourites lists
+        $fav1 = self::prune_nasty_zero(get_user_favorites($dbuser1->id, 100, 0));
+        $fav2 = self::prune_nasty_zero(get_user_favorites($dbuser2->id, 100, 0));
+        $this->assertEqual(count($fav1), count($user1->favourites));
+        $this->assertEqual($dbuser2->id, self::find_new_fav($fav1));
+        $this->assertEqual(count($fav2), count($user2->favourites));
+        $this->assertEqual($dbuser1->id, self::find_new_fav($fav2));
+
+        $function = 'mahara_user_get_favourites';
+        $params = array('users' => array(array('shortname' => 'testshortname1', 'userid' => $dbuser1->id),array('shortname' => 'testshortname1', 'userid' => $dbuser2->id)));
+        $users = $client->call($function, $params);
+        foreach ($users as $user) {
+            $favs = self::prune_nasty_zero($user['favourites']);
+            $this->assertEqual(count($favs), count($user1->favourites));
+            $this->assertEqual($user['shortname'], $user1->shortname);
+            $this->assertEqual($user['institution'], $user1->institution);
+        }
+
+        // get all favourites
+        $function = 'mahara_user_get_all_favourites';
+        $params = array('shortname' => 'testshortname1');
+        $users = $client->call($function, $params);
+        $this->assertTrue(count($users) >= 2);
+        foreach ($users as $user) {
+            // skip users that we don't know
+            if ($user['id'] != $dbuser1->id && $user['id'] != $dbuser2->id) {
+                continue;
+            }
+            $favs = self::prune_nasty_zero($user['favourites']);
+            $this->assertEqual(count($favs), count($user1->favourites));
+            $this->assertEqual($user['shortname'], $user1->shortname);
+            $this->assertEqual($user['institution'], $user1->institution);
+        }
+    }
+
+    /**
+     * get rid of a zero id record that I created and cannot easily delete
+     *
+     * @param array $favs
+     */
+    private static function prune_nasty_zero($favs) {
+        $zero = false;
+        foreach ($favs as $k => $fav) {
+            $fav = (object)$fav;
+            if ($fav->id == 0) {
+                $zero = $k;
+                break;
+            }
+        }
+        if ($zero !== false) {
+            unset($favs["$zero"]);
+        }
+        return $favs;
+    }
+
+
+    /**
+     * Find the non-admin userid
+     *
+     * @param array $favs
+     */
+    private static function find_new_fav($favs) {
+        foreach ($favs as $k => $fav) {
+            if ($fav->id > 1) {
+                return $fav->id;
+            }
+        }
+        return false;
+    }
+
+
+    // simple get groups by ID
+    function mahara_group_get_groups_by_id($client) {
+
+        error_log('getting groups by id');
+
+        $dbgroups = get_records_sql_array('SELECT * FROM {group} WHERE institution = ? AND shortname = ? AND deleted = 0', array('mahara', 'mytestgroup1'));
+        $groupids = array();
+        foreach ($dbgroups as $dbgroup) {
+            if ($dbgroup->id == 0) continue;
+            $groupids[] = $dbgroup->id;
+        }
+        $function = 'mahara_group_get_groups_by_id';
+
+        $params = array('groupids' => $groupids);
+        $groups = $client->call($function, $params);
+        $this->assertEqual(count($groups), count($groupids));
+    }
+
+
+    // simple get all groups
+    function mahara_group_get_groups($client) {
+
+        error_log('getting all groups');
+
+        $function = 'mahara_group_get_groups';
+        $dbgroups = get_records_sql_array('SELECT * FROM {group} WHERE institution = ? AND shortname = ? AND deleted = 0', array('mahara', 'mytestgroup1'));
+        $params = array();
+        $groups = $client->call($function, $params);
+
+        $this->assertEqual(count($groups), count($groups));
+    }
+
+
+    // create user test
+    function mahara_group_create_groups($client) {
+
+        error_log('creating groups');
+        //Set test data
+        $dbuser1 = $this->create_user1_for_update();
+        $dbuser2 = $this->create_user2_for_update();
+
+        $groupcategories = get_records_array('group_category','','','displayorder');
+        $category = array_shift($groupcategories);
+        //Test data
+        //a full group: group1
+        $group1 = new stdClass();
+        $group1->name           = 'The test group 1 - create';
+        $group1->shortname      = 'testgroupshortname1';
+        $group1->description    = 'a description for test group 1';
+        $group1->institution    = 'mahara';
+        $group1->grouptype      = 'standard';
+        $group1->category       = $category->title;
+        $group1->jointype       = 'invite';
+        $group1->public         = 0;
+        $group1->usersautoadded = 0;
+//        $group1->viewnotify     = 0;
+        $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'), array('id' => $dbuser2->id, 'role' => 'admin'));
+
+        //a small group: group2
+        $group2 = new stdClass();
+        $group2->shortname      = 'testgroupshortname2';
+        $group2->name           = 'The test group 2 - create';
+        $group2->description    = 'a description for test group 2';
+        $group2->institution    = 'mahara';
+        $group2->grouptype      = 'standard';
+        $group2->category       = $category->title;
+        $group2->jointype       = 'invite';
+        $group2->public         = 0;
+        $group2->usersautoadded = 0;
+//        $group2->viewnotify     = 0;
+        $group2->members        = array(array('username' => $dbuser1->username, 'role' => 'admin'), array('username' => $dbuser2->username, 'role' => 'admin'));
+        $groups = array($group1, $group2);
+
+        //do not run the test if group1 or group2 already exists
+        foreach (array($group1->shortname, $group2->shortname) as $shortname) {
+            $existinggroup = get_record('group', 'shortname', $shortname, 'institution', 'mahara');
+            if (!empty($existinggroup)) {
+                group_delete($existinggroup->id);
+            }
+        }
+
+        $function = 'mahara_group_create_groups';
+        $params = array('groups' => $groups);
+        $resultgroups = $client->call($function, $params);
+
+        // store groups for deletion at the end
+        foreach ($resultgroups as $g) {
+            $this->created_groups[]= $g['id'];
+        }
+        $this->assertEqual(count($groups), count($resultgroups));
+
+        $dbgroup1 = get_record('group', 'shortname', $group1->shortname, 'institution', 'mahara');
+        $dbgroupmembers1 = get_records_array('group_member', 'group', $dbgroup1->id);
+
+        $dbgroup2 = get_record('group', 'shortname', $group2->shortname, 'institution', 'mahara');
+        $dbgroupmembers2 = get_records_array('group_member', 'group', $dbgroup2->id);
+
+        //retrieve groups from the DB and check values
+        $this->assertEqual($dbgroup1->name, $group1->name);
+        $this->assertEqual($dbgroup1->description, $group1->description);
+        $this->assertEqual($dbgroup1->grouptype, $group1->grouptype);
+        $this->assertEqual($dbgroup1->category, $category->id);
+        $this->assertEqual($dbgroup1->jointype, $group1->jointype);
+        $this->assertEqual($dbgroup1->public, $group1->public);
+        $this->assertEqual($dbgroup1->usersautoadded, $group1->usersautoadded);
+        $this->assertEqual($dbgroup1->viewnotify, 1);
+        $this->assertEqual(count($dbgroupmembers1), count($group1->members)+1); // current user added as admin
+
+        $this->assertEqual($dbgroup2->name, $group2->name);
+        $this->assertEqual($dbgroup2->description, $group2->description);
+        $this->assertEqual($dbgroup2->grouptype, $group2->grouptype);
+        $this->assertEqual($dbgroup2->category, $category->id);
+        $this->assertEqual($dbgroup2->jointype, $group2->jointype);
+        $this->assertEqual($dbgroup2->public, $group2->public);
+        $this->assertEqual($dbgroup2->usersautoadded, $group2->usersautoadded);
+        $this->assertEqual($dbgroup2->viewnotify, 1);
+        $this->assertEqual(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
+    }
+
+
+    // delete user test
+    function mahara_group_delete_groups($client) {
+        global $DB, $CFG;
+
+        error_log('deleting groups');
+
+        //Set test data
+        $dbuser1 = $this->create_user1_for_update();
+        $dbuser2 = $this->create_user2_for_update();
+
+        $groupcategories = get_records_array('group_category','','','displayorder');
+        $category = array_shift($groupcategories);
+        //Test data
+        //a full group: group1
+        $group1 = new stdClass();
+        $group1->name           = 'The test group 1 - create';
+        $group1->shortname      = 'testgroupshortname1';
+        $group1->description    = 'a description for test group 1';
+        $group1->institution    = 'mahara';
+        $group1->grouptype      = 'standard';
+        $group1->category       = $category->id;
+        $group1->jointype       = 'invite';
+        $group1->public         = 0;
+        $group1->usersautoadded = 0;
+//        $group1->viewnotify     = 0;
+        $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'), array('id' => $dbuser2->id, 'role' => 'admin'));
+
+        //a small group: group2
+        $group2 = new stdClass();
+        $group2->shortname      = 'testgroupshortname2';
+        $group2->name           = 'The test group 2 - create';
+        $group2->description    = 'a description for test group 2';
+        $group2->institution    = 'mahara';
+        $group2->grouptype      = 'standard';
+        $group2->category       = $category->id;
+        $group2->jointype       = 'invite';
+        $group2->public         = 0;
+        $group2->usersautoadded = 0;
+//        $group2->viewnotify     = 0;
+        $group2->members        = array(array('username' => $dbuser1->username, 'role' => 'admin'), array('username' => $dbuser2->username, 'role' => 'admin'));
+
+        //do not run the test if group1 or group2 already exists
+        foreach (array($group1->shortname, $group2->shortname) as $shortname) {
+            $existinggroup = get_record('group', 'shortname', $shortname, 'institution', 'mahara');
+            if (!empty($existinggroup)) {
+                group_delete($existinggroup->id);
+            }
+        }
+
+        // setup test groups
+        $groupid1 = group_create((array) $group1);
+        $groupid2 = group_create((array) $group2);
+
+
+        $dbgroup1 = get_record('group', 'shortname', $group1->shortname, 'institution', 'mahara');
+        $dbgroup2 = get_record('group', 'shortname', $group2->shortname, 'institution', 'mahara');
+
+        //delete the users by webservice
+        $function = 'mahara_group_delete_groups';
+        $params = array('groups' => array(array('id' => $dbgroup1->id), array('shortname' => $dbgroup2->shortname, 'institution' => $dbgroup2->institution)));
+        $client->call($function, $params);
+
+        //search for them => TESTS they don't exists
+        foreach (array($dbgroup1, $dbgroup2) as $group) {
+            $group = get_record('group', 'id', $group->id, 'deleted', 0);
+            $this->assertTrue(empty($group));
+        }
+    }
+
+
+
+    // update user test
+    function mahara_group_update_groups($client) {
+        global $DB, $CFG;
+
+        error_log('updating groups');
+
+        //Set test data
+        $dbuser1 = $this->create_user1_for_update();
+        $dbuser2 = $this->create_user2_for_update();
+
+        $groupcategories = get_records_array('group_category','','','displayorder');
+        $category = array_shift($groupcategories);
+        //Test data
+        //a full group: group1
+        $group1 = new stdClass();
+        $group1->name           = 'The test group 1 - create';
+        $group1->shortname      = 'testgroupshortname1';
+        $group1->description    = 'a description for test group 1';
+        $group1->institution    = 'mahara';
+        $group1->grouptype      = 'standard';
+        $group1->category       = $category->id;
+        $group1->jointype       = 'invite';
+        $group1->public         = 0;
+        $group1->usersautoadded = 0;
+//        $group1->viewnotify     = 0;
+        $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'), array('id' => $dbuser2->id, 'role' => 'admin'));
+
+        //a small group: group2
+        $group2 = new stdClass();
+        $group2->shortname      = 'testgroupshortname2';
+        $group2->name           = 'The test group 2 - create';
+        $group2->description    = 'a description for test group 2';
+        $group2->institution    = 'mahara';
+        $group2->grouptype      = 'standard';
+        $group2->category       = $category->id;
+        $group2->jointype       = 'invite';
+        $group2->public         = 0;
+        $group2->usersautoadded = 0;
+//        $group2->viewnotify     = 0;
+        $group2->members        = array(array('username' => $dbuser1->username, 'role' => 'admin'), array('username' => $dbuser2->username, 'role' => 'admin'));
+
+        //do not run the test if group1 or group2 already exists
+        foreach (array($group1->shortname, $group2->shortname) as $shortname) {
+            $existinggroup = get_record('group', 'shortname', $shortname, 'institution', 'mahara');
+            if (!empty($existinggroup)) {
+                group_delete($existinggroup->id);
+            }
+        }
+
+        // setup test groups
+        $groupid1 = group_create((array) $group1);
+        $groupid2 = group_create((array) $group2);
+        $this->created_groups[]= $groupid1;
+        $this->created_groups[]= $groupid2;
+
+        $dbgroup1 = get_record('group', 'shortname', $group1->shortname, 'institution', 'mahara');
+        $dbgroup2 = get_record('group', 'shortname', $group2->shortname, 'institution', 'mahara');
+
+
+        //update the test data
+        $group1 = new stdClass();
+        $group1->id             = $dbgroup1->id;
+        $group1->name           = 'The test group 1 - changed';
+        $group1->shortname      = 'testgroupshortname1 - changed';
+        $group1->description    = 'a description for test group 1 - changed';
+        $group1->institution    = 'mahara';
+        $group1->grouptype      = 'standard';
+        $group1->category       = $category->title;
+        $group1->jointype       = 'invite';
+        $group1->public         = 0;
+        $group1->usersautoadded = 0;
+//        $group1->viewnotify     = 0;
+        $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'));
+
+        //a small group: group2
+        $group2 = new stdClass();
+//        $group2->id             = $dbgroup2->id;
+        $group2->shortname      = 'testgroupshortname2';
+        $group2->name           = 'The test group 2 - changed';
+        $group2->description    = 'a description for test group 2 - changed';
+        $group2->institution    = 'mahara';
+        $group2->grouptype      = 'standard';
+        $group2->category       = $category->title;
+        $group2->jointype       = 'invite';
+        $group2->public         = 0;
+        $group2->usersautoadded = 0;
+//        $group2->viewnotify     = 0;
+        $group2->members        = array(array('username' => $dbuser2->username, 'role' => 'admin'));
+        $groups = array($group1, $group2);
+
+        //update the users by web service
+        $function = 'mahara_group_update_groups';
+        $params = array('groups' => $groups);
+        $client->call($function, $params);
+
+        $dbgroup1 = get_record('group', 'id', $groupid1);
+        $dbgroupmembers1 = get_records_array('group_member', 'group', $dbgroup1->id);
+
+        $dbgroup2 = get_record('group', 'id', $groupid2);
+        $dbgroupmembers2 = get_records_array('group_member', 'group', $dbgroup2->id);
+        //compare DB group with the test data
+        //retrieve groups from the DB and check values
+        $this->assertEqual($dbgroup1->name, $group1->name);
+        $this->assertEqual($dbgroup1->description, $group1->description);
+        $this->assertEqual($dbgroup1->grouptype, $group1->grouptype);
+        $this->assertEqual($dbgroup1->category, $category->id);
+        $this->assertEqual($dbgroup1->jointype, $group1->jointype);
+        $this->assertEqual($dbgroup1->public, $group1->public);
+        $this->assertEqual($dbgroup1->usersautoadded, $group1->usersautoadded);
+//        $this->assertEqual($dbgroup1->viewnotify, 1);
+        $this->assertEqual(count($dbgroupmembers1), count($group1->members)+1); // current user added as admin
+
+        $this->assertEqual($dbgroup2->name, $group2->name);
+        $this->assertEqual($dbgroup2->description, $group2->description);
+        $this->assertEqual($dbgroup2->grouptype, $group2->grouptype);
+        $this->assertEqual($dbgroup2->category, $category->id);
+        $this->assertEqual($dbgroup2->jointype, $group2->jointype);
+        $this->assertEqual($dbgroup2->public, $group2->public);
+        $this->assertEqual($dbgroup2->usersautoadded, $group2->usersautoadded);
+//        $this->assertEqual($dbgroup2->viewnotify, 1);
+        $this->assertEqual(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
+    }
+
 }
