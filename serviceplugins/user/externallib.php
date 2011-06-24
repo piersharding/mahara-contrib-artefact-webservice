@@ -192,21 +192,21 @@ class mahara_user_external extends external_api {
             $userids[] = array('id'=> $new_user->id, 'username'=>$user['username']);
         }
 
-        // now sort out the passwords
-        foreach ($addedusers as $user) {
-            // Add salt and encrypt the pw, if the auth instance allows for it
-            $userobj = new User();
-            $userobj = $userobj->find_by_id($user->id);
-            $authobj_tmp = AuthFactory::create($user->authinstance);
-            if (method_exists($authobj_tmp, 'change_password')) {
-                $authobj_tmp->change_password($userobj, $user->password, false);
-            } else {
-                $userobj->password = '';
-                $userobj->salt = auth_get_random_salt();
-                $userobj->commit();
-            }
-        }
-        unset($authobj_tmp, $userobj);
+//        // now sort out the passwords
+//        foreach ($addedusers as $user) {
+//            // Add salt and encrypt the pw, if the auth instance allows for it
+//            $userobj = new User();
+//            $userobj = $userobj->find_by_id($user->id);
+//            $authobj_tmp = AuthFactory::create($user->authinstance);
+//            if (method_exists($authobj_tmp, 'change_password')) {
+//                $authobj_tmp->change_password($userobj, $user->password, false);
+//            } else {
+//                $userobj->password = '';
+//                $userobj->salt = auth_get_random_salt();
+//                $userobj->commit();
+//            }
+//        }
+//        unset($authobj_tmp, $userobj);
         db_commit();
 
         return $userids;
