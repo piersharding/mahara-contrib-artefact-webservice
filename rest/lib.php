@@ -71,6 +71,7 @@ class webservice_rest_client {
         //TODO : transform the XML result into PHP values - MDL-22965
         $xml2array = new xml2array($result);
         $raw = $xml2array->getResult();
+//        var_dump($raw);
 
         if (isset($raw['EXCEPTION'])) {
             $debug = isset($raw['EXCEPTION']['DEBUGINFO']) ? $raw['EXCEPTION']['DEBUGINFO']['#text'] : '';
@@ -109,18 +110,20 @@ class webservice_rest_client {
             $result[]= $item;
         }
         else {
-            foreach($node['SINGLE'] as $single) {
-                $item = array();
-                $single = array_shift($single);
-                foreach ($single as $element) {
-                    if (isset($element['MULTIPLE'])) {
-                        $item[$element['@name']] = self::recurse_structure($element['MULTIPLE']);
+            if (isset($node['SINGLE'])) {
+                foreach($node['SINGLE'] as $single) {
+                    $item = array();
+                    $single = array_shift($single);
+                    foreach ($single as $element) {
+                        if (isset($element['MULTIPLE'])) {
+                            $item[$element['@name']] = self::recurse_structure($element['MULTIPLE']);
+                        }
+                        else {
+                            $item[$element['@name']] = (isset($element['VALUE']['#text']) ? $element['VALUE']['#text'] : '');
+                        }
                     }
-                    else {
-                        $item[$element['@name']] = (isset($element['VALUE']['#text']) ? $element['VALUE']['#text'] : '');
-                    }
+                    $result[]= $item;
                 }
-                $result[]= $item;
             }
         }
         return $result;
