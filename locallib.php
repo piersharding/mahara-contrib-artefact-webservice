@@ -882,7 +882,7 @@ abstract class webservice_zend_server extends webservice_server {
                         if ($q->item(0)) {
                             $this->username = (string) $q->item(0)->data;
                             $this->password = (string) $xpath->query("//wsse:Security/wsse:UsernameToken/wsse:Password/text()", $dom)->item(0)->data;
-                            error_log('username/password is wsse: '.$this->username.'/'.$this->password);
+//                            error_log('username/password is wsse: '.$this->username.'/'.$this->password);
                         }
                     }
                 }

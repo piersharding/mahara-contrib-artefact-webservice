@@ -69,7 +69,7 @@ function external_upgrade_webservices() {
         if (!file_exists($basepath)) {
             continue;
         }
-        error_log('basepath: '.$basepath);
+//        error_log('basepath: '.$basepath);
 
         $items = new DirectoryIterator($basepath);
         foreach ($items as $item) {
