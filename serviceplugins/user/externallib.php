@@ -252,7 +252,6 @@ class mahara_user_external extends external_api {
 
         $params = self::validate_parameters(self::delete_users_parameters(), array('userids'=>$userids));
 
-        error_log('delete_user: userids: '.var_export($params, true));
         db_begin();
         foreach ($params['userids'] as $userid) {
             $user = get_record('usr', 'id', $userid, 'deleted', 0);
