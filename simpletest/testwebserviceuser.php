@@ -230,8 +230,13 @@ class webservice_test extends webservice_test_base {
         $function = 'mahara_user_get_users_by_id';
 
         $params = array('userids' => $userids);
-        $users = $client->call($function, $params);
 
+        // standard call
+        $users = $client->call($function, $params);
+        $this->assertEqual(count($users), count($userids));
+
+        // JSON call
+        $users = $client->call($function, $params, true);
         $this->assertEqual(count($users), count($userids));
     }
 

@@ -58,30 +58,48 @@ class webservice_rest_server extends webservice_base_server {
      * @return void
      */
     protected function parse_request() {
-        // determine the delivery format
-        $this->format = ((isset($_REQUEST['alt']) && trim($_REQUEST['alt']) == 'json') || $_SERVER['HTTP_ACCEPT'] == 'application/jsonrequest') ? 'json' : 'xml';
+        // determine the request/response format
+        if ((isset($_REQUEST['alt']) && trim($_REQUEST['alt']) == 'json') ||
+            (isset($_GET['alt']) && trim($_GET['alt']) == 'json') ||
+            (isset($_REQUEST['alt']) && trim($_REQUEST['alt']) == 'json') ||
+            $_SERVER['HTTP_ACCEPT'] == 'application/json' ||
+            $_SERVER['HTTP_ACCEPT'] == 'application/jsonrequest' ||
+            $_SERVER['CONTENT_TYPE'] == 'application/json' ||
+            $_SERVER['CONTENT_TYPE'] == 'application/jsonrequest' ){
+            $this->format = 'json';
+        }
+        else {
+            $this->format = 'xml';
+        }
         unset($_REQUEST['alt']);
 
+        $this->parameters = $_REQUEST;
+
+        // merge parameters from JSON request body if there is one
+        if ($this->format == 'json') {
+            // get request body
+            $values = json_decode(@file_get_contents('php://input'));
+            if (!empty($values)) {
+                $this->parameters = array_merge($this->parameters, (array)$values);
+            }
+        }
+
         if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
-            $this->username = isset($_REQUEST['wsusername']) ? trim($_REQUEST['wsusername']) : null;
-            unset($_REQUEST['wsusername']);
+            $this->username = isset($this->parameters['wsusername']) ? trim($this->parameters['wsusername']) : null;
+            unset($this->parameters['wsusername']);
 
-            $this->password = isset($_REQUEST['wspassword']) ? trim($_REQUEST['wspassword']) : null;
-            unset($_REQUEST['wspassword']);
+            $this->password = isset($this->parameters['wspassword']) ? trim($this->parameters['wspassword']) : null;
+            unset($this->parameters['wspassword']);
 
-            $this->functionname = isset($_REQUEST['wsfunction']) ? trim($_REQUEST['wsfunction']) : null;
-            unset($_REQUEST['wsfunction']);
+            $this->functionname = isset($this->parameters['wsfunction']) ? trim($this->parameters['wsfunction']) : null;
+            unset($this->parameters['wsfunction']);
+        }
+        else {
+            $this->token = isset($this->parameters['wstoken']) ? trim($this->parameters['wstoken']) : null;
+            unset($this->parameters['wstoken']);
 
-            $this->parameters = $_REQUEST;
-
-        } else {
-            $this->token = isset($_REQUEST['wstoken']) ? trim($_REQUEST['wstoken']) : null;
-            unset($_REQUEST['wstoken']);
-
-            $this->functionname = isset($_REQUEST['wsfunction']) ? trim($_REQUEST['wsfunction']) : null;
-            unset($_REQUEST['wsfunction']);
-
-            $this->parameters = $_REQUEST;
+            $this->functionname = isset($this->parameters['wsfunction']) ? trim($this->parameters['wsfunction']) : null;
+            unset($this->parameters['wsfunction']);
         }
     }
 

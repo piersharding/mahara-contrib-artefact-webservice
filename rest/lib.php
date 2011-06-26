@@ -59,10 +59,26 @@ class webservice_rest_client {
      * Execute client WS request with token authentication
      * @param string $functionname
      * @param array $params
+     * @param bool $json
      * @return mixed
      */
-    public function call($functionname, $params) {
+    public function call($functionname, $params, $json=false) {
         global $CFG;
+
+        if ($json) {
+            $data = json_encode($params);
+            $url = $this->serverurl . '?'.$this->auth.'&wsfunction=' . $functionname . '&alt=json';
+            $result = file_get_contents ($url, false, stream_context_create (array ('http'=>array ('method'=>'POST'
+                    , 'header'=>"Content-Type: application/json\r\nConnection: close\r\nContent-Length: ".strlen($data)."\r\n"
+                    , 'content'=>$data
+                    ))));
+            $values = (array)json_decode($result);
+            $result = array();
+            foreach ($values as $k => $v) {
+                $result[$k] = (is_object($v) ? (array)$v : $v);
+            }
+            return $result;
+        }
 
         $result = download_file_content($this->serverurl
                         . '?'.$this->auth.'&wsfunction='
