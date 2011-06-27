@@ -146,7 +146,22 @@ class mahara_group_external extends external_api {
             // convert the category
             $groupcategory = get_record('group_category','title', $group['category']);
             if (empty($groupcategory)) {
-                throw new invalid_parameter_exception('create_groups: category invalid: '.$group['category']);
+                // create the category on the fly
+                $displayorders = get_records_array('group_category', '', '', '', 'displayorder');
+                $max = 0;
+                if ($displayorders) {
+                    foreach ($displayorders as $r) {
+                        $max = $r->displayorder >= $max ? $r->displayorder + 1 : $max;
+                    }
+                }
+                $data = new StdClass;
+                $data->title = $group['category'];
+                $data->displayorder = $max;
+                insert_record('group_category', $data);
+                $groupcategory = get_record('group_category','title', $group['category']);
+                if (empty($groupcategory)) {
+                    throw new invalid_parameter_exception('create_groups: category invalid: '.$group['category']);
+                }
             }
             $group['category'] = $groupcategory->id;
 
@@ -452,39 +467,61 @@ class mahara_group_external extends external_api {
      */
     public static function get_groups_by_id_parameters() {
         return new external_function_parameters(
-                array(
-                    'groupids' => new external_multiple_structure(new external_value(PARAM_INT, 'group ID')),
+            array(
+                'groups' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the group', VALUE_OPTIONAL),
+                            'shortname'       => new external_value(PARAM_RAW, 'Group shortname for API only controlled groups', VALUE_OPTIONAL),
+                            'institution'     => new external_value(PARAM_TEXT, 'Mahara institution - required for API controlled groups', VALUE_OPTIONAL),
+                            )
+                        )
+                    )
                 )
-        );
+            );
     }
 
     /**
      * Get user information
      *
-     * @param array $userids  array of user ids
-     * @return array An array of arrays describing users
+     * @param array $groups  array of groups
+     * @return array An array of arrays describing groups
      */
-    public static function get_groups_by_id($groupids) {
+    public static function get_groups_by_id($groups) {
         global $CFG, $WEBSERVICE_INSTITUTION, $USER;
 
         $params = self::validate_parameters(self::get_groups_by_id_parameters(),
-                array('groupids' => $groupids));
+                array('groups' => $groups));
 
         // if this is a get all users - then lets get them all
-        if (empty($params['groupids'])) {
-            $params['groupids'] = array();
+
+        if (empty($params['groups'])) {
+            $params['groups'] = array();
             $dbgroups =get_records_sql_array('SELECT * FROM {group} WHERE institution = ? AND deleted = 0', array($WEBSERVICE_INSTITUTION));
             foreach ($dbgroups as $dbgroup) {
-                $params['groupids'][] = $dbgroup->id;
+                $params['groups'][] = array('id' => $dbgroup->id);
             }
         }
 
         // now process the ids
         $groups = array();
-        foreach ($params['groupids'] as $groupid) {
-            // must exist
-            if (!$dbgroup = get_record('group', 'id', $groupid, 'deleted', 0)) {
-                throw new invalid_parameter_exception('get_group: Invalid group id: '.$groupid);
+        foreach ($params['groups'] as $group) {
+            // Make sure that the group doesn't already exist
+            if (!empty($group['id'])) {
+                if (!$dbgroup = get_record('group', 'id', $group['id'], 'deleted', 0)) {
+                    throw new invalid_parameter_exception('update_groups: Group does not exist: '.$group['id']);
+                }
+            }
+            else if (!empty($group['shortname'])) {
+                if (empty($group['institution'])) {
+                    throw new invalid_parameter_exception('update_groups: institution must be set for: '.$group['shortname']);
+                }
+                if (!$dbgroup = get_record('group', 'shortname', $group['shortname'], 'institution', $group['institution'], 'deleted', 0)) {
+                    throw new invalid_parameter_exception('update_groups: Group does not exist: '.$group['shortname']);
+                }
+            }
+            else {
+                throw new invalid_parameter_exception('update_groups: no group specified');
             }
 
             // must have access to the related institution
@@ -496,7 +533,7 @@ class mahara_group_external extends external_api {
             }
 
             // get the members
-            $dbmembers = get_records_sql_array('SELECT gm.member AS userid, u.username AS username, gm.role AS role FROM {group_member} gm LEFT JOIN {usr} u ON gm.member = u.id WHERE "group" = ?', array($groupid));
+            $dbmembers = get_records_sql_array('SELECT gm.member AS userid, u.username AS username, gm.role AS role FROM {group_member} gm LEFT JOIN {usr} u ON gm.member = u.id WHERE "group" = ?', array($dbgroup->id));
             $members = array();
             if ($dbmembers) {
                 foreach ($dbmembers as $member) {
