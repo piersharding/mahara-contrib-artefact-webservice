@@ -222,22 +222,22 @@ class webservice_test extends webservice_test_base {
         error_log('getting users by id');
 
         $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u INNER JOIN {auth_instance} ai ON u.authinstance = ai.id WHERE u.deleted = 0 AND ai.institution = \'mahara\'', null);
-        $userids = array();
+        $users_in = array();
         foreach ($dbusers as $dbuser) {
             if ($dbuser->id == 0) continue;
-            $userids[] = $dbuser->id;
+            $users_in[] = array('id' => $dbuser->id);
         }
         $function = 'mahara_user_get_users_by_id';
 
-        $params = array('userids' => $userids);
+        $params = array('users' => $users_in);
 
         // standard call
         $users = $client->call($function, $params);
-        $this->assertEqual(count($users), count($userids));
+        $this->assertEqual(count($users), count($users_in));
 
         // JSON call
         $users = $client->call($function, $params, true);
-        $this->assertEqual(count($users), count($userids));
+        $this->assertEqual(count($users), count($users_in));
     }
 
 
@@ -386,7 +386,7 @@ class webservice_test extends webservice_test_base {
 
         //delete the users by webservice
         $function = 'mahara_user_delete_users';
-        $params = array('userids' => array($dbuser1->id, $dbuser2->id));
+        $params = array('users' => array(array('id' => $dbuser1->id), array('id' => $dbuser2->id)));
         $client->call($function, $params);
 
         //search for them => TESTS they don't exists

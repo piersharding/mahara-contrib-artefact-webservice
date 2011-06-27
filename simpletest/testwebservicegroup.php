@@ -226,11 +226,11 @@ class webservice_test extends webservice_test_base {
         $groupids = array();
         foreach ($dbgroups as $dbgroup) {
             if ($dbgroup->id == 0) continue;
-            $groupids[] = $dbgroup->id;
+            $groupids[] = array('id' => $dbgroup->id);
         }
         $function = 'mahara_group_get_groups_by_id';
 
-        $params = array('groupids' => $groupids);
+        $params = array('groups' => $groupids);
         $groups = $client->call($function, $params);
         $this->assertEqual(count($groups), count($groupids));
     }

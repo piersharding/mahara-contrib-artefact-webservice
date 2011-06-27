@@ -268,14 +268,13 @@ class webservice_test extends webservice_test_base {
 
         //update the users by web service
         $function = 'mahara_institution_invite_members';
-        $params = array('institution' => $this->testinstitution, 'userids' => array($dbuser1->id, $dbuser2->id),
-                        );
+        $params = array('institution' => $this->testinstitution, 'users' => array(array('id' => $dbuser1->id), array('id' => $dbuser2->id),));
         $client->call($function, $params);
 
         $dbinvites = get_records_array('usr_institution_request', 'institution', $this->testinstitution);
 
         //compare DB user with the test data
-        $this->assertEqual(count($params['userids']), count($dbinvites));
+        $this->assertEqual(count($params['users']), count($dbinvites));
     }
 
 
@@ -294,13 +293,13 @@ class webservice_test extends webservice_test_base {
 
         //update the users by web service
         $function = 'mahara_institution_add_members';
-        $params = array('institution' => $this->testinstitution, 'userids' => array($dbuser1->id, $dbuser2->id),);
+        $params = array('institution' => $this->testinstitution, 'users' => array(array('id' => $dbuser1->id), array('id' => $dbuser2->id),));
         $client->call($function, $params);
 
         $dbmembers = get_records_array('usr_institution', 'institution', $this->testinstitution);
 
         //compare DB user with the test data
-        $this->assertEqual(count($params['userids']), count($dbmembers));
+        $this->assertEqual(count($params['users']), count($dbmembers));
     }
 
 
@@ -321,7 +320,7 @@ class webservice_test extends webservice_test_base {
 
         //update the users by web service
         $function = 'mahara_institution_remove_members';
-        $params = array('institution' => $this->testinstitution, 'userids' => array($dbuser1->id, $dbuser2->id),);
+        $params = array('institution' => $this->testinstitution, 'users' => array(array('id' => $dbuser1->id), array('id' => $dbuser2->id),));
         $client->call($function, $params);
 
         $dbmembers = get_records_array('usr_institution', 'institution', $this->testinstitution);
@@ -340,22 +339,21 @@ class webservice_test extends webservice_test_base {
         $this->clean_institution();
 
         $institution = new Institution($this->testinstitution);
-        $institution->invite_users(array($dbuser1->id, $dbuser2->id));
+        $institution->addRequestFromUser($dbuser1);
+        $institution->addRequestFromUser($dbuser2);
+//        $institution->invite_users(array($dbuser1->id, $dbuser2->id));
 
-
-        // XXXXXXXXXXXXXXXXX this could be a hack - not sure if this is due to a bug in $institution->decline_requests
-
-        set_field('usr_institution_request', 'confirmedusr', 1, 'institution', $this->testinstitution, 'usr', $dbuser1->id);
-        set_field('usr_institution_request', 'confirmedusr', 1, 'institution', $this->testinstitution, 'usr', $dbuser2->id);
-
-
+//        // XXXXXXXXXXXXXXXXX this could be a hack - not sure if this is due to a bug in $institution->decline_requests
+//
+//        set_field('usr_institution_request', 'confirmedusr', 1, 'institution', $this->testinstitution, 'usr', $dbuser1->id);
+//        set_field('usr_institution_request', 'confirmedusr', 1, 'institution', $this->testinstitution, 'usr', $dbuser2->id);
 
         $dbinvites = get_records_array('usr_institution_request', 'institution', $this->testinstitution);
         $this->assertEqual(2, count($dbinvites));
 
         //update the users by web service
         $function = 'mahara_institution_decline_members';
-        $params = array('institution' => $this->testinstitution, 'userids' => array($dbuser1->id, $dbuser2->id),);
+        $params = array('institution' => $this->testinstitution, 'users' => array(array('id' => $dbuser1->id), array('id' => $dbuser2->id),));
         $client->call($function, $params);
 
         $dbinvites = get_records_array('usr_institution_request', 'institution', $this->testinstitution);
