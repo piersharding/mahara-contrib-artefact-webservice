@@ -62,8 +62,8 @@ class webservice_rest_server extends webservice_base_server {
         if ((isset($_REQUEST['alt']) && trim($_REQUEST['alt']) == 'json') ||
             (isset($_GET['alt']) && trim($_GET['alt']) == 'json') ||
             (isset($_REQUEST['alt']) && trim($_REQUEST['alt']) == 'json') ||
-            $_SERVER['HTTP_ACCEPT'] == 'application/json' ||
-            $_SERVER['HTTP_ACCEPT'] == 'application/jsonrequest' ||
+            (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == 'application/json') ||
+            (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == 'application/jsonrequest') ||
             $_SERVER['CONTENT_TYPE'] == 'application/json' ||
             $_SERVER['CONTENT_TYPE'] == 'application/jsonrequest' ){
             $this->format = 'json';
@@ -78,9 +78,9 @@ class webservice_rest_server extends webservice_base_server {
         // merge parameters from JSON request body if there is one
         if ($this->format == 'json') {
             // get request body
-            $values = json_decode(@file_get_contents('php://input'));
+            $values = (array)json_decode(@file_get_contents('php://input'), true);
             if (!empty($values)) {
-                $this->parameters = array_merge($this->parameters, (array)$values);
+                $this->parameters = array_merge($this->parameters, $values);
             }
         }
 

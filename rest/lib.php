@@ -72,12 +72,8 @@ class webservice_rest_client {
                     , 'header'=>"Content-Type: application/json\r\nConnection: close\r\nContent-Length: ".strlen($data)."\r\n"
                     , 'content'=>$data
                     ))));
-            $values = (array)json_decode($result);
-            $result = array();
-            foreach ($values as $k => $v) {
-                $result[$k] = (is_object($v) ? (array)$v : $v);
-            }
-            return $result;
+            $values = (array)json_decode($result, true);
+            return $values;
         }
 
         $result = download_file_content($this->serverurl
