@@ -191,22 +191,6 @@ class mahara_user_external extends external_api {
             $addedusers[] = $new_user;
             $userids[] = array('id'=> $new_user->id, 'username'=>$user['username']);
         }
-
-//        // now sort out the passwords
-//        foreach ($addedusers as $user) {
-//            // Add salt and encrypt the pw, if the auth instance allows for it
-//            $userobj = new User();
-//            $userobj = $userobj->find_by_id($user->id);
-//            $authobj_tmp = AuthFactory::create($user->authinstance);
-//            if (method_exists($authobj_tmp, 'change_password')) {
-//                $authobj_tmp->change_password($userobj, $user->password, false);
-//            } else {
-//                $userobj->password = '';
-//                $userobj->salt = auth_get_random_salt();
-//                $userobj->commit();
-//            }
-//        }
-//        unset($authobj_tmp, $userobj);
         db_commit();
 
         return $userids;
@@ -233,32 +217,39 @@ class mahara_user_external extends external_api {
      * @return external_function_parameters
      */
     public static function delete_users_parameters() {
-        return new external_function_parameters(
+       return new external_function_parameters(
             array(
-                'userids' => new external_multiple_structure(new external_value(PARAM_INT, 'user ID')),
-            )
-        );
+                'users' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the favourites owner', VALUE_OPTIONAL),
+                            'username'        => new external_value(PARAM_RAW, 'Username of the favourites owner', VALUE_OPTIONAL),
+                            )
+                        )
+                    )
+                )
+            );
     }
 
 
     /**
      * Delete one or more users
      *
-     * @param array $userids
+     * @param array $users
      */
-    public static function delete_users($userids) {
+    public static function delete_users($users) {
         global $USER, $WEBSERVICE_INSTITUTION;
         require_once(get_config('docroot').'/artefact/lib.php');
 
-        $params = self::validate_parameters(self::delete_users_parameters(), array('userids'=>$userids));
+        $params = self::validate_parameters(self::delete_users_parameters(), array('users'=>$users));
+
+        $users = array();
+        foreach ($params['users'] as $user) {
+            $users[]= self::checkuser($user);
+        }
 
         db_begin();
-        foreach ($params['userids'] as $userid) {
-            $user = get_record('usr', 'id', $userid, 'deleted', 0);
-            if (empty($user)) {
-                throw new invalid_parameter_exception('delete_users: invalid user id: '.$userid);
-            }
-
+        foreach ($users as $user) {
             // Make sure auth is valid
             if (!$authinstance = get_record('auth_instance', 'id', $user->authinstance)) {
                 throw new invalid_parameter_exception('Invalid authentication type: '.$user->authinstance);
@@ -266,7 +257,7 @@ class mahara_user_external extends external_api {
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
-                throw new invalid_parameter_exception('delete_users: access denied for institution: '.$authinstance->institution.' on user: '.$userid);
+                throw new invalid_parameter_exception('delete_users: access denied for institution: '.$authinstance->institution.' on user: '.$user->id);
             }
 
             // must not allow deleting of admins or self!!!
@@ -276,7 +267,7 @@ class mahara_user_external extends external_api {
             if ($USER->id == $user->id) {
                 throw new MaharaException('usernotdeletederror', 'error');
             }
-            delete_user($userid);
+            delete_user($user->id);
         }
         db_commit();
 
@@ -303,7 +294,7 @@ class mahara_user_external extends external_api {
                 'users' => new external_multiple_structure(
                     new external_single_structure(
                         array(
-                            'id'              => new external_value(PARAM_NUMBER, 'ID of the user'),
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the user', VALUE_OPTIONAL),
                             'username'        => new external_value(PARAM_RAW, 'Username policy is defined in Mahara security config', VALUE_OPTIONAL),
                             'password'        => new external_value(PARAM_RAW, 'Plain text password consisting of any characters', VALUE_OPTIONAL),
                             'salt'            => new external_value(PARAM_RAW, 'Set the password salt', VALUE_OPTIONAL),
@@ -381,7 +372,6 @@ class mahara_user_external extends external_api {
             }
 
             $updated_user = $dbuser;
-            $updated_user->id = $dbuser->id;
             foreach (array('username', 'firstname', 'lastname', 'email', 'quota', 'studentid', 'preferredname', 'password') as $field) {
                 if (isset($user[$field])) {
                     $updated_user->{$field} = $user[$field];
@@ -422,56 +412,92 @@ class mahara_user_external extends external_api {
      * @return external_function_parameters
      */
     public static function get_users_by_id_parameters() {
-        return new external_function_parameters(
-                array(
-                    'userids' => new external_multiple_structure(new external_value(PARAM_INT, 'user ID')),
+       return new external_function_parameters(
+            array(
+                'users' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the favourites owner', VALUE_OPTIONAL),
+                            'username'        => new external_value(PARAM_RAW, 'Username of the favourites owner', VALUE_OPTIONAL),
+                            )
+                        )
+                    )
                 )
-        );
+            );
+    }
+
+
+    /**
+     * Check that a user exists
+     *
+     * @param array $user array('id' => .., 'username' => ..)
+     * @return array() of user
+     */
+    private static function checkuser($user) {
+        if (isset($user['id'])) {
+            $id = $user['id'];
+        }
+        else if (isset($user['userid'])) {
+            $id = $user['userid'];
+        }
+        else if (isset($user['username'])) {
+            $dbuser = get_record('usr', 'username', $user['username']);
+            if (empty($dbuser)) {
+                throw new invalid_parameter_exception('Invalid username: '.$user['username']);
+            }
+            $id = $dbuser->id;
+        }
+        else {
+            throw new invalid_parameter_exception('Must have id, userid or username');
+        }
+        // now get the user
+        if ($user = get_user($id)) {
+            return $user;
+        }
+        else {
+            throw new invalid_parameter_exception('Invalid user id: '.$id);
+        }
     }
 
     /**
      * Get user information
      *
-     * @param array $userids  array of user ids
+     * @param array $users  array of users
      * @return array An array of arrays describing users
      */
-    public static function get_users_by_id($userids) {
+    public static function get_users_by_id($users) {
         global $CFG, $WEBSERVICE_INSTITUTION;
 
         $params = self::validate_parameters(self::get_users_by_id_parameters(),
-                array('userids'=>$userids));
+                array('users'=>$users));
 
         // if this is a get all users - then lets get them all
-        if (empty($params['userids'])) {
-            $params['userids'] = array();
+        if (empty($params['users'])) {
+            $params['users'] = array();
             $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u INNER JOIN {auth_instance} ai ON u.authinstance = ai.id WHERE u.deleted = 0 AND ai.institution = \''.$WEBSERVICE_INSTITUTION.'\'', null);
             foreach ($dbusers as $dbuser) {
                 // eliminate bad uid
                 if ($dbuser->id == 0) {
                     continue;
                 }
-                $params['userids'][] = $dbuser->id;
+                $params['users'][] = array('id' => $dbuser->id);
             }
         }
 
         //TODO: check if there is any performance issue: we do one DB request to retrieve
         //  all user, then for each user the profile_load_data does at least two DB requests
         $users = array();
-        foreach ($params['userids'] as $userid) {
-            if ($user = get_user($userid)) {
-                $users[]= $user;
-            }
-            else {
-                throw new invalid_parameter_exception('Invalid user id: '.$userid);
-            }
+        foreach ($params['users'] as $user) {
+            $users[]= self::checkuser($user);
         }
+
         $result = array();
         foreach ($users as $user) {
             if (empty($user->deleted)) {
                 // check the institution
                 $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
                 if (empty($auth_instance) || $WEBSERVICE_INSTITUTION != $auth_instance->institution) {
-                    throw new invalid_parameter_exception('Not authorised for access to user id: '.$userid);
+                    throw new invalid_parameter_exception('Not authorised for access to user id: '.$user->id);
                 }
 
                 $userarray = array();
@@ -609,18 +635,8 @@ class mahara_user_external extends external_api {
 
         db_begin();
         foreach ($params['users'] as $user) {
-            if (!empty($user['id'])) {
-                $dbuser = get_record('usr', 'id', $user['id'], 'deleted', 0);
-            }
-            else if (!empty($user['username'])) {
-                $dbuser = get_record('usr', 'username', $user['username'], 'deleted', 0);
-            }
-            else {
-                throw new invalid_parameter_exception('update_favourites: no username or id ');
-            }
-            if (empty($dbuser)) {
-                throw new invalid_parameter_exception('update_favourites: invalid user: '.$user['id'].'/'.$user['username']);
-            }
+            $dbuser = self::checkuser($user);
+
             $ownerid = $dbuser->id;
 
             // Make sure auth is valid
@@ -639,21 +655,9 @@ class mahara_user_external extends external_api {
             }
 
             // check that the favourites exist and we are allowed to administer them
-            $favourites = array($USER->get('id') => 'admin');
+            $favourites = array($USER->get('id'));
             foreach ($user['favourites'] as $favourite) {
-                if (!empty($favourite['id'])) {
-                    $dbuser = get_record('usr', 'id', $favourite['id'], 'deleted', 0);
-                }
-                else if (!empty($favourite['username'])) {
-                    $dbuser = get_record('usr', 'username', $favourite['username'], 'deleted', 0);
-                }
-                else {
-                    throw new invalid_parameter_exception('update_favourites: no username or id for favourite  owner');
-                }
-                if (empty($dbuser)) {
-                    throw new invalid_parameter_exception('update_favourites: invalid user: '.$favourite['id'].'/'.$favourite['username']);
-                }
-
+                $dbuser = self::checkuser($favourite);
                 // Make sure auth is valid
                 if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
                     throw new invalid_parameter_exception('update_favourites: Invalid authentication type: '.$dbuser->authinstance);
@@ -695,7 +699,8 @@ class mahara_user_external extends external_api {
                     new external_single_structure(
                         array(
                             'shortname' => new external_value(PARAM_SAFEDIR, 'Favourites shorname', VALUE_DEFAULT, 'favourites', NULL_NOT_ALLOWED),
-                            'userid' => new external_value(PARAM_INT, 'user id'),
+                            'userid'    => new external_value(PARAM_INT, 'user id', VALUE_OPTIONAL),
+                            'username'  => new external_value(PARAM_RAW, 'Username of the favourites owner', VALUE_OPTIONAL),
                         )
                     )
                 )
@@ -713,40 +718,11 @@ class mahara_user_external extends external_api {
         global $CFG, $WEBSERVICE_INSTITUTION;
 
         $params = self::validate_parameters(self::get_favourites_parameters(), array('users' => $users));
-//        $params = self::validate_parameters(self::get_users_by_id_parameters(), $users);
-//        // if this is a get all users - then lets get them all
-//        if (empty($params['favourites']['userids'])) {
-//            $params['favourites']['userids'] = array();
-//            $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u INNER JOIN {auth_instance} ai ON u.authinstance = ai.id WHERE u.deleted = 0 AND ai.institution = \''.$WEBSERVICE_INSTITUTION.'\'', null);
-//            foreach ($dbusers as $dbuser) {
-//                // eliminate bad uid
-//                if ($dbuser->id == 0) {
-//                    continue;
-//                }
-//                $params['favourites']['userids'][] = $dbuser->id;
-//            }
-//        }
 
-        //TODO: check if there is any performance issue: we do one DB request to retrieve
-        //  all user, then for each user the profile_load_data does at least two DB requests
-//        $users = array();
-//        foreach ($params['users'] as $user) {
-//            if ($user = get_user($user['userid'])) {
-//                $users[]= $user;
-//            }
-//            else {
-//                throw new invalid_parameter_exception('get_favourites: Invalid user id: '.$user['userid']);
-//            }
-//        }
-//        $shortname = $params['favourites']['shortname'];
-
-    // build the final results
+        // build the final results
         $result = array();
         foreach ($params['users'] as $user) {
-            $dbuser = get_record('usr', 'id', $user['userid'], 'deleted', 0);
-            if (empty($dbuser)) {
-                throw new invalid_parameter_exception('get_favourites: Invalid user id: '.$user['userid']);
-            }
+            $dbuser = self::checkuser($user);
             // check the institution
             $auth_instance = get_record('auth_instance', 'id', $dbuser->authinstance);
             if (empty($auth_instance) || $WEBSERVICE_INSTITUTION != $auth_instance->institution) {
@@ -758,7 +734,8 @@ class mahara_user_external extends external_api {
             $favourites = get_user_favorites($dbuser->id, 100);
             $dbfavourite = get_record('favorite', 'shortname', $user['shortname'], 'institution', $WEBSERVICE_INSTITUTION, 'owner', $dbuser->id);
             if (empty($dbfavourite)) {
-                throw new invalid_parameter_exception('get_favourites: Invalid favourite: '.$user['shortname'].'/'.$WEBSERVICE_INSTITUTION);
+                // create an empty one
+                $dbfavourite = (object) array('shortname' => $user['shortname'], 'institution' => $WEBSERVICE_INSTITUTION);
             }
             if (!empty($favourites)) {
                 foreach ($favourites as $fav) {
