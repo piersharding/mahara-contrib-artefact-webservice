@@ -34,8 +34,41 @@
 require_once("$CFG->docroot/artefact/webservice/libs/externallib.php");
 require_once($CFG->docroot.'/lib/institution.php');
 require_once($CFG->docroot.'/lib/searchlib.php');
+require_once($CFG->docroot.'/lib/user.php');
 
 class mahara_institution_external extends external_api {
+
+    /**
+     * Check that a user exists
+     *
+     * @param array $user array('id' => .., 'username' => ..)
+     * @return array() of user
+     */
+    private static function checkuser($user) {
+        if (isset($user['id'])) {
+            $id = $user['id'];
+        }
+        else if (isset($user['userid'])) {
+            $id = $user['userid'];
+        }
+        else if (isset($user['username'])) {
+            $dbuser = get_record('usr', 'username', $user['username']);
+            if (empty($dbuser)) {
+                throw new invalid_parameter_exception('Invalid username: '.$user['username']);
+            }
+            $id = $dbuser->id;
+        }
+        else {
+            throw new invalid_parameter_exception('Must have id, userid or username');
+        }
+        // now get the user
+        if ($user = get_user($id)) {
+            return $user;
+        }
+        else {
+            throw new invalid_parameter_exception('Invalid user id: '.$id);
+        }
+    }
 
     /**
      * Returns description of method parameters
@@ -45,7 +78,14 @@ class mahara_institution_external extends external_api {
         return new external_function_parameters(
             array(
                 'institution'     => new external_value(PARAM_TEXT, 'Mahara institution'),
-                'userids'         => new external_multiple_structure(new external_value(PARAM_INT, 'user ID')),
+                'users' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the favourites owner', VALUE_OPTIONAL),
+                            'username'        => new external_value(PARAM_RAW, 'Username of the favourites owner', VALUE_OPTIONAL),
+                            )
+                        )
+                    )
             )
         );
     }
@@ -53,12 +93,12 @@ class mahara_institution_external extends external_api {
     /**
      * Add one or more users
      *
-     * @param array $userids
+     * @param array $users
      */
-    public static function add_members($institution, $userids) {
+    public static function add_members($institution, $users) {
         global $USER, $WEBSERVICE_INSTITUTION;
 
-        $params = array('institution' => $institution, 'userids' => $userids);
+        $params = array('institution' => $institution, 'users' => $users);
         $params = self::validate_parameters(self::add_members_parameters(), $params);
 
         if (!$USER->get('admin') && !$USER->is_institutional_admin()) {
@@ -69,31 +109,29 @@ class mahara_institution_external extends external_api {
             throw new invalid_parameter_exception('add_members: access denied for institution: '.$params['institution']);
         }
         db_begin();
-        foreach ($params['userids'] as $userid) {
-            $user = get_record('usr', 'id', $userid, 'deleted', 0);
-            if (empty($user)) {
-                throw new invalid_parameter_exception('add_members: invalid user id: '.$userid);
-            }
-
+        $userids = array();
+        foreach ($params['users'] as $user) {
+            $dbuser = self::checkuser($user);
             // Make sure auth is valid
-            if (!$authinstance = get_record('auth_instance', 'id', $user->authinstance)) {
-                throw new invalid_parameter_exception('Invalid authentication type: '.$user->authinstance);
+            if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
+                throw new invalid_parameter_exception('Invalid authentication type: '.$dbuser->authinstance);
             }
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
-                throw new invalid_parameter_exception('add_members: access denied for institution: '.$authinstance->institution.' on user: '.$userid);
+                throw new invalid_parameter_exception('add_members: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->id);
             }
+            $userids[]= $dbuser->id;
         }
         $institution = new Institution($params['institution']);
         $maxusers = $institution->maxuseraccounts;
         if (!empty($maxusers)) {
             $members = $institution->countMembers();
-            if ($members + count($params['userids']) > $maxusers) {
+            if ($members + count($userids) > $maxusers) {
                 throw new AccessDeniedException("Institution::add_members: ".get_string('institutionuserserrortoomanyinvites', 'admin'));
             }
         }
-        $institution->add_members($params['userids']);
+        $institution->add_members($userids);
         db_commit();
 
         return null;
@@ -116,7 +154,14 @@ class mahara_institution_external extends external_api {
         return new external_function_parameters(
             array(
                 'institution'     => new external_value(PARAM_TEXT, 'Mahara institution'),
-                'userids'         => new external_multiple_structure(new external_value(PARAM_INT, 'user ID')),
+                'users' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the favourites owner', VALUE_OPTIONAL),
+                            'username'        => new external_value(PARAM_RAW, 'Username of the favourites owner', VALUE_OPTIONAL),
+                            )
+                        )
+                    )
             )
         );
     }
@@ -124,12 +169,12 @@ class mahara_institution_external extends external_api {
     /**
      * Invite one or more users
      *
-     * @param array $userids
+     * @param array $users
      */
-    public static function invite_members($institution, $userids) {
+    public static function invite_members($institution, $users) {
         global $USER, $WEBSERVICE_INSTITUTION;
 
-        $params = array('institution' => $institution, 'userids' => $userids);
+        $params = array('institution' => $institution, 'users' => $users);
         $params = self::validate_parameters(self::invite_members_parameters(), $params);
 
         if (!$USER->get('admin') && !$USER->is_institutional_admin()) {
@@ -140,31 +185,30 @@ class mahara_institution_external extends external_api {
             throw new invalid_parameter_exception('invite_members: access denied for institution: '.$params['institution']);
         }
         db_begin();
-        foreach ($params['userids'] as $userid) {
-            $user = get_record('usr', 'id', $userid, 'deleted', 0);
-            if (empty($user)) {
-                throw new invalid_parameter_exception('invite_members: invalid user id: '.$userid);
-            }
+        $userids = array();
+        foreach ($params['users'] as $user) {
+            $dbuser = self::checkuser($user);
 
             // Make sure auth is valid
-            if (!$authinstance = get_record('auth_instance', 'id', $user->authinstance)) {
-                throw new invalid_parameter_exception('invite_members: Invalid authentication type: '.$user->authinstance);
+            if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
+                throw new invalid_parameter_exception('invite_members: Invalid authentication type: '.$dbuser->authinstance);
             }
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
-                throw new invalid_parameter_exception('invite_members: access denied for institution: '.$authinstance->institution.' on user: '.$userid);
+                throw new invalid_parameter_exception('invite_members: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->id);
             }
+            $userids[]= $dbuser->id;
         }
         $institution = new Institution($params['institution']);
         $maxusers = $institution->maxuseraccounts;
         if (!empty($maxusers)) {
-            if ($members + $institution->countInvites() + count($params['userids']) > $maxusers) {
+            if ($members + $institution->countInvites() + count($userids) > $maxusers) {
                 throw new AccessDeniedException("Institution::invite_members: ".get_string('institutionuserserrortoomanyinvites', 'admin'));
             }
         }
 
-        $institution->invite_users($params['userids']);
+        $institution->invite_users($userids);
         db_commit();
 
         return null;
@@ -187,7 +231,14 @@ class mahara_institution_external extends external_api {
         return new external_function_parameters(
             array(
                 'institution'     => new external_value(PARAM_TEXT, 'Mahara institution'),
-                'userids'         => new external_multiple_structure(new external_value(PARAM_INT, 'user ID')),
+                'users' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the favourites owner', VALUE_OPTIONAL),
+                            'username'        => new external_value(PARAM_RAW, 'Username of the favourites owner', VALUE_OPTIONAL),
+                            )
+                        )
+                    )
             )
         );
     }
@@ -195,12 +246,12 @@ class mahara_institution_external extends external_api {
     /**
      * remove one or more users
      *
-     * @param array $userids
+     * @param array $users
      */
-    public static function remove_members($institution, $userids) {
+    public static function remove_members($institution, $users) {
         global $USER, $WEBSERVICE_INSTITUTION;
 
-        $params = array('institution' => $institution, 'userids' => $userids);
+        $params = array('institution' => $institution, 'users' => $users);
         $params = self::validate_parameters(self::remove_members_parameters(), $params);
 
         if (!$USER->get('admin') && !$USER->is_institutional_admin()) {
@@ -211,25 +262,24 @@ class mahara_institution_external extends external_api {
             throw new invalid_parameter_exception('remove_members: access denied for institution: '.$params['institution']);
         }
         db_begin();
-        foreach ($params['userids'] as $userid) {
-            $user = get_record('usr', 'id', $userid, 'deleted', 0);
-            if (empty($user)) {
-                throw new invalid_parameter_exception('remove_members: invalid user id: '.$userid);
-            }
+        $userids = array();
+        foreach ($params['users'] as $user) {
+            $dbuser = self::checkuser($user);
 
             // Make sure auth is valid
-            if (!$authinstance = get_record('auth_instance', 'id', $user->authinstance)) {
-                throw new invalid_parameter_exception('remove_members: Invalid authentication type: '.$user->authinstance);
+            if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
+                throw new invalid_parameter_exception('remove_members: Invalid authentication type: '.$dbuser->authinstance);
             }
 
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
-                throw new invalid_parameter_exception('remove_members: access denied for institution: '.$authinstance->institution.' on user: '.$userid);
+                throw new invalid_parameter_exception('remove_members: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->id);
             }
+            $userids[]= $dbuser->id;
         }
         $institution = new Institution($params['institution']);
-        $institution->removeMembers($params['userids']);
+        $institution->removeMembers($userids);
         db_commit();
 
         return null;
@@ -252,7 +302,14 @@ class mahara_institution_external extends external_api {
         return new external_function_parameters(
             array(
                 'institution'     => new external_value(PARAM_TEXT, 'Mahara institution'),
-                'userids'         => new external_multiple_structure(new external_value(PARAM_INT, 'user ID')),
+                'users' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the favourites owner', VALUE_OPTIONAL),
+                            'username'        => new external_value(PARAM_RAW, 'Username of the favourites owner', VALUE_OPTIONAL),
+                            )
+                        )
+                    )
             )
         );
     }
@@ -260,12 +317,12 @@ class mahara_institution_external extends external_api {
     /**
      * decline one or more users
      *
-     * @param array $userids
+     * @param array $users
      */
-    public static function decline_members($institution, $userids) {
+    public static function decline_members($institution, $users) {
         global $USER, $WEBSERVICE_INSTITUTION;
 
-        $params = array('institution' => $institution, 'userids' => $userids);
+        $params = array('institution' => $institution, 'users' => $users);
         $params = self::validate_parameters(self::decline_members_parameters(), $params);
 
         if (!$USER->get('admin') && !$USER->is_institutional_admin()) {
@@ -276,25 +333,24 @@ class mahara_institution_external extends external_api {
             throw new invalid_parameter_exception('decline_members: access denied for institution: '.$params['institution']);
         }
         db_begin();
-        foreach ($params['userids'] as $userid) {
-            $user = get_record('usr', 'id', $userid, 'deleted', 0);
-            if (empty($user)) {
-                throw new invalid_parameter_exception('decline_members: invalid user id: '.$userid);
-            }
+        $userids = array();
+        foreach ($params['users'] as $user) {
+            $dbuser = self::checkuser($user);
 
             // Make sure auth is valid
-            if (!$authinstance = get_record('auth_instance', 'id', $user->authinstance)) {
-                throw new invalid_parameter_exception('decline_members: Invalid authentication type: '.$user->authinstance);
+            if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
+                throw new invalid_parameter_exception('decline_members: Invalid authentication type: '.$dbuser->authinstance);
             }
 
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
-                throw new invalid_parameter_exception('decline_members: access denied for institution: '.$authinstance->institution.' on user: '.$userid);
+                throw new invalid_parameter_exception('decline_members: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->id);
             }
+            $userids[]= $dbuser->id;
         }
         $institution = new Institution($params['institution']);
-        $institution->decline_requests($params['userids']);
+        $institution->decline_requests($userids);
         db_commit();
 
         return null;
@@ -359,8 +415,8 @@ class mahara_institution_external extends external_api {
         return new external_multiple_structure(
                 new external_single_structure(
                         array(
-                    'id'              => new external_value(PARAM_NUMBER, 'ID of the user'),
-                    'username'        => new external_value(PARAM_RAW, 'Username policy is defined in Mahara security config'),
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the user'),
+                            'username'        => new external_value(PARAM_RAW, 'Username policy is defined in Mahara security config'),
                         )
                 )
         );
@@ -419,8 +475,8 @@ class mahara_institution_external extends external_api {
         return new external_multiple_structure(
                 new external_single_structure(
                         array(
-                    'id'              => new external_value(PARAM_NUMBER, 'ID of the user'),
-                    'username'        => new external_value(PARAM_RAW, 'Username policy is defined in Mahara security config'),
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the user'),
+                            'username'        => new external_value(PARAM_RAW, 'Username policy is defined in Mahara security config'),
                         )
                 )
         );
