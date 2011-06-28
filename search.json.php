@@ -49,8 +49,8 @@ if ($action == 'search') {
     $limit   = param_integer('limit', 10);
     $sortby  = param_alpha('sortby', 'firstname');
     $sortdir = param_alpha('sortdir', 'asc');
-    $token   = param_alpha('token', '');
-    $suid    = param_alpha('suid', '');
+    $token   = param_variable('token', '');
+    $suid    = param_variable('suid', '');
 
     json_headers();
     if (param_boolean('raw', false)) {

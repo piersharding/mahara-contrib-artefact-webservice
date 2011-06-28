@@ -55,8 +55,8 @@ function local_main_nav_update(&$menu) {
 }
 
 // validate the incoming token
-$token  = param_alpha('token', '');
-$suid   = param_alpha('suid', '');
+$token  = param_variable('token', '');
+$suid   = param_variable('suid', '');
 
 // did the user cancel
 if (param_alpha('cancel_submit', 'empty') != 'empty') {

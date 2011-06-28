@@ -48,7 +48,12 @@ function local_main_nav_update(&$menu) {
       'weight' => 30);
 }
 
-$suid  = param_integer('suid', '');
+$suid  = param_variable('suid', '');
+// lookup user cancelled
+if ($suid == 'add') {
+    redirect('/artefact/webservice/pluginconfig.php');
+}
+
 $dbserviceuser = get_record('external_services_users', 'id', $suid);
 if (empty($dbserviceuser)) {
     $SESSION->add_error_msg(get_string('invalidserviceuser', 'artefact.webservice'));

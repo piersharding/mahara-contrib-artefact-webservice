@@ -48,7 +48,12 @@ function local_main_nav_update(&$menu) {
       'weight' => 30);
 }
 
-$token  = param_integer('token', 0);
+$token  = param_variable('token', 0);
+// lookup user cancelled
+if ($token == 'add') {
+    redirect('/artefact/webservice/pluginconfig.php');
+}
+
 $dbtoken = get_record('external_tokens', 'id', $token);
 if (empty($dbtoken)) {
     $SESSION->add_error_msg(get_string('invalidtoken', 'artefact.webservice'));
