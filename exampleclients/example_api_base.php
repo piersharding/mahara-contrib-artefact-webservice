@@ -49,22 +49,41 @@ ini_set("soap.wsdl_cache_enabled", "0");
 // get the WSSE SOAP client class
 require_once('wsse_soap_client.php');
 
+/**
+ *   command line help text
+ */
+function help_text() {
+    return "
+    Options are:
+        --username     - Web Services simple authentication username
+        --password     - Web Services simple authentication password
+        --busername    - basic authentication username to get past basic auth
+        --bpassword    - basic authentication password to get past basic auth
+        --servicegroup - service group as specified in artefact/webservice configuration that contains the necessary functions to call
+        --url          - the URL of the Web Service to call eg: http://your.mahara.local.net/artefact/webservice/soap/simpleserver.php
+    ";
+}
 
 //fetch arguments
 $args = Console_Getopt::readPHPArgv();
 //checking errors for argument fetching
 if (PEAR::isError($args)) {
-    error_log('Invalid arguments (1)');
+    error_log('Invalid arguments (1): '.help_text());
     exit(1);
 }
 
 // remove stderr/stdout redirection args
 $args = preg_grep('/2>&1/', $args, PREG_GREP_INVERT);
-$console_opt = Console_Getopt::getOpt($args, 'u:p:l:s:', array('username=', 'password=', 'url=', 'servicegroup='));
+$console_opt = Console_Getopt::getOpt($args, 'u:p:l:s:', array('username=', 'password=', 'url=', 'servicegroup=', 'bausername=', 'bapassword='));
+
+if (PEAR::isError($console_opt)) {
+    error_log('Invalid arguments (2): '.help_text());
+    exit(1);
+}
 
 // must supply at least one arg for the action to perform
-if (count($args) <= 1) {
-    error_log('Invalid arguments (2)');
+if (count($args) <= 2) {
+    error_log('Invalid arguments: you must atleast specify --username and --password'.help_text());
     exit(1);
 }
 
@@ -85,9 +104,11 @@ function get_param_console($param, $default) {
 }
 
 // defaults
-global $url, $servicegroup, $username, $password;
+global $url, $servicegroup, $username, $password, $bausername, $bapassword;
+$bausername = false;
+$bapassword = false;
 
-$url = 'http://mahara.local.net/maharadev/artefact/webservice/soap/simpleserver.php';
+$url = 'https://apistaging.myportfolio.school.nz/artefact/webservice/soap/simpleserver.php';
 if (empty($servicegroup)) {
     $servicegroup = 'Simple User Provisioning';
 }
@@ -121,6 +142,12 @@ if (sizeof($opts) > 0) {
             case '--servicegroup':
                 $servicegroup = $o[1];
                 break;
+            case '--bausername':
+                $bausername = $o[1];
+                break;
+            case '--bapassword':
+                $bapassword = $o[1];
+                break;
         }
     }
 }
@@ -131,6 +158,8 @@ $username = get_param_console('username', $username);
 $password = get_param_console('password', $password);
 $servicegroup = get_param_console('servicegroup', $servicegroup);
 $url = get_param_console('Mahara Web Services URL', $url);
+$bausername = get_param_console('username', $bausername);
+$bapassword = get_param_console('password', $bapassword);
 
 // declare what we are running with
 print "web services url: $url\n";
@@ -139,6 +168,8 @@ print "username; $username\n";
 print "password: $password\n";
 $wsdl = $url. '?wsservice=' . $servicegroup.'&wsdl=1';
 print "WSDL URL: $wsdl \n";
+print "basic auth username; $bausername\n";
+print "basic auth password: $bapassword\n";
 
 // keep looping until user exits
 while (1==1) {
@@ -163,7 +194,12 @@ while (1==1) {
     print "Parameters used for execution are: ".var_export($functions[$function], true)."\n";
 
     // build the client for execution
-    $client = new WSSE_Soap_Client($wsdl, $username, $password);
+    $options = null;
+    if ($bausername) {
+        print "setting user/pass for basic auth...\n";
+        $options = array('login' => $bausername, 'password' => $bapassword);
+    }
+    $client = new WSSE_Soap_Client($wsdl, $options, $username, $password);
 
     //make the web service call
     try {

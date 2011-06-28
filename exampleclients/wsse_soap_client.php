@@ -85,9 +85,9 @@ class WSSE_Soap_Client extends Zend_Soap_Client {
      * @param string $username WSSE Username
      * @param string $password WSSE Password
      */
-    public function __construct($wsdl, $username=null, $password=null) {
-        parent::__construct($wsdl);
-        $this->soapClient = new WSSoapClient(array($this, '_doRequest'), $wsdl, $this->getOptions());
+    public function __construct($wsdl, $options = null, $username=null, $password=null) {
+        parent::__construct($wsdl, $options);
+        $this->soapClient = new WSSoapClient(array($this, '_doRequest'), $wsdl, array_merge($this->getOptions(), ($options ? $options : array())));
         if ($username && $password) {
             $this->soapClient->setUsernamePassword($username, $password);
         }
@@ -98,7 +98,6 @@ class WSSE_Soap_Client extends Zend_Soap_Client {
     public function setUsernamePassword($username, $password) {
         $this->soapClient->setUsernamePassword($username, $password);
     }
-
 
     /**
      * Execute client WS request
