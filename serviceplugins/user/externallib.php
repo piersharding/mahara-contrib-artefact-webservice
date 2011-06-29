@@ -807,7 +807,7 @@ class mahara_user_external extends external_api {
 
         $dbfavourites = get_records_sql_array('SELECT * from {favorite} WHERE shortname = ? AND institution = ?',array($shortname, $WEBSERVICE_INSTITUTION));
         if (empty($dbfavourites)) {
-            throw new invalid_parameter_exception('get_favourites: Invalid favourite: '.$user['shortname'].'/'.$WEBSERVICE_INSTITUTION);
+            throw new invalid_parameter_exception('get_favourites: Invalid favourite: '.$shortname.'/'.$WEBSERVICE_INSTITUTION);
         }
 
         $result = array();
