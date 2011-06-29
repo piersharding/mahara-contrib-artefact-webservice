@@ -266,7 +266,7 @@ function testclient_parameters($paramdescription, $paramstring) {
  * @param array $parts
  * @param string $value
  */
-function testclient_build_inputs($inputs, $parts, $value) {
+function testclient_build_inputs(&$inputs, $parts, $value) {
     $part = array_shift($parts);
     if (empty($parts)) {
         if (!empty($value)) {
@@ -282,7 +282,7 @@ function testclient_build_inputs($inputs, $parts, $value) {
     if (!isset($inputs[$part])) {
         $inputs[$part] = array();
     }
-    testclient_build_inputs(&$inputs[$part], $parts, $value);
+    testclient_build_inputs($inputs[$part], $parts, $value);
 }
 
 /**
@@ -303,7 +303,7 @@ function testclient_submit(Pieform $form, $values) {
             foreach ($vars as $var) {
                 $name = preg_replace('/NUM/', $i, $var['name']);
                 $parts = explode('_', $name);
-                testclient_build_inputs(&$inputs, $parts, $values[$name]);
+                testclient_build_inputs($inputs, $parts, $values[$name]);
             }
         }
 //        error_log('inputs built: '.var_export($inputs, true));
