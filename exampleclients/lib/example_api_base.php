@@ -158,8 +158,10 @@ $username = get_param_console('username', $username);
 $password = get_param_console('password', $password);
 $servicegroup = get_param_console('servicegroup', $servicegroup);
 $url = get_param_console('Mahara Web Services URL', $url);
-$bausername = get_param_console('username', $bausername);
-$bapassword = get_param_console('password', $bapassword);
+if (!empty($bausername)) {
+    $bausername = get_param_console('username', $bausername);
+    $bapassword = get_param_console('password', $bapassword);
+}
 
 // declare what we are running with
 print "web services url: $url\n";

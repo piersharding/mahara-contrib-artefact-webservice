@@ -100,6 +100,18 @@ $string['class'] = 'Class';
 $string['arguments'] = 'Arguments';
 $string['invalidparameter'] = 'Invalid parameter value detected, execution can not continue.';
 
+// testclient
+$string['testclient'] = 'Web Services test client';
+$string['tokenauth'] = 'Token';
+$string['userauth'] = 'User';
+$string['authtype'] = 'Authentication Type';
+$string['enterparameters'] = 'Enter Function Parameters';
+$string['testclientinstructions'] = 'This is the interactive test client facility for Web Services.  This enables you to select a function and then execute it live against the current system.  Please be aware that ANY function you eecute will run for real.';
+$string['executed'] = 'Function call executed';
+$string['invaliduser'] = 'Invalid wsusername/wspassword supplied';
+$string['invalidtoken'] = 'Invalid wstoken supplied';
+$string['topinstructions'] = 'Go <a href="%s">here</a> to access the Web Services interactive test client.';
+
 
 // running webservices messages
 $string['accessexception'] = 'Access control exception';
