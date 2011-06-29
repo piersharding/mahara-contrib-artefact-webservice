@@ -35,12 +35,12 @@ if (isset($_SERVER['REMOTE_ADDR']) || isset($_SERVER['GATEWAY_INTERFACE'])){
 }
 
 // pull in the test data
-include_once('example_test_data_user.php');
+include_once('lib/example_test_data_user.php');
 
 // set defaults
 global $servicegroup, $username, $password;
 $servicegroup = 'Simple User Provisioning';
 
 // run it
-include_once('example_api_base.php');
+include_once('lib/example_api_base.php');
 

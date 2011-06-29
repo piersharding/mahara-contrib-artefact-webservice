@@ -57,8 +57,8 @@ function help_text() {
     Options are:
         --username     - Web Services simple authentication username
         --password     - Web Services simple authentication password
-        --busername    - basic authentication username to get past basic auth
-        --bpassword    - basic authentication password to get past basic auth
+        --bausername   - basic authentication username to get past basic auth
+        --bapassword   - basic authentication password to get past basic auth
         --servicegroup - service group as specified in artefact/webservice configuration that contains the necessary functions to call
         --url          - the URL of the Web Service to call eg: http://your.mahara.local.net/artefact/webservice/soap/simpleserver.php
     ";
