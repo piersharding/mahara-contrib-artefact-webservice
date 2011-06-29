@@ -33,21 +33,6 @@ require_once('pieforms/pieform.php');
 require_once(get_config('docroot') . '/artefact/webservice/lib.php');
 require_once(get_config('docroot').'/artefact/webservice/libs/moodlelib.php');
 
-
-/**
- * override menu layout for WebServices
- *
- * @param arrayref $menu
- */
-function local_main_nav_update(&$menu) {
-    $menu[]=
-    array(
-      'path' =>  'configextensions/pluginadminwebservices',
-      'url' => 'artefact/webservice/pluginconfig.php',
-      'title' => 'WebServices Administration',
-      'weight' => 30);
-}
-
 $function  = param_integer('id', 0);
 $dbfunction = get_record('external_functions', 'id', $function);
 if (empty($dbfunction)) {
@@ -56,13 +41,6 @@ if (empty($dbfunction)) {
 }
 $fdesc = external_function_info($dbfunction->name);
 
-//$service  = param_integer('service', 0);
-//$dbservice = get_record('external_services', 'id', $service);
-//if (empty($dbservice)) {
-//    $SESSION->add_error_msg(get_string('invalidservice', 'artefact.webservice'));
-//    redirect('/artefact/webservice/pluginconfig.php');
-//}
-
 $plugintype = 'artefact';
 $pluginname = 'webservice';
 
@@ -70,13 +48,7 @@ define('SECTION_PLUGINTYPE', $plugintype);
 define('SECTION_PLUGINNAME', $pluginname);
 define('SECTION_PAGE', 'pluginconfig');
 
-safe_require($plugintype, $pluginname);
-$classname = generate_artefact_class_name($pluginname);
-if (!call_static_method($classname, 'plugin_is_active')) {
-    throw new UserException("Plugin $plugintype $pluginname is disabled");
-}
-
-$smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . '/artefact/webservice/theme/raw/static/style/style.css">',));
+$smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('function', $dbfunction);
 $smarty->assign('functiondescription', $fdesc->description);
 $smarty->assign('fdesc', $fdesc);

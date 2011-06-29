@@ -398,6 +398,12 @@ class PluginArtefactWebservice extends PluginArtefact {
 
     public static function menu_items() {
         return array(
+            array(
+              'path' =>  'configextensions/pluginadminwebservices',
+              'url' => 'artefact/webservice/pluginconfig.php',
+              'title' => 'WebServices Administration',
+              'weight' => 30
+                )
         );
     }
 
@@ -608,7 +614,8 @@ class ArtefactTypeWebservice extends ArtefactType {
             $function_list = array();
             if ($functions) {
                 foreach ($functions as $function) {
-                    $function_list[]= $function->functionname;
+                    $dbfunction = get_record('external_functions', 'name', $function->functionname);
+                    $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
                 }
             }
             $form['elements']['id'. $service->id . '_functions'] = array(
@@ -770,7 +777,8 @@ class ArtefactTypeWebservice extends ArtefactType {
                 $function_list = array();
                 if ($functions) {
                     foreach ($functions as $function) {
-                        $function_list[]= $function->functionname;
+                        $dbfunction = get_record('external_functions', 'name', $function->functionname);
+                        $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
                     }
                 }
                 $form['elements']['id'. $token->tokenid . '_functions'] = array(
@@ -853,7 +861,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                                                            ),
                                         'usersearch'  => array(
                                                                'type'        => 'html',
-                                                               'value'       => '&nbsp;<a href="'.get_config('wwwroot') .'/artefact/webservice/search.php?token=add"><img src="'.$searchicon.'" id="usersearch"/></a> &nbsp; ',
+                                                               'value'       => '&nbsp;<a href="'.get_config('wwwroot') .'artefact/webservice/search.php?token=add"><img src="'.$searchicon.'" id="usersearch"/></a> &nbsp; ',
                                                            ),
 
                                         'action'     => array('type' => 'hidden', 'value' => 'generate'),
@@ -953,7 +961,8 @@ class ArtefactTypeWebservice extends ArtefactType {
                 $function_list = array();
                 if ($functions) {
                     foreach ($functions as $function) {
-                        $function_list[]= $function->functionname;
+                        $dbfunction = get_record('external_functions', 'name', $function->functionname);
+                        $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
                     }
                 }
                 $form['elements']['id'. $user->id . '_functions'] = array(
@@ -1036,7 +1045,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                                                            ),
                                         'usersearch'  => array(
                                                                'type'        => 'html',
-                                                               'value'       => '&nbsp;<a href="'.get_config('wwwroot') .'/artefact/webservice/search.php?suid=add"><img src="'.$searchicon.'" id="usersearch"/></a> &nbsp; ',
+                                                               'value'       => '&nbsp;<a href="'.get_config('wwwroot') .'artefact/webservice/search.php?suid=add"><img src="'.$searchicon.'" id="usersearch"/></a> &nbsp; ',
                                                            ),
 
                                         'action'     => array('type' => 'hidden', 'value' => 'add'),
@@ -1072,6 +1081,9 @@ class ArtefactTypeWebservice extends ArtefactType {
         $currentheight = get_config_plugin('artefact', 'file', 'profileiconheight');
 
         $elements = array(
+                'topinstructions' => array('type' => 'html',
+                                           'value' => get_string('topinstructions', 'artefact.webservice',
+                                           get_config('wwwroot') . 'artefact/webservice/testclient.php')),
                 // fieldset of master switch
                 'webservicesmaster' => array(
                     'type' => 'fieldset',

@@ -34,20 +34,6 @@ require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 define('TITLE', get_string('pluginadmin', 'admin'));
 require_once('pieforms/pieform.php');
 
-/**
- * override menu layout for WebServices
- *
- * @param arrayref $menu
- */
-function local_main_nav_update(&$menu) {
-    $menu[]=
-    array(
-      'path' =>  'configextensions/pluginadminwebservices',
-      'url' => 'artefact/webservice/pluginconfig.php',
-      'title' => 'WebServices Administration',
-      'weight' => 30);
-}
-
 $token  = param_variable('token', 0);
 // lookup user cancelled
 if ($token == 'add') {
@@ -159,7 +145,8 @@ $functions = get_records_array('external_services_functions', 'externalserviceid
 $function_list = array();
 if ($functions) {
     foreach ($functions as $function) {
-        $function_list[]= $function->functionname;
+        $dbfunction = get_record('external_functions', 'name', $function->functionname);
+        $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
     }
 }
 $token_details['elements']['functions'] = array(
@@ -171,7 +158,7 @@ $token_details['elements']['functions'] = array(
 $token_details['elements']['submit'] = array(
     'type'  => 'submitcancel',
     'value' => array(get_string('save'), get_string('cancel')),
-    'goto'  => get_config('wwwroot') . '/artefact/webservice/pluginconfig.php',
+    'goto'  => get_config('wwwroot') . 'artefact/webservice/pluginconfig.php',
 );
 
 $elements = array(
@@ -203,7 +190,7 @@ $form = array(
 
 $form = pieform($form);
 
-$smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . '/artefact/webservice/theme/raw/static/style/style.css">',));
+$smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('token', $dbtoken->token);
 $smarty->assign('form', $form);
 $smarty->assign('plugintype', $plugintype);

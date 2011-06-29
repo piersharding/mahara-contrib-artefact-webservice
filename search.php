@@ -40,20 +40,6 @@ define('SECTION_PAGE', 'pluginconfig');
 
 require_once('webservicessearchlib.php');
 
-/**
- * override menu layout for WebServices
- *
- * @param arrayref $menu
- */
-function local_main_nav_update(&$menu) {
-    $menu[]=
-    array(
-      'path' =>  'configextensions/pluginadminwebservices',
-      'url' => 'artefact/webservice/pluginconfig.php',
-      'title' => 'WebServices Administration',
-      'weight' => 30);
-}
-
 // validate the incoming token
 $token  = param_variable('token', '');
 $suid   = param_variable('suid', '');

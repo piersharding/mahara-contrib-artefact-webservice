@@ -34,20 +34,6 @@ require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 define('TITLE', get_string('pluginadmin', 'admin'));
 require_once('pieforms/pieform.php');
 
-/**
- * override menu layout for WebServices
- *
- * @param arrayref $menu
- */
-function local_main_nav_update(&$menu) {
-    $menu[]=
-    array(
-      'path' =>  'configextensions/pluginadminwebservices',
-      'url' => 'artefact/webservice/pluginconfig.php',
-      'title' => 'WebServices Administration',
-      'weight' => 30);
-}
-
 $service  = param_integer('service', 0);
 $dbservice = get_record('external_services', 'id', $service);
 if (empty($dbservice)) {
@@ -126,7 +112,7 @@ foreach ($dbfunctions as $function) {
 $functions['elements']['submit'] = array(
             'type'  => 'submitcancel',
             'value' => array(get_string('save'), get_string('cancel')),
-            'goto'  => get_config('wwwroot') . '/artefact/webservice/pluginconfig.php',
+            'goto'  => get_config('wwwroot') . 'artefact/webservice/pluginconfig.php',
         );
 
 $elements = array(
@@ -220,7 +206,7 @@ $form = array(
 $form['name'] = 'serviceconfig';
 $form['successcallback'] = 'serviceconfig_submit';
 $form = pieform($form);
-$smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . '/artefact/webservice/theme/raw/static/style/style.css">',));
+$smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('servicename', $dbservice->name);
 $smarty->assign('form', $form);
 $smarty->assign('plugintype', $plugintype);
