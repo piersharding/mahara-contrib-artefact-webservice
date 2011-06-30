@@ -655,7 +655,8 @@ class mahara_user_external extends external_api {
             }
 
             // check that the favourites exist and we are allowed to administer them
-            $favourites = array($USER->get('id'));
+//            $favourites = array($USER->get('id'));
+            $favourites = array();
             foreach ($user['favourites'] as $favourite) {
                 $dbuser = self::checkuser($favourite);
                 // Make sure auth is valid
