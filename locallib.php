@@ -865,28 +865,9 @@ abstract class webservice_zend_server extends webservice_server {
             $this->load_services($serviceids);
         }
         else {
-            // standard auth
-            if (!isset($_REQUEST['wsusername']) && $this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
-                // wsse auth
-                $xml = file_get_contents('php://input');
-                $dom = new DOMDocument();
-                if(strlen($xml) == 0 || !$dom->loadXML($xml)) {
-                    require_once 'Zend/Soap/Server/Exception.php';
-                    throw new Zend_Soap_Server_Exception('Invalid XML');
-                }
-                else {
-                    // now hunt for the user and password from the headers
-                    $xpath = new DOMXpath($dom);
-                    $xpath->registerNamespace('wsse', 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd');
-                    if ($q = $xpath->query("//wsse:Security/wsse:UsernameToken/wsse:Username/text()", $dom)) {
-                        if ($q->item(0)) {
-                            $this->username = (string) $q->item(0)->data;
-                            $this->password = (string) $xpath->query("//wsse:Security/wsse:UsernameToken/wsse:Password/text()", $dom)->item(0)->data;
-//                            error_log('username/password is wsse: '.$this->username.'/'.$this->password);
-                        }
-                    }
-                }
-            }
+            // Manipulate the payload if necessary
+            $xml = $this->modify_payload();
+
             // this sets up $USER and $SESSION and context restrictions
             $this->authenticate_user();
         }
@@ -911,10 +892,37 @@ abstract class webservice_zend_server extends webservice_server {
             die;
         }
 
+        // modify the result
+        $response = $this->modify_result($response);
+
         //finally send the result
         $this->send_headers();
         echo $response;
         die;
+    }
+
+    /**
+     * Chance for each protocol to modify the incoming
+     * raw payload - eg: SOAP and auth headers
+     *
+     * @return content
+     */
+    protected function modify_payload() {
+
+        return null;
+    }
+
+    /**
+     * Chance for each protocol to modify the out going
+     * raw payload - eg: SOAP encryption and signatures
+     *
+     * @param string $response The raw response value
+     *
+     * @return content
+     */
+    protected function modify_result($response) {
+
+        return $response;
     }
 
     /**

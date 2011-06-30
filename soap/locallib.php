@@ -175,6 +175,42 @@ class webservice_soap_server extends webservice_zend_server {
     }
 
     /**
+     * For SOAP - we want to inspect for auth headers
+     * and do decrypt / sigs
+     *
+     * @return $xml
+     */
+    protected function modify_payload() {
+
+        $xml = null;
+
+        // standard auth
+        if (!isset($_REQUEST['wsusername']) && $this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
+            // wsse auth
+            $xml = file_get_contents('php://input');
+            $dom = new DOMDocument();
+            if(strlen($xml) == 0 || !$dom->loadXML($xml)) {
+                require_once 'Zend/Soap/Server/Exception.php';
+                throw new Zend_Soap_Server_Exception('Invalid XML');
+            }
+            else {
+                // now hunt for the user and password from the headers
+                $xpath = new DOMXpath($dom);
+                $xpath->registerNamespace('wsse', 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd');
+                if ($q = $xpath->query("//wsse:Security/wsse:UsernameToken/wsse:Username/text()", $dom)) {
+                    if ($q->item(0)) {
+                        $this->username = (string) $q->item(0)->data;
+                        $this->password = (string) $xpath->query("//wsse:Security/wsse:UsernameToken/wsse:Password/text()", $dom)->item(0)->data;
+//                        error_log('username/password is wsse: '.$this->username.'/'.$this->password);
+                    }
+                }
+            }
+        }
+
+        return $xml;
+    }
+
+    /**
      * This method parses the $_REQUEST superglobal and looks for
      * the following information:
      *  1/ user authentication - username+password or token (wsusername, wspassword and wstoken parameters)
