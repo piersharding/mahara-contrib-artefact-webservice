@@ -34,6 +34,7 @@ $path = get_config('docroot').'artefact/webservice/libs/zend';
 set_include_path($path . PATH_SEPARATOR . get_include_path());
 
 require_once(get_config('docroot')."/artefact/webservice/locallib.php");
+require_once(get_config('docroot') . 'api/xmlrpc/lib.php');
 
 /**
  * Delete all service and external functions information defined in the specified component.
@@ -732,6 +733,12 @@ class ArtefactTypeWebservice extends ArtefactType {
                                 'type'  => 'html',
                                 'value' => get_string('enabled', 'artefact.webservice'),
                             ),
+                            'wssigenc' => array(
+                                'title' => ' ',
+                                'class' => 'header',
+                                'type'  => 'html',
+                                'value' => get_string('titlewssigenc', 'artefact.webservice'),
+                            ),
                             'functions' => array(
                                 'title' => ' ',
                                 'class' => 'header',
@@ -741,7 +748,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                         ),
             );
 
-        $dbtokens = get_records_sql_array('SELECT et.id as tokenid, et.externalserviceid as externalserviceid, et.institution as institution, u.id as userid, u.username as username, et.token as token, es.name as name, es.enabled as enabled FROM external_tokens AS et LEFT JOIN usr AS u ON et.userid = u.id LEFT JOIN external_services AS es ON et.externalserviceid = es.id ORDER BY u.username', false);
+        $dbtokens = get_records_sql_array('SELECT et.id as tokenid, et.wssigenc AS wssigenc, et.externalserviceid as externalserviceid, et.institution as institution, u.id as userid, u.username as username, et.token as token, es.name as name, es.enabled as enabled FROM external_tokens AS et LEFT JOIN usr AS u ON et.userid = u.id LEFT JOIN external_services AS es ON et.externalserviceid = es.id ORDER BY u.username', false);
         if (!empty($dbtokens)) {
             foreach ($dbtokens as $token) {
                 $dbinstitution = get_record('institution', 'name', $token->institution);
@@ -768,6 +775,12 @@ class ArtefactTypeWebservice extends ArtefactType {
                 );
                 $form['elements']['id'. $token->tokenid . '_enabled'] = array(
                     'defaultvalue' => (($token->enabled == 1) ? 'checked' : ''),
+                    'type'         => 'checkbox',
+                    'disabled'     => true,
+                    'title'        => $token->token,
+                );
+                $form['elements']['id'. $token->tokenid . '_wssigenc'] = array(
+                    'defaultvalue' => (($token->wssigenc == 1) ? 'checked' : ''),
                     'type'         => 'checkbox',
                     'disabled'     => true,
                     'title'        => $token->token,
@@ -916,6 +929,12 @@ class ArtefactTypeWebservice extends ArtefactType {
                                 'type'  => 'html',
                                 'value' => get_string('enabled', 'artefact.webservice'),
                             ),
+                            'wssigenc' => array(
+                                'title' => ' ',
+                                'class' => 'header',
+                                'type'  => 'html',
+                                'value' => get_string('titlewssigenc', 'artefact.webservice'),
+                            ),
                             'functions' => array(
                                 'title' => ' ',
                                 'class' => 'header',
@@ -925,7 +944,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                         ),
             );
 
-        $dbusers = get_records_sql_array('SELECT eu.id as id, eu.userid as userid, eu.externalserviceid as externalserviceid, eu.institution as institution, u.username as username, es.name as name, es.enabled as enabled FROM external_services_users AS eu LEFT JOIN usr AS u ON eu.userid = u.id LEFT JOIN external_services AS es ON eu.externalserviceid = es.id ORDER BY eu.id', false);
+        $dbusers = get_records_sql_array('SELECT eu.id as id, eu.userid as userid, eu.wssigenc AS wssigenc, eu.externalserviceid as externalserviceid, eu.institution as institution, u.username as username, es.name as name, es.enabled as enabled FROM external_services_users AS eu LEFT JOIN usr AS u ON eu.userid = u.id LEFT JOIN external_services AS es ON eu.externalserviceid = es.id ORDER BY eu.id', false);
         if (!empty($dbusers)) {
             foreach ($dbusers as $user) {
                 $dbinstitution = get_record('institution', 'name', $user->institution);
@@ -952,6 +971,12 @@ class ArtefactTypeWebservice extends ArtefactType {
                 );
                 $form['elements']['id'. $user->id . '_enabled'] = array(
                     'defaultvalue' => (($user->enabled == 1) ? 'checked' : ''),
+                    'type'         => 'checkbox',
+                    'disabled'     => true,
+                    'title'        => $user->id,
+                );
+                $form['elements']['id'. $user->id . '_wssigenc'] = array(
+                    'defaultvalue' => (($user->wssigenc == 1) ? 'checked' : ''),
                     'type'         => 'checkbox',
                     'disabled'     => true,
                     'title'        => $user->id,
@@ -1080,6 +1105,11 @@ class ArtefactTypeWebservice extends ArtefactType {
         $currentwidth = get_config_plugin('artefact', 'file', 'profileiconwidth');
         $currentheight = get_config_plugin('artefact', 'file', 'profileiconheight');
 
+        // certificate values from MNet
+        $openssl = OpenSslRepo::singleton();
+        $yesno = array(true  => get_string('yes'),
+                       false => get_string('no'));
+
         $elements = array(
                 'topinstructions' => array('type' => 'html',
                                            'value' => get_string('topinstructions', 'artefact.webservice',
@@ -1090,7 +1120,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                     'legend' => get_string('masterswitch', 'artefact.webservice'),
                     'elements' =>  self::webservices_master_switch_form(),
                     'collapsible' => true,
-                    'collapsed'   => false,
+                    'collapsed'   => true,
                 ),
 
                 // fieldset of protocol switches
@@ -1108,7 +1138,48 @@ class ArtefactTypeWebservice extends ArtefactType {
                                                     ),
                                                 ),
                                     'collapsible' => true,
-                                    'collapsed'   => false,
+                                    'collapsed'   => true,
+                                ),
+
+
+                // System Certificates
+                'certificates' => array(
+                                    'type' => 'fieldset',
+                                    'legend' => get_string('certificates', 'artefact.webservice'),
+                                    'elements' =>  array(
+                                                    'protos_help' =>  array(
+                                                    'type' => 'html',
+                                                    'value' => get_string('manage_certificates', 'artefact.webservice', get_config('wwwroot').'admin/site/networking.php'),
+                                                    ),
+
+                                                    'pubkey' => array(
+                                                        'type'         => 'html',
+                                                        'title'        => get_string('publickey','admin'),
+                                                        'description'  => get_string('publickeydescription2', 'admin', 365),
+                                                        'value'        => '<pre style="font-size: 0.7em; white-space: pre;">'.$openssl->certificate.'</pre>'
+                                                    ),
+                                                    'sha1fingerprint' => array(
+                                                        'type'         => 'html',
+                                                        'title'        => 'SHA1 Fingerprint',
+                                                        'value'        => $openssl->sha1_fingerprint
+                                                    ),
+                                                    'md5fingerprint' => array(
+                                                        'type'         => 'html',
+                                                        'title'        => 'MD5 Fingerprint',
+                                                        'value'        => $openssl->md5_fingerprint
+                                                    ),
+                                                    'expires' => array(
+                                                        'type'         => 'html',
+                                                        'title'        => get_string('publickeyexpires','admin'),
+                                                        'value'        => format_date($openssl->expires)
+                                                    ),
+//                                                    'submit' => array(
+//                                                        'type'  => 'submit',
+//                                                        'value' => get_string('savechanges','admin')
+//                                                    ),
+                                                ),
+                                    'collapsible' => true,
+                                    'collapsed'   => true,
                                 ),
 
 

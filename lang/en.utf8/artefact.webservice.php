@@ -41,6 +41,8 @@ $string['protocol'] = 'Protocol';
 $string['rest'] = 'REST';
 $string['soap'] = 'SOAP';
 $string['xmlrpc'] = 'XML-RPC';
+$string['manage_certificates'] = 'These are the Certificates generated as part of <a href="%s">Networking</a> services. These values are used by Mahara when WS-Security Signatures, and Encryption are enabled for a particular wstoken or service user.';
+$string['certificates'] = 'Networking Certificates';
 
 $string['servicefunctiongroups'] = 'Manage Service Groups';
 $string['sfgdescription'] = 'Build lists of functions into service groups, that can be allocated to users authorised for execution';
@@ -68,6 +70,8 @@ $string['token'] = 'Token';
 $string['invaliduserselected'] = 'Invalid user selected';
 $string['invaliduserselectedinstitution'] = 'Invalid user for token institution selected from user search';
 $string['noservices'] = 'No services configured';
+$string['wssigenc'] = 'Enble WS-Security';
+$string['titlewssigenc'] = 'WSSecurity';
 
 $string['manageserviceusers'] = 'Manage Service Users';
 $string['sudescription'] = 'Allocate users to Service Groups and Institutions.  User must only be configured once.  All users must have the "webservice" authentication method.  The instance of the "webservice" authentication method of the user must be from an institution that they are a member of.';

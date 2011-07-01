@@ -62,6 +62,17 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         add_field($table, $field);
     }
 
+    if ($oldversion < 2010012705) {
+        // add public key switch
+        $table = new XMLDBTable('external_tokens');
+        $field = new XMLDBField('wssigenc');
+        $field->setAttributes(XMLDB_TYPE_INTEGER, 1, null, XMLDB_NOTNULL, null, null, null, 0);
+        add_field($table, $field);
+        $table = new XMLDBTable('external_services_users');
+        $field = new XMLDBField('wssigenc');
+        $field->setAttributes(XMLDB_TYPE_INTEGER, 1, null, XMLDB_NOTNULL, null, null, null, 0);
+        add_field($table, $field);
+    }
     // sweep for webservice updates everytime
     $status = external_upgrade_webservices();
     return $status;

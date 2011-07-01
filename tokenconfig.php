@@ -80,24 +80,6 @@ $token_details =
                 ),
         );
 
-
-$token_details['elements']['publickey'] = array(
-    'type' => 'textarea',
-    'title' => get_string('publickey', 'admin'),
-    'defaultvalue' => $dbtoken->publickey,
-    'rules' => array(
-        'required' => true,
-    ),
-    'rows' => 15,
-    'cols' => 90,
-);
-
-$token_details['elements']['publickeyexpires']= array(
-    'type' => 'html',
-    'title' => get_string('publickeyexpires', 'admin'),
-    'value' => ($dbtoken->publickeyexpires ? format_date(strtotime($dbtoken->publickeyexpires)) : format_date(time())),
-);
-
 $institutions = get_records_array('institution');
 $iopts = array();
 foreach ($institutions as $institution) {
@@ -152,7 +134,6 @@ $token_details['elements']['enabled'] = array(
     'disabled'     => true,
 );
 
-
 $token_details['elements']['restricted'] = array(
     'title'        => get_string('restrictedusers', 'artefact.webservice'),
     'defaultvalue' => (($dbservice->restrictedusers == 1) ? 'checked' : ''),
@@ -172,6 +153,30 @@ $token_details['elements']['functions'] = array(
     'title'        => get_string('functions', 'artefact.webservice'),
     'value'        =>  implode(', ', $function_list),
     'type'         => 'html',
+);
+
+$token_details['elements']['wssigenc'] = array(
+    'defaultvalue' => (($dbtoken->wssigenc == 1) ? 'checked' : ''),
+    'type'         => 'checkbox',
+    'disabled'     => false,
+    'title'        => get_string('wssigenc', 'artefact.webservice'),
+);
+
+$token_details['elements']['publickey'] = array(
+    'type' => 'textarea',
+    'title' => get_string('publickey', 'admin'),
+    'defaultvalue' => $dbtoken->publickey,
+//    'rules' => array(
+//        'required' => true,
+//    ),
+    'rows' => 15,
+    'cols' => 90,
+);
+
+$token_details['elements']['publickeyexpires']= array(
+    'type' => 'html',
+    'title' => get_string('publickeyexpires', 'admin'),
+    'value' => ($dbtoken->publickeyexpires ? format_date(strtotime($dbtoken->publickeyexpires)) : format_date(time())),
 );
 
 $token_details['elements']['submit'] = array(
@@ -228,7 +233,18 @@ function allocate_webservice_tokens_submit(Pieform $form, $values) {
         return;
     }
 
-    if (isset($values['publickey'])) {
+    if (!empty($values['wssigenc'])) {
+        if (empty($values['publickey'])) {
+            $SESSION->add_error_msg('Must supply a public key to enable WS-Security');
+            redirect('/artefact/webservice/tokenconfig.php?token='.$dbtoken->id);
+        }
+        $dbtoken->wssigenc = 1;
+    }
+    else {
+        $dbtoken->wssigenc = 0;
+    }
+
+    if (!empty($values['publickey'])) {
         $publickey = openssl_x509_parse($values['publickey']);
         if (empty($publickey)) {
             $SESSION->add_error_msg('Invalid public key');
@@ -236,6 +252,10 @@ function allocate_webservice_tokens_submit(Pieform $form, $values) {
         }
         $dbtoken->publickey = $values['publickey'];
         $dbtoken->publickeyexpires = format_date($publickey['validTo_time_t']);
+    }
+    else {
+        $dbtoken->publickey = '';
+        $dbtoken->publickeyexpires = NULL;
     }
 
     if ($dbtoken->externalserviceid != $values['service']) {

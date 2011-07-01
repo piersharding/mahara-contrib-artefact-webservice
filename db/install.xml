@@ -66,7 +66,8 @@
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="validuntil" NEXT="lastaccess"/>
         <FIELD NAME="lastaccess" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" COMMENT="last access timestamp" PREVIOUS="timecreated" NEXT="publickey"/>
         <FIELD NAME="publickey" TYPE="text" NOTNULL="true" DEFAULT="" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="privatekey" NEXT="publickeyexpires"/>
-        <FIELD NAME="publickeyexpires" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="publickey"/>        
+        <FIELD NAME="publickeyexpires" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="publickey" NEXT="wssigenc"/>        
+        <FIELD NAME="wssigenc" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="publickeyexpires"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="userid"/>
@@ -88,7 +89,8 @@
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="validuntil" NEXT="lastaccess"/>
         <FIELD NAME="lastaccess" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" COMMENT="last access timestamp" PREVIOUS="timecreated" NEXT="publickey"/>
         <FIELD NAME="publickey" TYPE="text" NOTNULL="true" DEFAULT="" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="privatekey" NEXT="publickeyexpires"/>
-        <FIELD NAME="publickeyexpires" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="publickey"/>        
+        <FIELD NAME="publickeyexpires" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="publickey" NEXT="wssigenc"/>        
+        <FIELD NAME="wssigenc" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="publickeyexpires"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="externalserviceid"/>

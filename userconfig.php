@@ -103,24 +103,6 @@ $serviceuser_details =
                 ),
         );
 
-
-$serviceuser_details['elements']['publickey'] = array(
-    'type' => 'textarea',
-    'title' => get_string('publickey', 'admin'),
-    'defaultvalue' => $dbserviceuser->publickey,
-    'rules' => array(
-        'required' => true,
-    ),
-    'rows' => 15,
-    'cols' => 90,
-);
-
-$serviceuser_details['elements']['publickeyexpires']= array(
-    'type' => 'html',
-    'title' => get_string('publickeyexpires', 'admin'),
-    'value' => ($dbserviceuser->publickeyexpires ? format_date(strtotime($dbserviceuser->publickeyexpires)) : format_date(time())),
-);
-
 $dbinstitution = get_record('institution', 'name', $dbserviceuser->institution);
 $serviceuser_details['elements']['institution'] = array(
     'type'         => 'html',
@@ -181,6 +163,30 @@ $serviceuser_details['elements']['functions'] = array(
     'type'         => 'html',
 );
 
+$serviceuser_details['elements']['wssigenc'] = array(
+    'defaultvalue' => (($dbserviceuser->wssigenc == 1) ? 'checked' : ''),
+    'type'         => 'checkbox',
+    'disabled'     => false,
+    'title'        => get_string('wssigenc', 'artefact.webservice'),
+);
+
+$serviceuser_details['elements']['publickey'] = array(
+    'type' => 'textarea',
+    'title' => get_string('publickey', 'admin'),
+    'defaultvalue' => $dbserviceuser->publickey,
+//    'rules' => array(
+//        'required' => true,
+//    ),
+    'rows' => 15,
+    'cols' => 90,
+);
+
+$serviceuser_details['elements']['publickeyexpires']= array(
+    'type' => 'html',
+    'title' => get_string('publickeyexpires', 'admin'),
+    'value' => ($dbserviceuser->publickeyexpires ? format_date(strtotime($dbserviceuser->publickeyexpires)) : format_date(time())),
+);
+
 $serviceuser_details['elements']['submit'] = array(
     'type'  => 'submitcancel',
     'value' => array(get_string('save'), get_string('cancel')),
@@ -235,14 +241,29 @@ function allocate_webservice_users_submit(Pieform $form, $values) {
         return;
     }
 
-    if (isset($values['publickey'])) {
+    if (!empty($values['wssigenc'])) {
+        if (empty($values['publickey'])) {
+            $SESSION->add_error_msg('Must supply a public key to enable WS-Security');
+            redirect('/artefact/webservice/userconfig.php?suid='.$dbserviceuser->id);
+        }
+        $dbserviceuser->wssigenc = 1;
+    }
+    else {
+        $dbserviceuser->wssigenc = 0;
+    }
+
+    if (!empty($values['publickey'])) {
         $publickey = openssl_x509_parse($values['publickey']);
         if (empty($publickey)) {
             $SESSION->add_error_msg('Invalid public key');
-            redirect('/artefact/webservice/tokenconfig.php?token='.$dbtoken->id);
+            redirect('/artefact/webservice/userconfig.php?suid='.$dbserviceuser->id);
         }
         $dbserviceuser->publickey = $values['publickey'];
         $dbserviceuser->publickeyexpires = format_date($publickey['validTo_time_t']);
+    }
+    else {
+        $dbserviceuser->publickey = '';
+        $dbserviceuser->publickeyexpires = NULL;
     }
 
     if ($dbserviceuser->externalserviceid != $values['service']) {

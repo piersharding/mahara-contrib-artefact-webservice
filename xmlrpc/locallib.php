@@ -347,7 +347,10 @@ class webservice_xmlrpc_server extends webservice_zend_server {
                 ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice').": ".$this->token. " - ".getremoteaddr() , 0);
                 throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
             }
-            $this->publickey = $dbtoken->publickey;
+            // is WS-Security active ?
+            if ($dbtoken->wssigenc) {
+                $this->publickey = $dbtoken->publickey;
+            }
         }
         else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
             // get the user
@@ -360,7 +363,10 @@ class webservice_xmlrpc_server extends webservice_zend_server {
             if (empty($ext_user)) {
                 throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
             }
-            $this->publickey = $ext_user->publickey;
+            // is WS-Security active ?
+            if ($ext_user->wssigenc) {
+                $this->publickey = $ext_user->publickey;
+            }
         }
 
         // only both if we can find a public key
@@ -430,17 +436,19 @@ class webservice_xmlrpc_server extends webservice_zend_server {
      * @return content
      */
     protected function modify_result($response) {
-        // do sigs + encrypt
 //        error_log('response: '.$response);
-        require_once(get_config('docroot').'/api/xmlrpc/lib.php');
-        $openssl = OpenSslRepo::singleton();
-        if ($this->payload_signed) {
-            // Sign and encrypt our response, even though we don't know if the
-            // request was signed and encrypted
-            $response = xmldsig_envelope($response);
-        }
-        if ($this->payload_encrypted) {
-            $response = xmlenc_envelope($response, $this->publickey);
+        if (!empty($this->publickey)) {
+            // do sigs + encrypt
+            require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+            $openssl = OpenSslRepo::singleton();
+            if ($this->payload_signed) {
+                // Sign and encrypt our response, even though we don't know if the
+                // request was signed and encrypted
+                $response = xmldsig_envelope($response);
+            }
+            if ($this->payload_encrypted) {
+                $response = xmlenc_envelope($response, $this->publickey);
+            }
         }
         return $response;
     }
