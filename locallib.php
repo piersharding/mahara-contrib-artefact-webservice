@@ -878,6 +878,9 @@ abstract class webservice_zend_server extends webservice_server {
         // tell server what functions are available
         $this->zend_server->setClass($this->service_class);
 
+        // set additional functions
+        $this->fixup_functions();
+
         //log the web service request
         ws_add_to_log(0, 'webservice', '', '' , $this->zend_class." ".getremoteaddr() , 0, $this->userid);
 
@@ -899,6 +902,15 @@ abstract class webservice_zend_server extends webservice_server {
         $this->send_headers();
         echo $response;
         die;
+    }
+
+    /**
+     * Chance for each protocol to modify the function processing list
+     *
+     */
+    protected function fixup_functions() {
+
+        return null;
     }
 
     /**

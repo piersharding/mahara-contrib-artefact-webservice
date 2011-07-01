@@ -31,19 +31,281 @@
 
 require_once(get_config('docroot')."/artefact/webservice/locallib.php");
 
+require_once 'Zend/XmlRpc/Server.php';
+
+class Zend_XmlRpc_Server_Local extends Zend_XmlRpc_Server {
+
+    /**
+     * Here we need to be able to add new functions to the call list
+     *
+     * @param array $functions
+     */
+    public function addFunctionsAsMethods($functions) {
+        foreach ($functions as $key => $function) {
+            // do a reflection on the function interface
+            $reflection = new Zend_Server_Reflection_Function(new ReflectionFunction($function));
+
+            // build up the method definition
+            $definition = new Zend_Server_Method_Definition();
+            $definition->setName($key)
+                       ->setCallback($this->_buildCallback($reflection))
+                       ->setMethodHelp($reflection->getDescription())
+                       ->setInvokeArguments($reflection->getInvokeArguments());
+
+            // here is where the parameters really get built up
+            foreach ($reflection->getPrototypes() as $proto) {
+                $prototype = new Zend_Server_Method_Prototype();
+                $prototype->setReturnType($this->_fixType($proto->getReturnType()));
+                foreach ($proto->getParameters() as $parameter) {
+                    $param = new Zend_Server_Method_Parameter(array(
+                        'type'     => $this->_fixType($parameter->getType()),
+                        'name'     => $parameter->getName(),
+                        'optional' => $parameter->isOptional(),
+                    ));
+                    if ($parameter->isDefaultValueAvailable()) {
+                        $param->setDefaultValue($parameter->getDefaultValue());
+                    }
+                    $prototype->addParameter($param);
+                }
+                $definition->addPrototype($prototype);
+            }
+
+            // finally add the new function definition to the available call stack
+            $this->_table->addMethod($definition, $key);
+        }
+    }
+}
+
+/**
+ *  wrapper function for MNet function user_authorise
+ *
+ * @param string $token
+ * @param string $useragent
+ *
+ * @return array userdata
+ */
+function webservice_mnet_user_authorise($token, $useragent) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+
+    error_log('executing: webservice_mnet_user_authorise');
+    $userdata = user_authorise($token, $useragent);
+    error_log('userdata: '.var_export($userdata, true));
+    return $userdata;
+}
+
+
+/**
+ *  wrapper function for MNet function update_enrolments
+ *
+ * @param string $username
+ * @param array $enrolments
+ *
+ * @return boolean true
+ */
+function webservice_mnet_update_enrolments($username, $enrolments) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+
+    error_log('executing: webservice_mnet_update_enrolments');
+    $result = xmlrpc_not_implemented();
+    error_log('after: webservice_mnet_update_enrolments');
+    return $result;
+}
+
+/**
+ * Fetch a users image
+ *
+ * @param string $username
+ *
+ * @return blob
+ */
+function webservice_mnet_fetch_user_image($username) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return fetch_user_image($username);
+}
+
+/**
+ * keep alive server - not implemented
+ *
+ * @param unknown_type $array
+ */
+function webservice_mnet_keepalive_server($array) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    $result = xmlrpc_not_implemented();
+    return $result;
+}
+
+/**
+ * Kill off child sessions
+ *
+ * @param string $username
+ * @param string $useragent
+ *
+ * @return bool
+ */
+function webservice_mnet_kill_children($username, $useragent) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return kill_children($username, $useragent);
+}
+
+/**
+ * kill child - not implemented
+ *
+ * @param unknown_type $username
+ * @param unknown_type $useragent
+ *
+ * @return bool
+ */
+function webservice_mnet_kill_child($username, $useragent) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    $result = xmlrpc_not_implemented();
+    return $result;
+}
+
+/**
+ * get user views
+ *
+ * @param string $username
+ * @param string $query
+ *
+ * @return array
+ */
+function webservice_mnet_get_views_for_user($username, $query=null) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return get_views_for_user($username, $query);
+}
+
+/**
+ * submit view for assessment
+ *
+ * @param string $username
+ * @param integer $viewid
+ *
+ * @return bool
+ */
+function webservice_mnet_submit_view_for_assessment($username, $viewid) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return submit_view_for_assessment($username, $viewid);
+}
+
+/**
+ * release a submitted view
+ *
+ * @param unknown_type $viewid
+ * @param unknown_type $assessmentdata
+ * @param unknown_type $teacherusername
+ */
+function webservice_mnet_release_submitted_view($viewid, $assessmentdata, $teacherusername) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return release_submitted_view($viewid, $assessmentdata, $teacherusername);
+}
+
+/**
+ * send a content intent
+ *
+ * @param unknown_type $username
+ */
+function webservice_mnet_send_content_intent($username) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return send_content_intent($username);
+}
+
+/**
+ * send a content ready
+ *
+ * @param $token
+ * @param $username
+ * @param $format
+ * @param $importdata
+ * @param $fetchnow
+ */
+function webservice_mnet_send_content_ready($token, $username, $format, $importdata, $fetchnow) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return send_content_ready($token, $username, $format, $importdata, $fetchnow);
+}
+
+/**
+ * get folder files
+ *
+ * @param string $username
+ * @param integer $folderid
+ *
+ * @return array
+ */
+function webservice_mnet_get_folder_files($username, $folderid) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return get_folder_files($username, $folderid);
+}
+
+/**
+ * get file
+ *
+ * @param string $username
+ * @param integer $id
+ *
+ * @return array
+ */
+function webservice_mnet_get_file($username, $id) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return get_file($username, $id);
+}
+
+/**
+ * serach folders and files
+ *
+ * @param string $username
+ * @param string $search
+ *
+ * @return array
+ */
+function webservice_mnet_search_folders_and_files($username, $search) {
+    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    return search_folders_and_files($username, $search);
+}
+
+
 /**
  * XML-RPC service server implementation.
  * @author Petr Skoda (skodak)
  */
 class webservice_xmlrpc_server extends webservice_zend_server {
+
+    private $payload_signed = false;
+    private $payload_encrypted = false;
+    private $remotewwwroot = null;
+
     /**
      * Contructor
      * @param integer $authmethod authentication method one of WEBSERVICE_AUTHMETHOD_*
      */
     public function __construct($authmethod) {
         require_once 'Zend/XmlRpc/Server.php';
-        parent::__construct($authmethod, 'Zend_XmlRpc_Server');
+        parent::__construct($authmethod, 'Zend_XmlRpc_Server_Local');
         $this->wsname = 'xmlrpc';
+    }
+
+    /**
+     * Chance for each protocol to modify the function processing list
+     *
+     */
+    protected function fixup_functions() {
+        // tell server what extra functions are available
+        $functions = array(
+                    'auth/mnet/auth.php/user_authorise' => 'webservice_mnet_user_authorise',
+                    'auth/mnet/auth.php/update_enrolments' => 'webservice_mnet_update_enrolments',
+                    'auth/mnet/auth.php/fetch_user_image' => 'webservice_mnet_fetch_user_image',
+                    'auth/mnet/auth.php/keepalive_server' => 'webservice_mnet_keepalive_server',
+                    'auth/mnet/auth.php/kill_children' => 'webservice_mnet_kill_children',
+                    'auth/mnet/auth.php/kill_child' => 'webservice_mnet_kill_child',
+                    'mod/mahara/rpclib.php/get_views_for_user' => 'webservice_mnet_get_views_for_user',
+                    'mod/mahara/rpclib.php/submit_view_for_assessment' => 'webservice_mnet_submit_view_for_assessment',
+                    'mod/mahara/rpclib.php/release_submitted_view' => 'webservice_mnet_release_submitted_view',
+                    'portfolio/mahara/lib.php/send_content_intent' => 'webservice_mnet_send_content_intent',
+                    'portfolio/mahara/lib.php/send_content_ready' => 'webservice_mnet_send_content_ready',
+                    'repository/mahara/repository.class.php/get_folder_files' => 'webservice_mnet_get_folder_files',
+                    'repository/mahara/repository.class.php/get_file' => 'webservice_mnet_get_file',
+                    'repository/mahara/repository.class.php/search_folders_and_files' => 'webservice_mnet_search_folders_and_files'
+            );
+        $this->zend_server->addFunctionsAsMethods($functions);
     }
 
     /**
@@ -65,7 +327,106 @@ class webservice_xmlrpc_server extends webservice_zend_server {
         Zend_XmlRpc_Server_Fault::attachFaultException('invalid_parameter_exception');
         Zend_XmlRpc_Server_Fault::attachFaultException('invalid_response_exception');
     }
+
+
+    /**
+     * For XML-RPC - we want to check for enc / sigs
+     *
+     * @return $xml
+     */
+    protected function modify_payload() {
+        global $HTTP_RAW_POST_DATA;
+
+        $xml = null;
+
+        // check for encryption and signatures
+        if ($this->authmethod == WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN) {
+            // A singleton provides our site's SSL info
+            require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+            $HTTP_RAW_POST_DATA = file_get_contents('php://input');
+            $openssl = OpenSslRepo::singleton();
+            $payload                 = $HTTP_RAW_POST_DATA;
+            $this->payload_encrypted = false;
+            $this->payload_signed    = false;
+
+            try {
+                $xml = new SimpleXMLElement($payload);
+            } catch (Exception $e) {
+                throw new XmlrpcServerException('Payload is not a valid XML document', 6001);
+            }
+
+            // Cascading switch. Kinda.
+            try {
+                if ($xml->getName() == 'encryptedMessage') {
+                    $this->payload_encrypted = true;
+                    $this->remotewwwroot     = (string)$xml->wwwroot;
+                    $payload                 = xmlenc_envelope_strip($xml);
+                }
+
+                if ($xml->getName() == 'signedMessage') {
+                    $this->payload_signed = true;
+                    $this->remotewwwroot  = (string)$xml->wwwroot;
+                    $payload              = xmldsig_envelope_strip($xml);
+                }
+                $xml = $payload;
+            }
+            catch (CryptException $e) {
+                if ($e->getCode() == 7025) {
+                    // The key they used to contact us is old, respond with the new key correctly
+
+                    // This sucks. Error handling of our mnet code needs to improve
+                    ob_start();
+                    xmlrpc_error($e->getMessage(), $e->getCode());
+                    $response = ob_get_contents();
+                    ob_end_clean();
+
+                    // Sign and encrypt our response, even though we don't know if the
+                    // request was signed and encrypted
+                    $response = xmldsig_envelope($response);
+                    $peer     = get_peer($this->remotewwwroot);
+                    $response = xmlenc_envelope($response, $peer->certificate);
+                    $xml = $response;
+                }
+            }
+
+        }
+        // if XML has been grabbed already then it must be turned into a reuest object
+        if ($xml) {
+//            error_log('xml: '.$xml);
+            $request = new Zend_XmlRpc_Request();
+            $request->loadXML($xml);
+            $xml = $request;
+        }
+        return $xml;
+    }
+
+
+    /**
+     * Chance for each protocol to modify the out going
+     * raw payload - eg: SOAP encryption and signatures
+     *
+     * @param string $response The raw response value
+     *
+     * @return content
+     */
+    protected function modify_result($response) {
+        // do sigs + encrypt
+//        error_log('response: '.$response);
+        require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+        $openssl = OpenSslRepo::singleton();
+        if ($this->payload_signed) {
+            // Sign and encrypt our response, even though we don't know if the
+            // request was signed and encrypted
+            $response = xmldsig_envelope($response);
+        }
+        if ($this->payload_encrypted) {
+            $peer = get_peer($this->remotewwwroot);
+            $response = xmlenc_envelope($response, $peer->certificate);
+        }
+        return $response;
+    }
 }
+
 
 /**
  * XML-RPC test client class
