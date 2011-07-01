@@ -41,7 +41,7 @@ $string['protocol'] = 'Protocol';
 $string['rest'] = 'REST';
 $string['soap'] = 'SOAP';
 $string['xmlrpc'] = 'XML-RPC';
-$string['manage_certificates'] = 'These are the Certificates generated as part of <a href="%s">Networking</a> services. These values are used by Mahara when WS-Security Signatures, and Encryption are enabled for a particular wstoken or service user.';
+$string['manage_certificates'] = 'These are the Certificates generated as part of <a href="%s">Networking</a> services. These values are used by Mahara when WS-Security Signatures, and Encryption are enabled for a particular wstoken or service user (Only XML-RPC and legacy MNet).';
 $string['certificates'] = 'Networking Certificates';
 
 $string['servicefunctiongroups'] = 'Manage Service Groups';
@@ -70,7 +70,7 @@ $string['token'] = 'Token';
 $string['invaliduserselected'] = 'Invalid user selected';
 $string['invaliduserselectedinstitution'] = 'Invalid user for token institution selected from user search';
 $string['noservices'] = 'No services configured';
-$string['wssigenc'] = 'Enble WS-Security';
+$string['wssigenc'] = 'Enble WS-Security (XML-RPC Only)';
 $string['titlewssigenc'] = 'WSSecurity';
 
 $string['manageserviceusers'] = 'Manage Service Users';
