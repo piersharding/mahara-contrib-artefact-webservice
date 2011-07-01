@@ -103,6 +103,24 @@ $serviceuser_details =
                 ),
         );
 
+
+$serviceuser_details['elements']['publickey'] = array(
+    'type' => 'textarea',
+    'title' => get_string('publickey', 'admin'),
+    'defaultvalue' => $dbserviceuser->publickey,
+    'rules' => array(
+        'required' => true,
+    ),
+    'rows' => 15,
+    'cols' => 90,
+);
+
+$serviceuser_details['elements']['publickeyexpires']= array(
+    'type' => 'html',
+    'title' => get_string('publickeyexpires', 'admin'),
+    'value' => ($dbserviceuser->publickeyexpires ? format_date(strtotime($dbserviceuser->publickeyexpires)) : format_date(time())),
+);
+
 $dbinstitution = get_record('institution', 'name', $dbserviceuser->institution);
 $serviceuser_details['elements']['institution'] = array(
     'type'         => 'html',
@@ -215,6 +233,16 @@ function allocate_webservice_users_submit(Pieform $form, $values) {
         $SESSION->add_error_msg(get_string('invalidserviceuser', 'artefact.webservice'));
         redirect('/artefact/webservice/pluginconfig.php');
         return;
+    }
+
+    if (isset($values['publickey'])) {
+        $publickey = openssl_x509_parse($values['publickey']);
+        if (empty($publickey)) {
+            $SESSION->add_error_msg('Invalid public key');
+            redirect('/artefact/webservice/tokenconfig.php?token='.$dbtoken->id);
+        }
+        $dbserviceuser->publickey = $values['publickey'];
+        $dbserviceuser->publickeyexpires = format_date($publickey['validTo_time_t']);
     }
 
     if ($dbserviceuser->externalserviceid != $values['service']) {

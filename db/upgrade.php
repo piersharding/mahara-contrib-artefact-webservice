@@ -41,6 +41,27 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         delete_records('external_functions');
     }
 
+    if ($oldversion < 2010012704) {
+        // add public key validation for SOAP/XML-RPC enc/sig
+        $table = new XMLDBTable('external_tokens');
+        $field = new XMLDBField('publickey');
+        $field->setAttributes(XMLDB_TYPE_TEXT, null, false, true, false, null, null, '');
+        add_field($table, $field);
+        $field = new XMLDBField('publickeyexpires');
+        $field->setAttributes(XMLDB_TYPE_DATETIME);
+        add_field($table, $field);
+        $table = new XMLDBTable('external_services_users');
+        $field = new XMLDBField('lastaccess');
+        $field->setAttributes(XMLDB_TYPE_DATETIME);
+        add_field($table, $field);
+        $field = new XMLDBField('publickey');
+        $field->setAttributes(XMLDB_TYPE_TEXT, null, false, true, false, null, null, '');
+        add_field($table, $field);
+        $field = new XMLDBField('publickeyexpires');
+        $field->setAttributes(XMLDB_TYPE_DATETIME);
+        add_field($table, $field);
+    }
+
     // sweep for webservice updates everytime
     $status = external_upgrade_webservices();
     return $status;

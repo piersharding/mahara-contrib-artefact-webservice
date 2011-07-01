@@ -33,6 +33,7 @@ define('MENUITEM', 'configextensions/pluginadminwebservices');
 require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 define('TITLE', get_string('pluginadmin', 'admin'));
 require_once('pieforms/pieform.php');
+require_once(get_config('docroot') . 'api/xmlrpc/lib.php');
 
 $token  = param_variable('token', 0);
 // lookup user cancelled
@@ -78,6 +79,24 @@ $token_details =
                         ),
                 ),
         );
+
+
+$token_details['elements']['publickey'] = array(
+    'type' => 'textarea',
+    'title' => get_string('publickey', 'admin'),
+    'defaultvalue' => $dbtoken->publickey,
+    'rules' => array(
+        'required' => true,
+    ),
+    'rows' => 15,
+    'cols' => 90,
+);
+
+$token_details['elements']['publickeyexpires']= array(
+    'type' => 'html',
+    'title' => get_string('publickeyexpires', 'admin'),
+    'value' => ($dbtoken->publickeyexpires ? format_date(strtotime($dbtoken->publickeyexpires)) : format_date(time())),
+);
 
 $institutions = get_records_array('institution');
 $iopts = array();
@@ -207,6 +226,16 @@ function allocate_webservice_tokens_submit(Pieform $form, $values) {
         $SESSION->add_error_msg(get_string('invalidtoken', 'artefact.webservice'));
         redirect('/artefact/webservice/pluginconfig.php');
         return;
+    }
+
+    if (isset($values['publickey'])) {
+        $publickey = openssl_x509_parse($values['publickey']);
+        if (empty($publickey)) {
+            $SESSION->add_error_msg('Invalid public key');
+            redirect('/artefact/webservice/tokenconfig.php?token='.$dbtoken->id);
+        }
+        $dbtoken->publickey = $values['publickey'];
+        $dbtoken->publickeyexpires = format_date($publickey['validTo_time_t']);
     }
 
     if ($dbtoken->externalserviceid != $values['service']) {

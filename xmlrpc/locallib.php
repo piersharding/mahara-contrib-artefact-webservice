@@ -271,7 +271,7 @@ class webservice_xmlrpc_server extends webservice_zend_server {
 
     private $payload_signed = false;
     private $payload_encrypted = false;
-    private $remotewwwroot = null;
+    public $publickey = null;
 
     /**
      * Contructor
@@ -341,6 +341,30 @@ class webservice_xmlrpc_server extends webservice_zend_server {
 
         // check for encryption and signatures
         if ($this->authmethod == WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN) {
+            // we need the token so that we can find the key
+            if (!$dbtoken = get_record('external_tokens', 'token', $this->token, 'tokentype', EXTERNAL_TOKEN_PERMANENT)) {
+                // log failed login attempts
+                ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice').": ".$this->token. " - ".getremoteaddr() , 0);
+                throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
+            }
+            $this->publickey = $dbtoken->publickey;
+        }
+        else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
+            // get the user
+            $user = get_record('usr', 'username', $this->username);
+            if (empty($user)) {
+                throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
+            }
+            // get the institution from the external user
+            $ext_user = get_record('external_services_users', 'userid', $user->id);
+            if (empty($ext_user)) {
+                throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
+            }
+            $this->publickey = $ext_user->publickey;
+        }
+
+        // only both if we can find a public key
+        if (!empty($this->publickey)) {
             // A singleton provides our site's SSL info
             require_once(get_config('docroot').'/api/xmlrpc/lib.php');
             $HTTP_RAW_POST_DATA = file_get_contents('php://input');
@@ -359,13 +383,11 @@ class webservice_xmlrpc_server extends webservice_zend_server {
             try {
                 if ($xml->getName() == 'encryptedMessage') {
                     $this->payload_encrypted = true;
-                    $this->remotewwwroot     = (string)$xml->wwwroot;
                     $payload                 = xmlenc_envelope_strip($xml);
                 }
 
                 if ($xml->getName() == 'signedMessage') {
                     $this->payload_signed = true;
-                    $this->remotewwwroot  = (string)$xml->wwwroot;
                     $payload              = xmldsig_envelope_strip($xml);
                 }
                 $xml = $payload;
@@ -373,7 +395,6 @@ class webservice_xmlrpc_server extends webservice_zend_server {
             catch (CryptException $e) {
                 if ($e->getCode() == 7025) {
                     // The key they used to contact us is old, respond with the new key correctly
-
                     // This sucks. Error handling of our mnet code needs to improve
                     ob_start();
                     xmlrpc_error($e->getMessage(), $e->getCode());
@@ -383,13 +404,12 @@ class webservice_xmlrpc_server extends webservice_zend_server {
                     // Sign and encrypt our response, even though we don't know if the
                     // request was signed and encrypted
                     $response = xmldsig_envelope($response);
-                    $peer     = get_peer($this->remotewwwroot);
-                    $response = xmlenc_envelope($response, $peer->certificate);
+                    $response = xmlenc_envelope($response, $this->publickey);
                     $xml = $response;
                 }
             }
-
         }
+
         // if XML has been grabbed already then it must be turned into a reuest object
         if ($xml) {
 //            error_log('xml: '.$xml);
@@ -420,8 +440,7 @@ class webservice_xmlrpc_server extends webservice_zend_server {
             $response = xmldsig_envelope($response);
         }
         if ($this->payload_encrypted) {
-            $peer = get_peer($this->remotewwwroot);
-            $response = xmlenc_envelope($response, $peer->certificate);
+            $response = xmlenc_envelope($response, $this->publickey);
         }
         return $response;
     }
