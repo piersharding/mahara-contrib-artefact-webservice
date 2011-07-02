@@ -497,6 +497,7 @@ class webservice_xmlrpc_server extends webservice_zend_server {
             $request = new Zend_XmlRpc_Request();
             $request->loadXML($xml);
             $xml = $request;
+            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , 'XML-RPC method to call: '.$xml->getMethod()." From: ".$this->token. " - ".getremoteaddr() , 0);
         }
         return $xml;
     }
