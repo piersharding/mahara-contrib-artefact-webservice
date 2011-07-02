@@ -42,6 +42,7 @@ class Zend_XmlRpc_Server_Local extends Zend_XmlRpc_Server {
      */
     public function addFunctionsAsMethods($functions) {
         foreach ($functions as $key => $function) {
+
             // do a reflection on the function interface
             $reflection = new Zend_Server_Reflection_Function(new ReflectionFunction($function));
 
@@ -62,6 +63,7 @@ class Zend_XmlRpc_Server_Local extends Zend_XmlRpc_Server {
                         'name'     => $parameter->getName(),
                         'optional' => $parameter->isOptional(),
                     ));
+//                    error_log('function: '.$function.' parameter: '.$this->_fixType($parameter->getType()));
                     if ($parameter->isDefaultValueAvailable()) {
                         $param->setDefaultValue($parameter->getDefaultValue());
                     }
@@ -262,6 +264,68 @@ function webservice_mnet_search_folders_and_files($username, $search) {
     return search_folders_and_files($username, $search);
 }
 
+/**
+ *
+ * @param string $xmlrpc_method_name
+ * @param string $args
+ *
+ * @return array
+ */
+function webservice_list_methods($xmlrpc_method_name, $args) {
+    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    $Dispatcher = new Dispatcher(null, false, false);
+    return $Dispatcher->list_methods($xmlrpc_method_name, $args);
+}
+
+/**
+ *
+ * @param string $xmlrpc_method_name
+ * @param string $methodname
+ *
+ * @return array
+ */
+function webservice_method_signature($xmlrpc_method_name, $methodname) {
+    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    $Dispatcher = new Dispatcher(null, false, false);
+    return $Dispatcher->method_signature($xmlrpc_method_name, $methodname);
+}
+
+/**
+ *
+ * @param string $xmlrpc_method_name
+ * @param string $methodname
+ *
+ * @return array
+ */
+function webservice_method_help($xmlrpc_method_name, $methodname) {
+    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    $Dispatcher = new Dispatcher(null, false, false);
+    return $Dispatcher->method_help($xmlrpc_method_name, $methodname);
+}
+
+/**
+ * serach folders and files
+ *
+ * @param string $wwwroot
+ * @param string $pubkey
+ * @param string $application
+ *
+ * @return array
+ */
+function webservice_keyswap($wwwroot = '', $pubkey = '', $application = '') {
+    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    return Dispatcher::keyswap(null, array($wwwroot, $pubkey, $application));
+}
+
+/**
+ * @return array
+ */
+function webservice_list_services() {
+    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    $Dispatcher = new Dispatcher(null, false, false);
+    return $Dispatcher->list_services();
+}
+
 
 /**
  * XML-RPC service server implementation.
@@ -283,6 +347,7 @@ class webservice_xmlrpc_server extends webservice_zend_server {
         $this->wsname = 'xmlrpc';
     }
 
+
     /**
      * Chance for each protocol to modify the function processing list
      *
@@ -303,7 +368,17 @@ class webservice_xmlrpc_server extends webservice_zend_server {
                     'portfolio/mahara/lib.php/send_content_ready' => 'webservice_mnet_send_content_ready',
                     'repository/mahara/repository.class.php/get_folder_files' => 'webservice_mnet_get_folder_files',
                     'repository/mahara/repository.class.php/get_file' => 'webservice_mnet_get_file',
-                    'repository/mahara/repository.class.php/search_folders_and_files' => 'webservice_mnet_search_folders_and_files'
+                    'repository/mahara/repository.class.php/search_folders_and_files' => 'webservice_mnet_search_folders_and_files',
+//                    'system.listMethods'       => 'webservice_list_methods',
+                    'system/listMethods'       => 'webservice_list_methods',
+//                    'system.methodSignature'   => 'webservice_method_signature',
+                    'system/methodSignature'   => 'webservice_method_signature',
+//                    'system.methodHelp'        => 'webservice_method_help',
+                    'system/methodHelp'        => 'webservice_method_help',
+                    'system.listServices'      => 'webservice_list_services',
+                    'system/listServices'      => 'webservice_list_services',
+                    'system.keyswap'           => 'webservice_keyswap',
+                    'system/keyswap'           => 'webservice_keyswap',
             );
         $this->zend_server->addFunctionsAsMethods($functions);
     }
