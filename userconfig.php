@@ -184,7 +184,7 @@ $serviceuser_details['elements']['publickey'] = array(
 $serviceuser_details['elements']['publickeyexpires']= array(
     'type' => 'html',
     'title' => get_string('publickeyexpires', 'admin'),
-    'value' => ($dbserviceuser->publickeyexpires ? format_date(strtotime($dbserviceuser->publickeyexpires)) : format_date(time())),
+    'value' => ($dbserviceuser->publickeyexpires ? format_date($dbserviceuser->publickeyexpires, 'strftimedatetime', 'formatdate', 'artefact.webservice') : format_date(time(), 'strftimedatetime', 'formatdate', 'artefact.webservice')),
 );
 
 $serviceuser_details['elements']['submit'] = array(
@@ -259,11 +259,11 @@ function allocate_webservice_users_submit(Pieform $form, $values) {
             redirect('/artefact/webservice/userconfig.php?suid='.$dbserviceuser->id);
         }
         $dbserviceuser->publickey = $values['publickey'];
-        $dbserviceuser->publickeyexpires = format_date($publickey['validTo_time_t']);
+        $dbserviceuser->publickeyexpires = $publickey['validTo_time_t'];
     }
     else {
         $dbserviceuser->publickey = '';
-        $dbserviceuser->publickeyexpires = NULL;
+        $dbserviceuser->publickeyexpires = time();
     }
 
     if ($dbserviceuser->externalserviceid != $values['service']) {

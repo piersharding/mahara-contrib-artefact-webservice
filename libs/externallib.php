@@ -511,6 +511,9 @@ function external_generate_token($tokentype, $serviceorid, $userid, $institution
     $newtoken->institution = $institution;
     $newtoken->creatorid = $USER->id;
     $newtoken->timecreated = time();
+    $newtoken->publickeyexpires = time();
+    $newtoken->wssigenc = 0;
+    $newtoken->publickey = '';
     $newtoken->validuntil = $validuntil;
     if (!empty($iprestriction)) {
         $newtoken->iprestriction = $iprestriction;

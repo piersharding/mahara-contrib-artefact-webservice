@@ -34,6 +34,7 @@ $string['masterswitch'] = 'WebServices master switch';
 
 
 $string['pluginname'] = 'WebServices XXX';
+$string['formatdate'] = '';
 
 $string['protocolswitches'] = 'Switch On/Off Protocols';
 $string['manage_protocols'] = '<b>Enable or Disable protocols that are to be supported by this installation:</b>';

@@ -344,7 +344,10 @@ function webservices_user_submit(Pieform $form, $values) {
                         $dbserviceuser = (object) array('externalserviceid' => $service->id,
                                         'userid' => $dbuser->id,
                                         'institution' => $auth_instance->institution,
-                                        'timecreated' => time());
+                                        'timecreated' => time(),
+                                        'publickeyexpires' => time(),
+                                        'wssigenc' => 0,
+                                        'publickey' => '');
                         $dbserviceuser->id = insert_record('external_services_users', $dbserviceuser, 'id', true);
                         redirect('/artefact/webservice/userconfig.php?suid='.$dbserviceuser->id);
                     }
@@ -400,11 +403,17 @@ class PluginArtefactWebservice extends PluginArtefact {
     public static function menu_items() {
         return array(
             array(
+              'path' =>  'settings/oauthv1register',
+              'url' => 'artefact/webservice/oauthv1register.php',
+              'title' => 'OAuth Application REgistration',
+              'weight' => 30
+                ),
+            array(
               'path' =>  'configextensions/pluginadminwebservices',
               'url' => 'artefact/webservice/pluginconfig.php',
               'title' => 'WebServices Administration',
               'weight' => 30
-                )
+                ),
         );
     }
 
@@ -748,7 +757,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                         ),
             );
 
-        $dbtokens = get_records_sql_array('SELECT et.id as tokenid, et.wssigenc AS wssigenc, et.externalserviceid as externalserviceid, et.institution as institution, u.id as userid, u.username as username, et.token as token, es.name as name, es.enabled as enabled FROM external_tokens AS et LEFT JOIN usr AS u ON et.userid = u.id LEFT JOIN external_services AS es ON et.externalserviceid = es.id ORDER BY u.username', false);
+        $dbtokens = get_records_sql_array('SELECT et.id as tokenid, et.wssigenc AS wssigenc, et.externalserviceid as externalserviceid, et.institution as institution, u.id as userid, u.username as username, et.token as token, es.name as name, es.enabled as enabled FROM external_tokens AS et LEFT JOIN usr AS u ON et.userid = u.id LEFT JOIN external_services AS es ON et.externalserviceid = es.id WHERE et.tokentype = ? ORDER BY u.username', array(EXTERNAL_TOKEN_PERMANENT));
         if (!empty($dbtokens)) {
             foreach ($dbtokens as $token) {
                 $dbinstitution = get_record('institution', 'name', $token->institution);

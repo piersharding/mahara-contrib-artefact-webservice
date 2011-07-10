@@ -176,7 +176,7 @@ $token_details['elements']['publickey'] = array(
 $token_details['elements']['publickeyexpires']= array(
     'type' => 'html',
     'title' => get_string('publickeyexpires', 'admin'),
-    'value' => ($dbtoken->publickeyexpires ? format_date(strtotime($dbtoken->publickeyexpires)) : format_date(time())),
+    'value' => ($dbtoken->publickeyexpires ? format_date($dbtoken->publickeyexpires, 'strftimedatetime', 'formatdate', 'artefact.webservice') : format_date(time(), 'strftimedatetime', 'formatdate', 'artefact.webservice')),
 );
 
 $token_details['elements']['submit'] = array(
@@ -251,11 +251,11 @@ function allocate_webservice_tokens_submit(Pieform $form, $values) {
             redirect('/artefact/webservice/tokenconfig.php?token='.$dbtoken->id);
         }
         $dbtoken->publickey = $values['publickey'];
-        $dbtoken->publickeyexpires = format_date($publickey['validTo_time_t']);
+        $dbtoken->publickeyexpires = $publickey['validTo_time_t'];
     }
     else {
         $dbtoken->publickey = '';
-        $dbtoken->publickeyexpires = NULL;
+        $dbtoken->publickeyexpires = time();
     }
 
     if ($dbtoken->externalserviceid != $values['service']) {
