@@ -365,6 +365,18 @@ class mahara_user_external extends external_api {
             if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
                 throw new invalid_parameter_exception('Invalid authentication type: '.$dbuser->authinstance);
             }
+            // check for changed authinstance
+            if (isset($user['auth']) && isset($user['institution'])) {
+                $ai = get_record('auth_instance', 'institution', $user['institution'], 'authname', $user['auth']);
+                if (empty($ai)) {
+                    throw new invalid_parameter_exception('update_users: invalid auth type: '.$user['auth'].' on user: '.$dbuser->id);
+                }
+                $authinstance = $ai;
+            }
+            else if (isset($user['auth'])) {
+                throw new invalid_parameter_exception('update_users: must set auth and institution to update auth on user: '.$dbuser->id);
+            }
+
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
@@ -372,6 +384,7 @@ class mahara_user_external extends external_api {
             }
 
             $updated_user = $dbuser;
+            $updated_user->authinstance = $authinstance->id;
             foreach (array('username', 'firstname', 'lastname', 'email', 'quota', 'studentid', 'preferredname', 'password') as $field) {
                 if (isset($user[$field])) {
                     $updated_user->{$field} = $user[$field];
@@ -452,6 +465,8 @@ class mahara_user_external extends external_api {
         }
         // now get the user
         if ($user = get_user($id)) {
+            // get the remoteuser
+            $user->remoteuser = get_field('auth_remote_user', 'remoteusername', 'authinstance', $user->authinstance, 'localusr', $user->id);
             return $user;
         }
         else {
@@ -513,9 +528,16 @@ class mahara_user_external extends external_api {
                 $userarray['studentid'] = $user->studentid;
                 $userarray['preferredname'] = $user->preferredname;
                 foreach (self::$ALLOWEDKEYS as $field) {
-                    $userarray[$field] = (isset($user->{$field}) ? $user->{$field} : '');
+                    $userarray[$field] = ((isset($user->{$field}) && $user->{$field}) ? $user->{$field} : '');
                 }
                 $userarray['institution'] = $auth_instance->institution;
+                $userarray['auths'] = array();
+                $auths = get_records_sql_array('SELECT aru.remoteusername AS remoteusername, ai.authname AS authname FROM {auth_remote_user} aru INNER JOIN {auth_instance} ai ON aru.authinstance = ai.id WHERE ai.institution = ? AND aru.localusr = ?', array($auth_instance->institution, $user->id));
+                if ($auths) {
+                    foreach ($auths as $auth) {
+                        $userarray['auths'][]= array('auth' => $auth->authname, 'remoteuser' => $auth->remoteusername);
+                    }
+                }
                 $result[] = $userarray;
             }
         }
@@ -560,6 +582,13 @@ class mahara_user_external extends external_api {
                     'jabberusername'  => new external_value(PARAM_RAW, 'Jabber/XMPP username'),
                     'occupation'      => new external_value(PARAM_TEXT, 'Occupation'),
                     'industry'        => new external_value(PARAM_TEXT, 'Industry'),
+                    'auths'           => new external_multiple_structure(
+                                            new external_single_structure(
+                                                array(
+                                                    'auth' => new external_value(PARAM_SAFEDIR, 'Auth plugins include manual, ldap, imap, etc'),
+                                                    'remoteuser' => new external_value(PARAM_SAFEDIR, 'remote username'),
+                                                ), 'Connected Remote Users')
+                                        ),
                         )
                 )
         );

@@ -668,7 +668,7 @@ abstract class webservice_server implements webservice_server_interface {
         }
 
         // now fake user login, the session is completely empty too
-        $USER->reanimate($user->id, $auth_instance->id);
+        $USER->reanimate($user->id, $user->authinstance);
     }
 
     protected function authenticate_by_token($tokentype){
