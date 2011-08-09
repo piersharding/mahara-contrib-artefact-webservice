@@ -51,6 +51,11 @@ if ($action == 'search') {
     $sortdir = param_alpha('sortdir', 'asc');
     $token   = param_variable('token', '');
     $suid    = param_variable('suid', '');
+    $ouid    = param_variable('ouid', '');
+    $params->sortby  = $sortby;
+    $params->sortdir = $sortdir;
+    $params->offset  = $offset;
+    $params->limit   = $limit;
 
     json_headers();
     if (param_boolean('raw', false)) {

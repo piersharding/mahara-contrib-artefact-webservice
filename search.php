@@ -43,10 +43,14 @@ require_once('webservicessearchlib.php');
 // validate the incoming token
 $token  = param_variable('token', '');
 $suid   = param_variable('suid', '');
+$ouid   = param_variable('ouid', '');
 
 // did the user cancel
 if (param_alpha('cancel_submit', 'empty') != 'empty') {
-    if ($suid) {
+    if ($ouid) {
+        redirect('/artefact/webservice/oauthsregister.php?ouid='.$ouid);
+    }
+    else if ($suid) {
         redirect('/artefact/webservice/userconfig.php?suid='.$suid);
     }
     else {
@@ -54,16 +58,21 @@ if (param_alpha('cancel_submit', 'empty') != 'empty') {
     }
 }
 
-$search = (object) array(
-    'query'       => trim(param_variable('query', '')),
-    'f'           => param_alpha('f', null), // first initial
-    'l'           => param_alpha('l', null), // last initial
-);
 
 $sortby  = param_alpha('sortby', 'firstname');
 $sortdir = param_alpha('sortdir', 'asc');
 $offset  = param_integer('offset', 0);
 $limit   = param_integer('limit', 10);
+
+$search = (object) array(
+    'query'       => trim(param_variable('query', '')),
+    'f'           => param_alpha('f', null), // first initial
+    'l'           => param_alpha('l', null), // last initial
+    'sortby'      => $sortby,
+    'sortdir'     => $sortdir,
+    'offset'      => $offset,
+    'limit'       => $limit,
+);
 
 if ($USER->get('admin')) {
     $institutions = get_records_array('institution', '', '', 'displayname');
@@ -77,6 +86,7 @@ $smarty = smarty(array('artefact/webservice/js/usersearch.js'));
 $smarty->assign('token_id', $token);
 $smarty->assign('token', $token);
 $smarty->assign('suid', $suid);
+$smarty->assign('ouid', $ouid);
 $smarty->assign('search', $search);
 $smarty->assign('alphabet', explode(',', get_string('alphabet')));
 $smarty->assign('cancel', get_string('cancel'));

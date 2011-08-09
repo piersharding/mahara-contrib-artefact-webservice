@@ -44,6 +44,7 @@
             {/if}
             <input type="hidden" name="token" id="token" value="{$token_id}" />
             <input type="hidden" name="suid" id="suid" value="{$suid}" />
+            <input type="hidden" name="ouid" id="ouid" value="{$ouid}" />
             <button id="query-button" class="btn-search" type="submit">{str tag="go"}</button>
             <input type="submit" class="submitcancel cancel" id="cancel_submit" name="cancel_submit" value="{$cancel}">
         </div>
