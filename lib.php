@@ -403,10 +403,10 @@ class PluginArtefactWebservice extends PluginArtefact {
     public static function menu_items() {
         return array(
             array(
-              'path' =>  'settings/oauthv1register',
-              'url' => 'artefact/webservice/oauthv1register.php',
-              'title' => 'OAuth Application REgistration',
-              'weight' => 30
+              'path' =>  'configextensions/oauthv1sregister',
+              'url' => 'artefact/webservice/oauthv1sregister.php',
+              'title' => 'OAuth Application Registration',
+              'weight' => 99
                 ),
             array(
               'path' =>  'configextensions/pluginadminwebservices',
@@ -573,6 +573,12 @@ class ArtefactTypeWebservice extends ArtefactType {
             'successcallback' => 'webservices_function_groups_submit',
             'renderer'   => 'multicolumntable',
             'elements'   => array(
+                            'servicegroup' => array(
+                                'title' => ' ',
+                                'class' => 'header',
+                                'type'  => 'html',
+                                'value' => get_string('service', 'artefact.webservice'),
+                            ),
                             'component' => array(
                                 'title' => ' ',
                                 'class' => 'header',
@@ -602,22 +608,27 @@ class ArtefactTypeWebservice extends ArtefactType {
 
         $dbservices = get_records_array('external_services', null, null, 'name');
         foreach ($dbservices as $service) {
+            $form['elements']['id'. $service->id . '_service'] = array(
+                'value'        =>  $service->name,
+                'type'         => 'html',
+                'key'          => $service->name,
+            );
             $form['elements']['id'. $service->id . '_component'] = array(
                 'value'        =>  $service->component,
                 'type'         => 'html',
-                'title'        => $service->name,
+                'key'          => $service->name,
             );
             $form['elements']['id'. $service->id . '_enabled'] = array(
                 'defaultvalue' => (($service->enabled == 1) ? 'checked' : ''),
                 'type'         => 'checkbox',
                 'disabled'     => true,
-                'title'        => $service->name,
+                'key'          => $service->name,
             );
             $form['elements']['id'. $service->id . '_restricted'] = array(
                 'defaultvalue' => (($service->restrictedusers == 1) ? 'checked' : ''),
                 'type'         => 'checkbox',
                 'disabled'     => true,
-                'title'        => $service->name,
+                'key'          => $service->name,
             );
 
             $functions = get_records_array('external_services_functions', 'externalserviceid', $service->id);
@@ -631,7 +642,7 @@ class ArtefactTypeWebservice extends ArtefactType {
             $form['elements']['id'. $service->id . '_functions'] = array(
                 'value'        =>  implode(', ', $function_list),
                 'type'         => 'html',
-                'title'        => $service->name,
+                'key'          => $service->name,
             );
 
             // edit and delete buttons
@@ -676,7 +687,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                                 )) . '</span>'
                                 ,
                 'type'         => 'html',
-                'title'        => $service->name,
+                'key'          => $service->name,
                 'class'        => 'actions',
             );
         }
@@ -718,6 +729,12 @@ class ArtefactTypeWebservice extends ArtefactType {
             'successcallback' => 'webservices_tokens_submit',
             'renderer'   => 'multicolumntable',
             'elements'   => array(
+                            'token' => array(
+                                'title' => ' ',
+                                'class' => 'header',
+                                'type'  => 'html',
+                                'value' => get_string('token', 'artefact.webservice'),
+                            ),
                             'institution' => array(
                                 'title' => ' ',
                                 'class' => 'header',
@@ -760,11 +777,16 @@ class ArtefactTypeWebservice extends ArtefactType {
         $dbtokens = get_records_sql_array('SELECT et.id as tokenid, et.wssigenc AS wssigenc, et.externalserviceid as externalserviceid, et.institution as institution, u.id as userid, u.username as username, et.token as token, es.name as name, es.enabled as enabled FROM external_tokens AS et LEFT JOIN usr AS u ON et.userid = u.id LEFT JOIN external_services AS es ON et.externalserviceid = es.id WHERE et.tokentype = ? ORDER BY u.username', array(EXTERNAL_TOKEN_PERMANENT));
         if (!empty($dbtokens)) {
             foreach ($dbtokens as $token) {
+                $form['elements']['id'. $token->tokenid . '_token'] = array(
+                    'value'        =>  $token->token,
+                    'type'         => 'html',
+                    'key'          => $token->token,
+                );
                 $dbinstitution = get_record('institution', 'name', $token->institution);
                 $form['elements']['id'. $token->tokenid . '_institution'] = array(
                     'value'        =>  $dbinstitution->displayname,
                     'type'         => 'html',
-                    'title'        => $token->token,
+                    'key'          => $token->token,
                 );
                 if ($USER->is_admin_for_user($token->userid)) {
                     $user_url = get_config('wwwroot').'admin/users/edit.php?id='.$token->userid;
@@ -775,24 +797,24 @@ class ArtefactTypeWebservice extends ArtefactType {
                 $form['elements']['id'. $token->tokenid . '_username'] = array(
                     'value'        =>  '<a href="'.$user_url.'">'.$token->username.'</a>',
                     'type'         => 'html',
-                    'title'        => $token->token,
+                    'key'          => $token->token,
                 );
                 $form['elements']['id'. $token->tokenid . '_servicename'] = array(
                     'value'        =>  $token->name,
                     'type'         => 'html',
-                    'title'        => $token->token,
+                    'key'          => $token->token,
                 );
                 $form['elements']['id'. $token->tokenid . '_enabled'] = array(
                     'defaultvalue' => (($token->enabled == 1) ? 'checked' : ''),
                     'type'         => 'checkbox',
                     'disabled'     => true,
-                    'title'        => $token->token,
+                    'key'          => $token->token,
                 );
                 $form['elements']['id'. $token->tokenid . '_wssigenc'] = array(
                     'defaultvalue' => (($token->wssigenc == 1) ? 'checked' : ''),
                     'type'         => 'checkbox',
                     'disabled'     => true,
-                    'title'        => $token->token,
+                    'key'          => $token->token,
                 );
 
                 $functions = get_records_array('external_services_functions', 'externalserviceid', $token->externalserviceid);
@@ -806,7 +828,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                 $form['elements']['id'. $token->tokenid . '_functions'] = array(
                     'value'        =>  implode(', ', $function_list),
                     'type'         => 'html',
-                    'title'        => $token->token,
+                    'key'          => $token->token,
                 );
 
                 // edit and delete buttons
@@ -849,7 +871,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                                     )) . '</span>'
                                     ,
                     'type'         => 'html',
-                    'title'        => $token->token,
+                    'key'          => $token->token,
                     'class'        => 'actions',
                 );
             }
@@ -914,17 +936,17 @@ class ArtefactTypeWebservice extends ArtefactType {
             'successcallback' => 'webservices_users_submit',
             'renderer'   => 'multicolumntable',
             'elements'   => array(
-                            'institution' => array(
-                                'title' => ' ',
-                                'class' => 'header',
-                                'type'  => 'html',
-                                'value' => get_string('institution'),
-                            ),
                             'username' => array(
                                 'title' => ' ',
                                 'class' => 'header',
                                 'type'  => 'html',
                                 'value' => get_string('username', 'artefact.webservice'),
+                            ),
+                            'institution' => array(
+                                'title' => ' ',
+                                'class' => 'header',
+                                'type'  => 'html',
+                                'value' => get_string('institution'),
                             ),
                             'servicename' => array(
                                 'title' => ' ',
@@ -957,11 +979,6 @@ class ArtefactTypeWebservice extends ArtefactType {
         if (!empty($dbusers)) {
             foreach ($dbusers as $user) {
                 $dbinstitution = get_record('institution', 'name', $user->institution);
-                $form['elements']['id'. $user->id . '_institution'] = array(
-                    'value'        =>  $dbinstitution->displayname,
-                    'type'         => 'html',
-                    'title'        => $user->id,
-                );
                 if ($USER->is_admin_for_user($user->id)) {
                     $user_url = get_config('wwwroot').'admin/users/edit.php?id='.$user->userid;
                 }
@@ -971,24 +988,29 @@ class ArtefactTypeWebservice extends ArtefactType {
                 $form['elements']['id'. $user->id . '_username'] = array(
                     'value'        =>  '<a href="'.$user_url.'">'.$user->username.'</a>',
                     'type'         => 'html',
-                    'title'        => $user->id,
+                    'key'          => $user->id,
+                );
+                $form['elements']['id'. $user->id . '_institution'] = array(
+                    'value'        =>  $dbinstitution->displayname,
+                    'type'         => 'html',
+                    'key'          => $user->id,
                 );
                 $form['elements']['id'. $user->id . '_servicename'] = array(
                     'value'        =>  $user->name,
                     'type'         => 'html',
-                    'title'        => $user->id,
+                    'key'          => $user->id,
                 );
                 $form['elements']['id'. $user->id . '_enabled'] = array(
                     'defaultvalue' => (($user->enabled == 1) ? 'checked' : ''),
                     'type'         => 'checkbox',
                     'disabled'     => true,
-                    'title'        => $user->id,
+                    'key'          => $user->id,
                 );
                 $form['elements']['id'. $user->id . '_wssigenc'] = array(
                     'defaultvalue' => (($user->wssigenc == 1) ? 'checked' : ''),
                     'type'         => 'checkbox',
                     'disabled'     => true,
-                    'title'        => $user->id,
+                    'key'          => $user->id,
                 );
 
                 $functions = get_records_array('external_services_functions', 'externalserviceid', $user->externalserviceid);
@@ -1002,7 +1024,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                 $form['elements']['id'. $user->id . '_functions'] = array(
                     'value'        =>  implode(', ', $function_list),
                     'type'         => 'html',
-                    'title'        => $user->id,
+                    'key'          => $user->id,
                 );
 
                 // edit and delete buttons
@@ -1045,7 +1067,7 @@ class ArtefactTypeWebservice extends ArtefactType {
                                     )) . '</span>'
                                     ,
                     'type'         => 'html',
-                    'title'        => $user->id,
+                    'key'          => $user->id,
                     'class'        => 'actions',
                 );
             }
