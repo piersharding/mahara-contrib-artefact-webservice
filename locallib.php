@@ -810,7 +810,10 @@ abstract class webservice_zend_server extends webservice_server {
 
         //finally send the result
         $this->send_headers();
+        // force the content length as this was going wrong
+        header('Content-Length: '.strlen($response));
         echo $response;
+        flush();
         die;
     }
 

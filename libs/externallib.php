@@ -360,6 +360,7 @@ class external_api {
                         $result[$key] = self::clean_returnvalue($subdesc, $response[$key]);
                     } catch (Exception $e) {
                         //it's ok to display debug info as here the information is useful for ws client/dev
+//                        error_log('ohoh: '.var_export(array('key' => $key, 'subdesc' => $subdesc, 'response' => $response[$key]), true));
                         throw new webservice_parameter_exception('invalidextresponse',$key." (".$e->debuginfo.")");
                     }
                 }

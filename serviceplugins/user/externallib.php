@@ -586,7 +586,7 @@ class mahara_user_external extends external_api {
                                             new external_single_structure(
                                                 array(
                                                     'auth' => new external_value(PARAM_SAFEDIR, 'Auth plugins include manual, ldap, imap, etc'),
-                                                    'remoteuser' => new external_value(PARAM_SAFEDIR, 'remote username'),
+                                                    'remoteuser' => new external_value(PARAM_RAW, 'remote username'),
                                                 ), 'Connected Remote Users')
                                         ),
                         )

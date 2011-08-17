@@ -491,7 +491,7 @@ class webservice_xmlrpc_server extends webservice_zend_server {
             }
         }
 
-        // if XML has been grabbed already then it must be turned into a reuest object
+        // if XML has been grabbed already then it must be turned into a request object
         if ($xml) {
 //            error_log('xml: '.$xml);
             $request = new Zend_XmlRpc_Request();

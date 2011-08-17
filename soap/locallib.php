@@ -114,6 +114,11 @@ class Zend_Soap_Server_Local extends Zend_Soap_Server {
  * @author Petr Skoda (skodak)
  */
 class webservice_soap_server extends webservice_zend_server {
+
+    private $payload_signed = false;
+    private $payload_encrypted = false;
+    public $publickey = null;
+
     /**
      * Contructor
      * @param bool $simple use simple authentication
@@ -184,10 +189,112 @@ class webservice_soap_server extends webservice_zend_server {
 
         $xml = null;
 
+        // don't do any of this if we are in the WSDL phase
+        if (optional_param('wsdl', 0, PARAM_BOOL)) {
+            return $xml;
+        }
+
+        // check for encryption and signatures
+        if ($this->authmethod == WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN) {
+            // we need the token so that we can find the key
+            if (!$dbtoken = get_record('external_tokens', 'token', $this->token, 'tokentype', EXTERNAL_TOKEN_PERMANENT)) {
+                // log failed login attempts
+                ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice').": ".$this->token. " - ".getremoteaddr() , 0);
+                throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
+            }
+            // is WS-Security active ?
+            if ($dbtoken->wssigenc) {
+                $this->publickey = $dbtoken->publickey;
+            }
+        }
+        else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME && !empty($this->username)) {
+            // get the user
+            $user = get_record('usr', 'username', $this->username);
+            if (empty($user)) {
+                throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
+            }
+            // get the institution from the external user
+            $ext_user = get_record('external_services_users', 'userid', $user->id);
+            if (empty($ext_user)) {
+                throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
+            }
+            // is WS-Security active ?
+            if ($ext_user->wssigenc) {
+                $this->publickey = $ext_user->publickey;
+            }
+        }
+
+        // only both if we can find a public key
+        if (!empty($this->publickey)) {
+            // A singleton provides our site's SSL info
+            require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+            $HTTP_RAW_POST_DATA = file_get_contents('php://input');
+            $openssl = OpenSslRepo::singleton();
+            $payload                 = $HTTP_RAW_POST_DATA;
+            $this->payload_encrypted = false;
+            $this->payload_signed    = false;
+
+            try {
+                $xml = new SimpleXMLElement($payload);
+            } catch (Exception $e) {
+                throw new XmlrpcServerException('Payload is not a valid XML document', 6001);
+            }
+
+            // Cascading switch. Kinda.
+            try {
+                if ($xml->getName() == 'encryptedMessage') {
+                    $this->payload_encrypted = true;
+                    $payload                 = xmlenc_envelope_strip($xml);
+                }
+
+                if ($xml->getName() == 'signedMessage') {
+                    $this->payload_signed = true;
+
+                    $signature      = base64_decode($xml->Signature->SignatureValue);
+                    $payload        = base64_decode($xml->object);
+                    $timestamp      = $xml->timestamp;
+
+                    // Does the signature match the data and the public cert?
+                    $signature_verified = openssl_verify($payload, $signature, $this->publickey);
+                    if ($signature_verified == 1) {
+                        // Parse the XML
+                        try {
+                            $xml = new SimpleXMLElement($payload);
+                        } catch (Exception $e) {
+                            throw new MaharaException('Signed payload is not a valid XML document', 6007);
+                        }
+                    }
+                    else {
+                        throw new MaharaException('An error occurred while trying to verify your message signature', 6004);
+                    }
+                }
+                $xml = $payload;
+            }
+            catch (CryptException $e) {
+                if ($e->getCode() == 7025) {
+                    // The key they used to contact us is old, respond with the new key correctly
+                    // This sucks. Error handling of our mnet code needs to improve
+                    ob_start();
+                    xmlrpc_error($e->getMessage(), $e->getCode());
+                    $response = ob_get_contents();
+                    ob_end_clean();
+
+                    // Sign and encrypt our response, even though we don't know if the
+                    // request was signed and encrypted
+                    $response = xmldsig_envelope($response);
+                    $response = xmlenc_envelope($response, $this->publickey);
+                    $xml = $response;
+                }
+            }
+        }
+
         // standard auth
-        if (!isset($_REQUEST['wsusername']) && $this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
+        if ((!isset($_REQUEST['wsusername']) && $this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) || !empty($this->publickey)) {
             // wsse auth
-            $xml = file_get_contents('php://input');
+            // we may already have the xml if sig/enc
+            if (empty($xml)) {
+                $xml = file_get_contents('php://input');
+            }
             $dom = new DOMDocument();
             if(strlen($xml) == 0 || !$dom->loadXML($xml)) {
                 require_once 'Zend/Soap/Server/Exception.php';
@@ -202,6 +309,7 @@ class webservice_soap_server extends webservice_zend_server {
                         $this->username = (string) $q->item(0)->data;
                         $this->password = (string) $xpath->query("//wsse:Security/wsse:UsernameToken/wsse:Password/text()", $dom)->item(0)->data;
 //                        error_log('username/password is wsse: '.$this->username.'/'.$this->password);
+                        $this->authmethod = WEBSERVICE_AUTHMETHOD_USERNAME;
                     }
                 }
             }
@@ -261,6 +369,32 @@ class webservice_soap_server extends webservice_zend_server {
         header('Content-Disposition: inline; filename="response.xml"');
 
         echo $xml;
+    }
+
+
+    /**
+     * Chance for each protocol to modify the out going
+     * raw payload - eg: SOAP encryption and signatures
+     *
+     * @param string $response The raw response value
+     *
+     * @return content
+     */
+    protected function modify_result($response) {
+        if (!empty($this->publickey)) {
+            // do sigs + encrypt
+            require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+            $openssl = OpenSslRepo::singleton();
+            if ($this->payload_signed) {
+                // Sign and encrypt our response, even though we don't know if the
+                // request was signed and encrypted
+                $response = xmldsig_envelope($response);
+            }
+            if ($this->payload_encrypted) {
+                $response = xmlenc_envelope($response, $this->publickey);
+            }
+        }
+        return $response;
     }
 }
 
