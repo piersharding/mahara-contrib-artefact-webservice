@@ -119,7 +119,7 @@ class mahara_user_external extends external_api {
      * @return array An array of arrays
      */
     public static function create_users($users) {
-        global $USER, $WEBSERVICE_INSTITUTION;
+        global $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         // Do basic automatic PARAM checks on incoming data, using params description
         // If any problems are found then exceptions are thrown with helpful error messages
@@ -238,7 +238,8 @@ class mahara_user_external extends external_api {
      * @param array $users
      */
     public static function delete_users($users) {
-        global $USER, $WEBSERVICE_INSTITUTION;
+        global $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
+
         require_once(get_config('docroot').'/artefact/lib.php');
 
         $params = self::validate_parameters(self::delete_users_parameters(), array('users'=>$users));
@@ -342,7 +343,7 @@ class mahara_user_external extends external_api {
      * @param array $users
      */
     public static function update_users($users) {
-        global $USER, $WEBSERVICE_INSTITUTION;
+        global $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         $params = self::validate_parameters(self::update_users_parameters(), array('users'=>$users));
 
@@ -481,7 +482,7 @@ class mahara_user_external extends external_api {
      * @return array An array of arrays describing users
      */
     public static function get_users_by_id($users) {
-        global $CFG, $WEBSERVICE_INSTITUTION;
+        global $CFG, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         $params = self::validate_parameters(self::get_users_by_id_parameters(),
                 array('users'=>$users));
@@ -658,7 +659,7 @@ class mahara_user_external extends external_api {
      * @param array $users
      */
     public static function update_favourites($users) {
-        global $USER, $WEBSERVICE_INSTITUTION;
+        global $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         $params = self::validate_parameters(self::update_favourites_parameters(), array('users'=>$users));
 
@@ -745,7 +746,7 @@ class mahara_user_external extends external_api {
      * @return array An array of arrays describing users favourites
      */
     public static function get_favourites($users) {
-        global $CFG, $WEBSERVICE_INSTITUTION;
+        global $CFG, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         $params = self::validate_parameters(self::get_favourites_parameters(), array('users' => $users));
 
@@ -831,7 +832,7 @@ class mahara_user_external extends external_api {
      * @param string $shortname  shortname of the favourites
      */
     public static function get_all_favourites($shortname) {
-        global $CFG, $WEBSERVICE_INSTITUTION;
+        global $CFG, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         $params = self::validate_parameters(self::get_all_favourites_parameters(), array('shortname' => $shortname));
 

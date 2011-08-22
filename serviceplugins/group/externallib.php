@@ -34,6 +34,11 @@
 require_once("$CFG->docroot/artefact/webservice/libs/externallib.php");
 require_once($CFG->docroot.'/lib/group.php');
 
+global $WEBSERVICE_OAUTH_USER;
+
+if ($WEBSERVICE_OAUTH_USER) {
+    throw new Exception('Not enabled for OAuth');
+}
 
 /**
  * Adds a member to a group.

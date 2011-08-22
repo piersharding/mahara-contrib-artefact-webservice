@@ -36,6 +36,12 @@ require_once($CFG->docroot.'/lib/institution.php');
 require_once($CFG->docroot.'/lib/searchlib.php');
 require_once($CFG->docroot.'/lib/user.php');
 
+global $WEBSERVICE_OAUTH_USER;
+
+if ($WEBSERVICE_OAUTH_USER) {
+    throw new Exception('Not enabled for OAuth');
+}
+
 class mahara_institution_external extends external_api {
 
     /**

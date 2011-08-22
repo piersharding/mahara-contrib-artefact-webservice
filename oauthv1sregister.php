@@ -148,8 +148,10 @@ function webservice_oauth_server_submit(Pieform $form, $values) {
                     'consumer_secret'   => $dbserver->consumer_secret,
                     'id'                => $values['id'],
        );        
-        $key = $store->updateConsumer($app, $values['userid'], true);
-        $c = (object) $store->getConsumer($key, $values['userid']);
+//        $key = $store->updateConsumer($app, $values['userid'], true);
+        $key = $store->updateConsumer($app, $USER->id, true);
+//        $c = (object) $store->getConsumer($key, $values['userid']);
+        $c = (object) $store->getConsumer($key, $USER->id);
         if (empty($c)) {
             $SESSION->add_error_msg(get_string('errorregister', 'artefact.webservice'));
             redirect('/artefact/webservice/oauthv1sregister.php');
@@ -346,7 +348,7 @@ function webservice_server_list_form($sopts, $iopts) {
                                 'title' => ' ',
                                 'class' => 'header',
                                 'type'  => 'html',
-                                'value' => get_string('username', 'artefact.webservice'),
+                                'value' => get_string('owner', 'artefact.webservice'),
                             ),                            
                             'consumer_key' => array(
                                 'title' => ' ',
@@ -386,8 +388,15 @@ function webservice_server_list_form($sopts, $iopts) {
                 'type'         => 'html',
                 'key'        => $consumer->consumer_key,
             );
+
+            if ($USER->is_admin_for_user($consumer->userid)) {
+                $user_url = get_config('wwwroot').'admin/users/edit.php?id='.$consumer->userid;
+            }
+            else {
+                $user_url = get_config('wwwroot').'user/view.php?id='.$consumer->userid;
+            }
             $form['elements']['id'. $consumer->id . '_username'] = array(
-                'value'        =>  $consumer->username,
+                'value'        =>  '<a href="'.$user_url.'">'.$consumer->username.'</a>',
                 'type'         => 'html',
                 'key'        => $consumer->consumer_key,
             );            
@@ -460,17 +469,17 @@ function webservice_server_list_form($sopts, $iopts) {
         $form = pieform($form);
     }
 
-    $username = '';
-    if ($user  = param_integer('user', 0)) {
-        $dbuser = get_record('usr', 'id', $user);
-        if (!empty($dbuser)) {
-            $username = $dbuser->username;
-        }
-    }
-    else {
-        $username = param_alphanum('username', '');
-    }
-    $searchicon = $THEME->get_url('images/btn-search.gif');    
+//    $username = '';
+//    if ($user  = param_integer('user', 0)) {
+//        $dbuser = get_record('usr', 'id', $user);
+//        if (!empty($dbuser)) {
+//            $username = $dbuser->username;
+//        }
+//    }
+//    else {
+//        $username = param_alphanum('username', '');
+//    }
+//    $searchicon = $THEME->get_url('images/btn-search.gif');
     $form = '<tr><td colspan="2">'.
             $form.'</td></tr><tr><td colspan="2">'.
                                 pieform(array(
@@ -496,15 +505,15 @@ function webservice_server_list_form($sopts, $iopts) {
                                                             'type'         => 'select',
                                                             'options'      => $sopts,
                                         ),     
-                                        'username'  => array(
-                                                               'type'        => 'text',
-                                                               'title'       => get_string('username'),
-                                                               'value'       => $username,
-                                                           ),
-                                        'usersearch'  => array(
-                                                               'type'        => 'html',
-                                                               'value'       => '&nbsp;<a href="'.get_config('wwwroot') .'artefact/webservice/search.php?ouid=add"><img src="'.$searchicon.'" id="usersearch"/></a> &nbsp; ',
-                                                           ),
+//                                        'username'  => array(
+//                                                               'type'        => 'text',
+//                                                               'title'       => get_string('username'),
+//                                                               'value'       => $username,
+//                                                           ),
+//                                        'usersearch'  => array(
+//                                                               'type'        => 'html',
+//                                                               'value'       => '&nbsp;<a href="'.get_config('wwwroot') .'artefact/webservice/search.php?ouid=add"><img src="'.$searchicon.'" id="usersearch"/></a> &nbsp; ',
+//                                                           ),
                                         'action'     => array('type' => 'hidden', 'value' => 'add'),
                                         'submit'     => array(
                                                 'type'  => 'submit',

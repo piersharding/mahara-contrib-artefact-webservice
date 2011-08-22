@@ -64,6 +64,7 @@ $string['invalidfunction'] = 'Invalid Function selected';
 $string['servicetokens'] = 'Manage Service Access Tokens';
 $string['stdescription'] = 'Generate access tokens, and allocate users to Service Groups';
 $string['username'] = 'User';
+$string['owner'] = 'Owner';
 $string['servicename'] = 'Service';
 $string['generate'] = 'Generate token';
 $string['invalidtoken'] = 'Invalid token selected';
@@ -76,7 +77,7 @@ $string['titlewssigenc'] = 'WSSecurity';
 
 $string['manageserviceusers'] = 'Manage Service Users';
 $string['sudescription'] = 'Allocate users to Service Groups and Institutions.  User must only be configured once.  All users must have the "webservice" authentication method.  The instance of the "webservice" authentication method of the user must be from an institution that they are a member of.';
-$string['serviceuser'] = 'Service user';
+$string['serviceuser'] = 'Service owner';
 $string['invalidserviceuser'] = 'Invalid Service User selected';
 $string['nouser'] = 'Please select a user';
 $string['duplicateuser'] = 'User account is already configured for Web Services';

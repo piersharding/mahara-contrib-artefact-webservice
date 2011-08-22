@@ -606,7 +606,7 @@ abstract class webservice_server implements webservice_server_interface {
      * @return void
      */
     protected function authenticate_user() {
-        global $CFG, $USER, $SESSION, $WEBSERVICE_INSTITUTION;
+        global $CFG, $USER, $SESSION, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
 
@@ -668,8 +668,9 @@ abstract class webservice_server implements webservice_server_interface {
             //OAuth
             // special web service login
             require_once(get_config('docroot')."/auth/webservice/lib.php");
-            // get the user
-            $user = get_record('usr', 'id', $this->oauth_token_details['service_user']);
+
+            // get the user - the user that authorised the token
+            $user = get_record('usr', 'id', $this->oauth_token_details['user_id']);
             if (empty($user)) {
                 throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
             }
@@ -680,6 +681,9 @@ abstract class webservice_server implements webservice_server_interface {
             }
             // set the global for the web service users defined institution
             $WEBSERVICE_INSTITUTION = $auth_instance->institution;
+            // set the note of the OAuth service owner
+//            error_log('OAuth running with: '.$this->oauth_token_details['user_id'].' service owner: '.$this->oauth_token_details['service_user']);
+            $WEBSERVICE_OAUTH_USER = $this->oauth_token_details['service_user'];
         } else {
             $user = $this->authenticate_by_token(EXTERNAL_TOKEN_EMBEDDED);
         }
@@ -1290,6 +1294,8 @@ abstract class webservice_base_server extends webservice_server {
      * @return void
      */
     public function run() {
+//        global $WEBSERVICE_OAUTH_USER;
+
         // we will probably need a lot of memory in some functions
         raise_memory_limit(MEMORY_EXTRA);
 
@@ -1317,6 +1323,10 @@ abstract class webservice_base_server extends webservice_server {
         ws_add_to_log(0, 'webservice', $this->functionname, '' , getremoteaddr() , 0, $this->userid);
 
         // finally, execute the function - any errors are catched by the default exception handler
+
+//        if ($WEBSERVICE_OAUTH_USER) {
+//            error_log('function info: '.var_export($this->function, true));
+//        }
         $this->execute();
 
         // send the results back in correct format
