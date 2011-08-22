@@ -1221,6 +1221,13 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
             throw new OAuthException2('No server with consumer_key "'.$consumer_key.'" or consumer_key is disabled');
         }
 
+        $callback = get_field_sql('
+                        SELECT callback_uri
+                        FROM {oauth_server_registry}
+                        WHERE consumer_key = ?
+                          AND enabled      = 1
+                        ', array($consumer_key));
+
         if (isset($options['token_ttl']) && is_numeric($options['token_ttl'])) {
             $ttl = intval($options['token_ttl']);
         }
@@ -1230,7 +1237,12 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
 
         if (!isset($options['oauth_callback'])) {
             // 1.0a Compatibility : store callback url associated with request token
-            $options['oauth_callback']='oob';
+            if (!empty($callback)) {
+                $options['oauth_callback'] = $callback;
+            }
+            else {
+                $options['oauth_callback'] = 'oob';
+            }
         }
 
         $ttl = date("F j, Y, g:i a", (time() + $ttl));

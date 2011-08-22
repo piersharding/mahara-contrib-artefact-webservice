@@ -41,7 +41,7 @@ OAuthStore::instance('Mahara');
 
 $server_id  = param_variable('edit', 0);
 $dbserver = get_record('oauth_server_registry', 'id', $server_id);
-error_log('server: '.var_export($dbserver, true));
+//error_log('server: '.var_export($dbserver, true));
 
 $institutions = get_records_array('institution');
 $iopts = array();
@@ -69,7 +69,7 @@ else {
                                 
 function webservices_add_application_validate(Pieform $form, $values) {
     global $SESSION;
-    error_log('validate application: '.var_export($values, true));
+//    error_log('validate application: '.var_export($values, true));
 //    $form->set_error('application', 'bad person');
 //    $SESSION->add_error_msg(get_string('existingtokens', 'artefact.webservice'));
 }
@@ -78,8 +78,6 @@ function webservices_add_application_validate(Pieform $form, $values) {
                                 
 function webservices_add_application_submit(Pieform $form, $values) {
     global $SESSION;
-    
-    error_log('add application: '.var_export($values, true));
     
     $dbuser = get_record('usr', 'username', $values['username']);
     if (empty($dbuser)) {
@@ -132,6 +130,7 @@ function webservices_server_submit(Pieform $form, $values) {
 
 function webservice_oauth_server_submit(Pieform $form, $values) {
     global $USER, $SESSION;
+
     $store = OAuthStore::instance();
     $is_admin = ($USER->get('admin') ||defined('ADMIN') || defined('INSTITUTIONALADMIN') || $USER->is_institutional_admin() ? true : false);
     $dbserver = get_record('oauth_server_registry', 'id', $values['id']);
@@ -212,7 +211,7 @@ function webservice_server_edit_form($dbserver, $sopts, $iopts) {
             
     $server_details['elements']['application_title'] = array(
         'title'        => get_string('application_title', 'artefact.webservice'),
-        'defaultvalue'        =>  $dbserver->application_title,
+        'defaultvalue' =>  $dbserver->application_title,
         'type'         => 'text',
     );
             
@@ -224,13 +223,13 @@ function webservice_server_edit_form($dbserver, $sopts, $iopts) {
                            
     $server_details['elements']['application_uri'] = array(
         'title'        => get_string('application_uri', 'artefact.webservice'),
-        'value'        =>  $dbserver->application_uri,
+        'defaultvalue' =>  $dbserver->application_uri,
         'type'         => 'text',
     );
                             
     $server_details['elements']['callback_uri'] = array(
         'title'        => get_string('callback', 'artefact.webservice'),
-        'value'        =>  $dbserver->callback_uri,
+        'defaultvalue' =>  $dbserver->callback_uri,
         'type'         => 'text',
     );
     
