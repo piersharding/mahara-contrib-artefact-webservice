@@ -32,22 +32,26 @@ class webservice_rest_client {
 
     private $serverurl;
     private $auth;
+    private $type;
+    private $consumer;
+    private $token;
 
     /**
      * Constructor
      * @param string $serverurl a Mahara URL
      * @param array $auth
      */
-    public function __construct($serverurl, $auth) {
+    public function __construct($serverurl, $auth, $type) {
         $this->serverurl = $serverurl;
-        $this->set_auth($auth);
+        $this->set_authentication($auth);
+        $this-> type = $type;
     }
 
     /**
      * Set the auth values used to do the REST call
      * @param array $auth
      */
-    public function set_auth($auth) {
+    public function set_authentication($auth) {
         $values = array();
         foreach ($auth as $k => $v) {
             $values[]= "$k=".urlencode($v);
@@ -55,6 +59,15 @@ class webservice_rest_client {
         $this->auth = implode('&', $values);
     }
 
+    /**
+     * Set the OAuth consumer details
+     * @param array $consumer
+     */
+    public function set_oauth($consumer, $token) {
+        $this->consumer = $consumer;
+        $this->token = $token;
+    }
+    
     /**
      * Execute client WS request with token authentication
      * @param string $functionname
@@ -65,25 +78,60 @@ class webservice_rest_client {
     public function call($functionname, $params, $json=false) {
         global $CFG;
 
-        if ($json) {
-            $data = json_encode($params);
-            $url = $this->serverurl . '?'.$this->auth.'&wsfunction=' . $functionname . '&alt=json';
-            $result = file_get_contents ($url, false, stream_context_create (array ('http'=>array ('method'=>'POST'
-                    , 'header'=>"Content-Type: application/json\r\nConnection: close\r\nContent-Length: ".strlen($data)."\r\n"
-                    , 'content'=>$data
-                    ))));
-            $values = (array)json_decode($result, true);
-            return $values;
+        if ($this->type == 'oauth') {
+            $url = $this->serverurl.'?wsfunction='.$functionname;
+            $body = '';
+            $options = array();
+            if ($json) {
+                $url .= '&alt=json';
+                $body = json_encode($params);
+            }
+            else {
+                $body = format_postdata_for_curlcall($params);
+            }
+            // setup the client side OAuth
+            $oauth_options = array(
+                'consumer_key' => $this->consumer->consumer_key,
+                'consumer_secret' => $this->consumer->consumer_secret,
+                'server_uri' => 'http://example.com/artefact/webservice/rest/server.php',
+                'request_token_uri' => 'http://example.com/maharadev/artefact/webservice/oauthv1.php/request_token',
+                'authorize_uri' => 'http://example.com/artefact/webservice/oauthv1.php/authorize',
+                'access_token_uri' => 'http://example.com/artefact/webservice/oauthv1.php/access_token',
+            );
+            $store = OAuthStore::instance("Session", $oauth_options, true);
+            $store->addServerToken($this->consumer->consumer_key, 'access', $this->token['token'], $this->token['token_secret'], 1);
+            $request = new OAuthRequester($url, 'POST', $options, $body);
+            $result = $request->doRequest(0);
+            if ($result['code'] != 200) {
+                throw new Exception('REST OAuth error: '.var_export($result, true));
+            }
+            $result = $result['body'];
+            if ($json) {
+                $values = (array)json_decode($result, true);
+                return $values;
+            }
+        }
+        else {
+            if ($json) {
+                $data = json_encode($params);
+                $url = $this->serverurl . '?'.$this->auth.'&wsfunction=' . $functionname . '&alt=json';
+                $result = file_get_contents ($url, false, stream_context_create (array ('http'=>array ('method'=>'POST'
+                        , 'header'=>"Content-Type: application/json\r\nConnection: close\r\nContent-Length: ".strlen($data)."\r\n"
+                        , 'content'=>$data
+                        ))));
+                $values = (array)json_decode($result, true);
+                return $values;
+            }
+    
+            $result = download_file_content($this->serverurl
+                            . '?'.$this->auth.'&wsfunction='
+                            . $functionname, null, $params);
         }
 
-        $result = download_file_content($this->serverurl
-                        . '?'.$this->auth.'&wsfunction='
-                        . $functionname, null, $params);
-
+        
         //TODO : transform the XML result into PHP values - MDL-22965
         $xml2array = new xml2array($result);
         $raw = $xml2array->getResult();
-//        var_dump($raw);
 
         if (isset($raw['EXCEPTION'])) {
             $debug = isset($raw['EXCEPTION']['DEBUGINFO']) ? $raw['EXCEPTION']['DEBUGINFO']['#text'] : '';

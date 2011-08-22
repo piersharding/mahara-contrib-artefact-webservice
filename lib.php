@@ -524,7 +524,7 @@ class ArtefactTypeWebservice extends ArtefactType {
         $elements = array();
         $elements['label'] = array('title' => ' ', 'class' => 'header', 'type' => 'html', 'value' => get_string('protocol', 'artefact.webservice'),);
 
-        foreach (array('soap', 'xmlrpc', 'rest') as $proto) {
+        foreach (array('soap', 'xmlrpc', 'rest', 'oauth') as $proto) {
             $enabled = (get_config_plugin('artefact', 'webservice', $proto.'_enabled') || 0);
             $elements[$proto] =  array(
                 'class' => 'header',

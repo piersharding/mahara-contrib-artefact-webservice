@@ -117,6 +117,26 @@ $string['invaliduser'] = 'Invalid wsusername/wspassword supplied';
 $string['invalidtoken'] = 'Invalid wstoken supplied';
 $string['topinstructions'] = 'Go <a href="%s">here</a> to access the Web Services interactive test client.';
 
+//oauth server registry
+$string['oauth'] = 'OAuth';
+$string['oauthv1sregister'] = 'OAuth Register Server';
+$string['userapplications'] = 'OAuth consumer keys';
+$string['application'] = 'Application';
+$string['callback'] = 'Callback URI';
+$string['consumer_key'] = 'Consumer Key';
+$string['consumer_secret'] = 'Consumer secret';
+$string['add'] = 'Add';
+$string['application'] = 'Application';
+$string['oauthserverdeleted'] = 'Server deleted';
+$string['errorregister'] = 'Server registry failed';
+$string['serverkey'] = 'Server key: %s';
+$string['application_uri'] = 'Application URI';
+$string['application_title'] = 'Application title';
+$string['errorupdate'] = 'Update failed';
+$string['erroruser'] = 'Invalid user specified';
+$string['authorise'] = 'Authorise application access';
+$string['oauth_access'] = 'This application will have access to your users details and resources';
+$string['oauth_instructions'] = 'If you wish to grant access to this application then "Authorise application access".  If you do not want to grant access the press "Cancel".';
 
 // running webservices messages
 $string['accessexception'] = 'Access control exception';

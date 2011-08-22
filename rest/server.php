@@ -46,6 +46,9 @@ if (!webservice_protocol_is_enabled('rest')) {
     die;
 }
 
+OAuthStore::instance('Mahara');
+global $OAUTH_SERVER;
+$OAUTH_SERVER = new OAuthServer();
 $server = new webservice_rest_server(WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN);
 $server->run();
 die;

@@ -630,7 +630,6 @@ abstract class webservice_server implements webservice_server_interface {
 
             // get the user
             $user = get_record('usr', 'username', $this->username);
-//            error_log('user is: '.var_export($user, true));
             if (empty($user)) {
                 throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
             }
@@ -661,8 +660,26 @@ abstract class webservice_server implements webservice_server_interface {
                 throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
             }
 
-        } else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN){
+        } 
+        else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN){
             $user = $this->authenticate_by_token(EXTERNAL_TOKEN_PERMANENT);
+        } 
+        else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_SESSION_TOKEN){
+            //OAuth
+            // special web service login
+            require_once(get_config('docroot')."/auth/webservice/lib.php");
+            // get the user
+            $user = get_record('usr', 'id', $this->oauth_token_details['service_user']);
+            if (empty($user)) {
+                throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
+            }
+            // determine the internal auth instance
+            $auth_instance = get_record('auth_instance', 'institution', $this->oauth_token_details['institution'], 'authname', 'webservice');
+            if (empty($auth_instance)) {
+                throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
+            }
+            // set the global for the web service users defined institution
+            $WEBSERVICE_INSTITUTION = $auth_instance->institution;
         } else {
             $user = $this->authenticate_by_token(EXTERNAL_TOKEN_EMBEDDED);
         }
@@ -729,6 +746,9 @@ abstract class webservice_zend_server extends webservice_server {
     /** @property string $service_class virtual web service class with all functions user name execute, created on the fly */
     protected $service_class;
 
+    /** @property string $functionname the name of the function that is executed */
+    protected $functionname = null;
+        
     /**
      * Contructor
      * @param integer $authmethod authentication method - one of WEBSERVICE_AUTHMETHOD_*
@@ -792,7 +812,7 @@ abstract class webservice_zend_server extends webservice_server {
         $this->fixup_functions();
 
         //log the web service request
-        ws_add_to_log(0, 'webservice', '', '' , $this->zend_class." ".getremoteaddr() , 0, $this->userid);
+//        ws_add_to_log(0, 'webservice', $this->functionname, '' , getremoteaddr() , 0, $this->userid);
 
         // execute and return response, this sends some headers too
         $response = $this->zend_server->handle($xml);

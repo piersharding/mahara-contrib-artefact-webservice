@@ -105,6 +105,10 @@ class webservice_test_base extends UnitTestCase {
     public $created_users;
     public $created_groups;
     public $test_institution;
+    public $consumer;
+    public $consumer_key;
+    public $request_token;
+    public $access_token;
 
     function setUp() {
         // default current user to admin
@@ -165,6 +169,39 @@ class webservice_test_base extends UnitTestCase {
             }
         }
 
+        // create an OAuth registry object
+        require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthServer.php');
+        require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthStore.php');
+        require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthRequester.php');        
+        $store = OAuthStore::instance('Mahara');
+        $new_app = array(
+                    'application_title' => 'Test Application',
+                    'application_uri'   => 'http://example.com',
+                    'requester_name'    => $dbuser->firstname.' '.$dbuser->lastname,
+                    'requester_email'   => $dbuser->email,
+                    'callback_uri'      => 'http://example.com',
+                    'institution'       => 'mahara',
+                    'externalserviceid' => $dbservice->id,
+          );
+        $this->consumer_key = $store->updateConsumer($new_app, $dbuser->id, true);
+        $this->consumer = (object) $store->getConsumer($this->consumer_key, $dbuser->id);
+        //$store->deleteConsumerRequestToken($token);
+//        error_log('consumer: '.var_export($this->consumer,true));
+        
+        // Now do the request and access token
+        $this->request_token  = $store->addConsumerRequestToken($this->consumer_key, array());
+//        error_log('request token: '.var_export($this->request_token,true));
+        
+        // authorise
+        $verifier = $store->authorizeConsumerRequestToken($this->request_token['token'], $dbuser->id, 'localhost');
+//        error_log('verifier: '.var_export($verifier,true));
+        
+        // exchange access token
+        $options = array();
+        $options['verifier'] = $verifier;
+        $this->access_token  = $store->exchangeConsumerRequestForAccessToken($this->request_token['token'], $options);
+//        error_log('access token: '.var_export($this->access_token,true));
+        
         // generate a test token
         $token = external_generate_token(EXTERNAL_TOKEN_PERMANENT, $dbservice, $dbuser->id);
         $dbtoken = get_record('external_tokens', 'token', $token);
@@ -298,6 +335,11 @@ class webservice_test_base extends UnitTestCase {
         // remove the web service descriptions
         $dbservice = get_record('external_services', 'name', $this->servicename);
         if ($dbservice) {
+            $dbregistry = get_record('oauth_server_registry', 'externalserviceid', $dbservice->id);
+            if ($dbregistry) {
+                delete_records('oauth_server_token', 'osr_id_ref', $dbregistry->id);
+            }
+            delete_records('oauth_server_registry', 'externalserviceid', $dbservice->id);
             delete_records('external_services_users', 'externalserviceid', $dbservice->id);
             delete_records('external_tokens', 'externalserviceid', $dbservice->id);
             delete_records('external_services_functions', 'externalserviceid', $dbservice->id);

@@ -31,6 +31,9 @@
 
 require_once(get_config('docroot')."/artefact/webservice/locallib.php");
 
+require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthServer.php');
+require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthStore.php');
+
 /**
  * REST service server implementation.
  * @author Petr Skoda (skodak)
@@ -58,6 +61,7 @@ class webservice_rest_server extends webservice_base_server {
      * @return void
      */
     protected function parse_request() {
+        global $OAUTH_SERVER;
         // determine the request/response format
         if ((isset($_REQUEST['alt']) && trim($_REQUEST['alt']) == 'json') ||
             (isset($_GET['alt']) && trim($_GET['alt']) == 'json') ||
@@ -74,6 +78,33 @@ class webservice_rest_server extends webservice_base_server {
         unset($_REQUEST['alt']);
 
         $this->parameters = $_REQUEST;
+        if ($OAUTH_SERVER) {
+            $oauth_token = null;
+            try {
+                $oauth_token = $OAUTH_SERVER->verifyExtended();
+            }
+            catch (OAuthException2 $e) {
+                // let all others fail
+//                error_log('could not get oauth: '.var_export($e, true));
+            }
+            if ($oauth_token) {
+                $this->authmethod = WEBSERVICE_AUTHMETHOD_SESSION_TOKEN;
+                $token = $OAUTH_SERVER->getParam('oauth_token');
+                $store = OAuthStore::instance();
+                $secrets = $store->getSecretsForVerify($oauth_token['consumer_key'], 
+                                                       $OAUTH_SERVER->urldecode($token), 
+                                                       'access');
+               $this->oauth_token_details = $secrets;
+
+               // the content type might be different for the OAuth client 
+                $headers = OAuthRequestLogger::getAllHeaders();
+                if ($headers['Content-Type'] == 'application/octet-stream' && $this->format != 'json') {
+                    $body = file_get_contents('php://input');
+                    parse_str($body, $parameters);
+                    $this->parameters = array_merge($this->parameters, $parameters);
+                }
+            }
+        }
 
         // merge parameters from JSON request body if there is one
         if ($this->format == 'json') {
@@ -95,6 +126,7 @@ class webservice_rest_server extends webservice_base_server {
             unset($this->parameters['wsfunction']);
         }
         else {
+            // is this our token based auth or OAuth?
             $this->token = isset($this->parameters['wstoken']) ? trim($this->parameters['wstoken']) : null;
             unset($this->parameters['wstoken']);
 

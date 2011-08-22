@@ -108,11 +108,25 @@ class webservice_test extends webservice_test_base {
                 $this->timerrest = time();
                 require_once(get_config('docroot') . "/artefact/webservice/rest/lib.php");
                 // iterate the token and user auth types
-                foreach (array('server', 'simpleserver') as $type) {
-                    $restclient = new webservice_rest_client(get_config('wwwroot')
-                                    . '/artefact/webservice/rest/'.$type.'.php',
-                                     ($type == 'server' ? array('wstoken' => $this->testtoken) :
-                                                          array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)));
+                foreach (array('server', 'simpleserver', 'oauth') as $type) {
+                    switch ($type) {
+                        case 'server':
+                             $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/'.$type.'.php',
+                                                                     array('wstoken' => $this->testtoken),
+                                                                     $type);
+                             break;
+                        case 'simpleserver':
+                            $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/'.$type.'.php',
+                                                                     array('wsusername' => $this->testuser, 'wspassword' => $this->testuser),
+                                                                     $type);
+                             break;
+                        case 'oauth':
+                             $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/server.php',
+                                                                     array(),
+                                                                     $type);
+                             $restclient->set_oauth($this->consumer, $this->access_token);
+                             break;
+                    }
                     for ($i = 1; $i <= $this->iteration; $i = $i + 1) {
                         foreach ($this->readonlytests as $functionname => $run) {
                             if ($run) {

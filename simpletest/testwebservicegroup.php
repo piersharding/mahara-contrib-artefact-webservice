@@ -112,7 +112,7 @@ class webservice_test extends webservice_test_base {
                     $restclient = new webservice_rest_client(get_config('wwwroot')
                                     . '/artefact/webservice/rest/'.$type.'.php',
                                      ($type == 'server' ? array('wstoken' => $this->testtoken) :
-                                                          array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)));
+                                                          array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)), $type);
                     for ($i = 1; $i <= $this->iteration; $i = $i + 1) {
                         foreach ($this->readonlytests as $functionname => $run) {
                             if ($run) {

@@ -512,7 +512,7 @@ class mahara_user_external extends external_api {
                 // check the institution
                 $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
                 if (empty($auth_instance) || $WEBSERVICE_INSTITUTION != $auth_instance->institution) {
-                    throw new invalid_parameter_exception('Not authorised for access to user id: '.$user->id);
+                    throw new invalid_parameter_exception('Not authorised for access to user id: '.$user->id.' institution: '.$auth_instance->institution);
                 }
 
                 $userarray = array();
@@ -756,7 +756,7 @@ class mahara_user_external extends external_api {
             // check the institution
             $auth_instance = get_record('auth_instance', 'id', $dbuser->authinstance);
             if (empty($auth_instance) || $WEBSERVICE_INSTITUTION != $auth_instance->institution) {
-                throw new invalid_parameter_exception('get_favourites: Not authorised for access to user id: '.$user['userid']);
+                throw new invalid_parameter_exception('get_favourites: Not authorised for access to user id: '.$user['userid'].' institution: '.$auth_instance->institution);
             }
 
             // get the favourite for the shortname for this user

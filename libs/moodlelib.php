@@ -406,6 +406,10 @@ define('EXTERNAL_TOKEN_PERMANENT', 0);
 define('EXTERNAL_TOKEN_EMBEDDED', 1);
 
 /**
+ * OAuth Token type for registered applications oauth v1
+ */
+define('EXTERNAL_TOKEN_OAUTH1', 2);
+/**
  * The home page should be the site home
  */
 define('HOMEPAGE_SITE', 0);
@@ -6245,3 +6249,29 @@ function get_home_page() {
     }
     return HOMEPAGE_SITE;
 }
+
+/**
+ * Returns most reliable client address
+ *
+ * @global object
+ * @param string $default If an address can't be determined, then return this
+ * @return string The remote IP address
+ */
+//function getremoteaddr($default='0.0.0.0') {
+//
+//    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+//        $address = $_SERVER['HTTP_CLIENT_IP'];
+//        return $address ? $address : $default;
+//    }
+//    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+//        $address = $_SERVER['HTTP_X_FORWARDED_FOR'];
+//        return $address ? $address : $default;
+//    }
+//    if (!empty($_SERVER['REMOTE_ADDR'])) {
+//        $address = $_SERVER['REMOTE_ADDR'];
+//        return $address ? $address : $default;
+//    } else {
+//        return $default;
+//    }
+//}
+
