@@ -48,7 +48,7 @@ $ouid   = param_variable('ouid', '');
 // did the user cancel
 if (param_alpha('cancel_submit', 'empty') != 'empty') {
     if ($ouid) {
-        redirect('/artefact/webservice/oauthsregister.php?ouid='.$ouid);
+        redirect('/artefact/webservice/oauthv1sregister.php?ouid='.$ouid);
     }
     else if ($suid) {
         redirect('/artefact/webservice/userconfig.php?suid='.$suid);

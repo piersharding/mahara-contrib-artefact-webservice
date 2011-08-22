@@ -105,6 +105,7 @@ function UserSearch() {
         self.params.action = 'search';
         self.params.token = $('token').value;
         self.params.suid = $('suid').value;
+        self.params.ouid = $('ouid').value;
         sendjsonrequest('search.json.php', self.params, 'POST', function(data) {
             $('results').innerHTML = data.data;
             self.rewritePaging();
