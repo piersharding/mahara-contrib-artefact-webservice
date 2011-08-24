@@ -77,9 +77,9 @@ function webservices_add_application_validate(Pieform $form, $values) {
 
                                 
 function webservices_add_application_submit(Pieform $form, $values) {
-    global $SESSION;
+    global $SESSION, $USER;
     
-    $dbuser = get_record('usr', 'username', $values['username']);
+    $dbuser = get_record('usr', 'id', $USER->id);
     if (empty($dbuser)) {
         $SESSION->add_error_msg(get_string('erroruser', 'artefact.webservice'));
         redirect('/artefact/webservice/oauthv1sregister.php');       
