@@ -414,6 +414,12 @@ class PluginArtefactWebservice extends PluginArtefact {
               'title' => 'WebServices Administration',
               'weight' => 30
                 ),
+            array(
+              'path' =>  'settings/apps',
+              'url' => 'artefact/webservice/apptokens.php',
+              'title' => get_string('apptokens', 'artefact.webservice'),
+              'weight' => 40
+                ),
         );
     }
 

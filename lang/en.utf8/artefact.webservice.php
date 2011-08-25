@@ -61,6 +61,7 @@ $string['switchtotokens'] = 'Switch to Tokens';
 $string['invalidservice'] = 'Invalid Service selected';
 $string['invalidfunction'] = 'Invalid Function selected';
 
+$string['apptokens'] = 'Application Connections';
 $string['servicetokens'] = 'Manage Service Access Tokens';
 $string['stdescription'] = 'Generate access tokens, and allocate users to Service Groups';
 $string['username'] = 'User';
@@ -74,6 +75,7 @@ $string['invaliduserselectedinstitution'] = 'Invalid user for token institution 
 $string['noservices'] = 'No services configured';
 $string['wssigenc'] = 'Enble WS-Security (XML-RPC Only)';
 $string['titlewssigenc'] = 'WSSecurity';
+$string['last_access'] = 'Last Access';
 
 $string['manageserviceusers'] = 'Manage Service Users';
 $string['sudescription'] = 'Allocate users to Service Groups and Institutions.  User must only be configured once.  All users must have the "webservice" authentication method.  The instance of the "webservice" authentication method of the user must be from an institution that they are a member of.';
@@ -119,9 +121,12 @@ $string['invalidtoken'] = 'Invalid wstoken supplied';
 $string['topinstructions'] = 'Go <a href="%s">here</a> to access the Web Services interactive test client.';
 
 //oauth server registry
+$string['accesstokens'] = 'OAuth Access Tokens';
+$string['notokens'] = 'You have no application tokens';
 $string['oauth'] = 'OAuth';
 $string['oauthv1sregister'] = 'OAuth Register Server';
 $string['userapplications'] = 'OAuth consumer keys';
+$string['accessto'] = 'Access to';
 $string['application'] = 'Application';
 $string['callback'] = 'Callback URI';
 $string['consumer_key'] = 'Consumer Key';
@@ -129,6 +134,7 @@ $string['consumer_secret'] = 'Consumer secret';
 $string['add'] = 'Add';
 $string['application'] = 'Application';
 $string['oauthserverdeleted'] = 'Server deleted';
+$string['oauthtokendeleted'] = 'Application token deleted';
 $string['errorregister'] = 'Server registry failed';
 $string['serverkey'] = 'Server key: %s';
 $string['application_uri'] = 'Application URI';

@@ -29,7 +29,6 @@
 
 define('INTERNAL', 1);
 define('ADMIN', 1);
-//define('MENUITEM', 'configusers/oauthv1sregister');
 define('MENUITEM', 'configextensions/oauthv1sregister');
 
 require(dirname(dirname(dirname(__FILE__))) . '/init.php');

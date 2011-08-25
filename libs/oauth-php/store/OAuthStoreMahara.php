@@ -147,12 +147,12 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
 
 //	public function addConsumerRequestToken ( $consumer_key, $options = array() ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
 //	public function getConsumerRequestToken ( $token ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
-	public function deleteConsumerRequestToken ( $token ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
+//	public function deleteConsumerRequestToken ( $token ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
 //	public function authorizeConsumerRequestToken ( $token, $userid, $referrer_host = '' ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
 	public function countConsumerAccessTokens ( $consumer_key ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
 //	public function exchangeConsumerRequestForAccessToken ( $token, $options = array() ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
 	public function getConsumerAccessToken ( $token, $userid ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
-	public function deleteConsumerAccessToken ( $token, $userid, $user_is_admin = false ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
+//	public function deleteConsumerAccessToken ( $token, $userid, $user_is_admin = false ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
 	public function setConsumerAccessTokenTtl ( $token, $ttl ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
 
 //	public function listConsumers ( $userid ) { throw new OAuthException2("OAuthStoreMahara doesn't support " . __METHOD__); }
@@ -1308,13 +1308,13 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
      *
      * @param string token
      */
-//    public function deleteConsumerRequestToken($token) {
-//        delete_records_sql('
-//                    DELETE FROM {oauth_server_token}
-//                    WHERE ost_token      = ?
-//                      AND ost_token_type = \'request\'
-//                    ', array($token));
-//    }
+    public function deleteConsumerRequestToken($token) {
+        delete_records_sql('
+                    DELETE FROM {oauth_server_token}
+                    WHERE  token      = ?
+                      AND  token_type = \'request\'
+                    ', array($token));
+    }
 
 
     /**
@@ -1474,23 +1474,23 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
      * @param int userid
      * @param boolean user_is_admin
      */
-//    public function deleteConsumerAccessToken($token, $userid, $user_is_admin = false) {
-//        if ($user_is_admin) {
-//            delete_records_sql('
-//                        DELETE FROM {oauth_server_token}
-//                        WHERE ost_token      = ?
-//                          AND ost_token_type = \'access\'
-//                        ', array($token));
-//        }
-//        else {
-//            delete_records_sql('
-//                        DELETE FROM {oauth_server_token}
-//                        WHERE ost_token      = ?
-//                          AND ost_token_type = \'access\'
-//                          AND ost_usa_id_ref = ?
-//                        ', array($token, $userid));
-//        }
-//    }
+    public function deleteConsumerAccessToken($token, $userid, $user_is_admin = false) {
+        if ($user_is_admin) {
+            delete_records_sql('
+                        DELETE FROM {oauth_server_token}
+                        WHERE  token      = ?
+                          AND  token_type = \'access\'
+                        ', array($token));
+        }
+        else {
+            delete_records_sql('
+                        DELETE FROM {oauth_server_token}
+                        WHERE  token      = ?
+                          AND  token_type = \'access\'
+                          AND  userid = ?
+                        ', array($token, $userid));
+        }
+    }
 
 
     /**
