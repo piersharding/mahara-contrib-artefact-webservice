@@ -84,7 +84,16 @@ class mahara_group_external extends external_api {
                             'description'     => new external_value(PARAM_NOTAGS, 'Group description'),
                             'institution'     => new external_value(PARAM_TEXT, 'Mahara institution - required for API controlled groups', VALUE_OPTIONAL),
                             'grouptype'       => new external_value(PARAM_ALPHANUMEXT, 'Group type: '.implode(',', $group_types)),
-                            'jointype'        => new external_value(PARAM_ALPHANUMEXT, 'Join type - these are specific to group type - the complete set are: open, invite, request or controlled', VALUE_DEFAULT, 'controlled'),
+//                            'jointype'        => new external_value(PARAM_ALPHANUMEXT, 'Join type - these are specific to group type - the complete set are: open, invite, request or controlled', VALUE_DEFAULT, 'controlled'),
+                            'open'            => new external_value(PARAM_INTEGER, 'Boolean 1/0 open - Users can join the group without approval from group administrators', VALUE_DEFAULT, '0'),
+                            'controlled'      => new external_value(PARAM_INTEGER, 'Boolean 1/0 controlled - Group administrators can add users to the group without their consent, and members cannot choose to leave', VALUE_DEFAULT, '0'),
+                            'request'         => new external_value(PARAM_INTEGER, 'Boolean 1/0 request - Users can send membership requests to group administrators', VALUE_DEFAULT, '0'),
+                            'submitpages'     => new external_value(PARAM_INTEGER, 'Boolean 1/0 submitpages - Members can submit pages to the group', VALUE_DEFAULT, '0'),
+                            'hidden'          => new external_value(PARAM_INTEGER, 'Boolean 1/0 hidden - Hide the group on the "Find Groups" page', VALUE_DEFAULT, '0'),
+                            'hidemembers'     => new external_value(PARAM_INTEGER, 'Boolean 1/0 hidemembers - Hide the group members tab from non-members', VALUE_DEFAULT, '0'),
+                            'invitefriends'   => new external_value(PARAM_INTEGER, 'Boolean 1/0 invitefriends - group members can invite friends', VALUE_DEFAULT, '0'),
+                            'suggestfriends'  => new external_value(PARAM_INTEGER, 'Boolean 1/0 suggestfriends - group members can suggest the group to friends', VALUE_DEFAULT, '0'),
+                            'hidemembersfrommembers' => new external_value(PARAM_INTEGER, 'Boolean 1/0 hidemembersfrommembers - hide group members from group members and only show admin and tutor', VALUE_DEFAULT, '0'),
                             'category'        => new external_value(PARAM_TEXT, 'Group category - the title of an existing group category'),
                             'public'          => new external_value(PARAM_INTEGER, 'Boolean 1/0 public group', VALUE_DEFAULT, '0'),
                             'usersautoadded'  => new external_value(PARAM_INTEGER, 'Boolean 1/0 for auto-adding users', VALUE_DEFAULT, '0'),
@@ -170,6 +179,29 @@ class mahara_group_external extends external_api {
             }
             $group['category'] = $groupcategory->id;
 
+            // validate the join type combinations
+            if ($group['open'] && $group['request']) {
+                throw new invalid_parameter_exception('create_groups: invalid join type combination open+request');
+            }
+            if ($group['open'] && $group['controlled']) {
+                throw new invalid_parameter_exception('create_groups: invalid join type combination open+controlled');
+            }
+
+            if (!$group['open'] && !$group['request'] && !$group['controlled']) {
+                throw new invalid_parameter_exception('create_groups: must select either open, request, or controlled');
+            }
+
+            // interim munging of jointype
+            if ($group['open']) {
+                $group['jointype'] = 'open';
+            }
+            else if ($group['controlled']) {
+                $group['jointype'] = 'controlled';
+            }
+            else if ($group['request']) {
+                $group['jointype'] = 'request';
+            }
+
             // check that the members exist and we are allowed to administer them
             $members = array($USER->get('id') => 'admin');
             foreach ($group['members'] as $member) {
@@ -199,7 +231,6 @@ class mahara_group_external extends external_api {
 
                 $members[$dbuser->id]= $member['role'];
             }
-
             // create the group
             $id = group_create(array(
                 'shortname'      => (isset($group['shortname']) ? $group['shortname'] : null),
@@ -209,6 +240,15 @@ class mahara_group_external extends external_api {
                 'grouptype'      => $group['grouptype'],
                 'category'       => $group['category'],
                 'jointype'       => $group['jointype'],
+                'open'           => $group['open'],
+                'controlled'     => $group['controlled'],
+                'request'        => $group['request'],
+                'submitpages'    => $group['submitpages'],
+                'hidemembers'    => $group['hidemembers'],
+                'invitefriends'  => $group['invitefriends'],
+                'suggestfriends' => $group['suggestfriends'],
+                'hidden'         => $group['hidden'],
+                'hidemembersfrommembers' => $group['hidemembersfrommembers'],
                 'public'         => intval($group['public']),
                 'usersautoadded' => intval($group['usersautoadded']),
                 'members'        => $members,
@@ -332,7 +372,16 @@ class mahara_group_external extends external_api {
                             'description'     => new external_value(PARAM_NOTAGS, 'Group description'),
                             'institution'     => new external_value(PARAM_TEXT, 'Mahara institution - required for API controlled groups', VALUE_OPTIONAL),
                             'grouptype'       => new external_value(PARAM_ALPHANUMEXT, 'Group type: '.implode(',', $group_types)),
-                            'jointype'        => new external_value(PARAM_ALPHANUMEXT, 'Join type - these are specific to group type - the complete set are: open, invite, request or controlled', VALUE_DEFAULT, 'controlled'),
+//                            'jointype'        => new external_value(PARAM_ALPHANUMEXT, 'Join type - these are specific to group type - the complete set are: open, invite, request or controlled', VALUE_DEFAULT, 'controlled'),
+                            'open'            => new external_value(PARAM_INTEGER, 'Boolean 1/0 open - Users can join the group without approval from group administrators', VALUE_DEFAULT, '0'),
+                            'controlled'      => new external_value(PARAM_INTEGER, 'Boolean 1/0 controlled - Group administrators can add users to the group without their consent, and members cannot choose to leave', VALUE_DEFAULT, '0'),
+                            'request'         => new external_value(PARAM_INTEGER, 'Boolean 1/0 request - Users can send membership requests to group administrators', VALUE_DEFAULT, '0'),
+                            'submitpages'     => new external_value(PARAM_INTEGER, 'Boolean 1/0 submitpages - Members can submit pages to the group', VALUE_DEFAULT, '0'),
+                            'hidden'          => new external_value(PARAM_INTEGER, 'Boolean 1/0 hidden - Hide the group on the "Find Groups" page', VALUE_DEFAULT, '0'),
+                            'hidemembers'     => new external_value(PARAM_INTEGER, 'Boolean 1/0 hidemembers - Hide the group members tab from non-members', VALUE_DEFAULT, '0'),
+                            'invitefriends'   => new external_value(PARAM_INTEGER, 'Boolean 1/0 invitefriends - group members can invite friends', VALUE_DEFAULT, '0'),
+                            'suggestfriends'  => new external_value(PARAM_INTEGER, 'Boolean 1/0 suggestfriends - group members can suggest the group to friends', VALUE_DEFAULT, '0'),
+                            'hidemembersfrommembers' => new external_value(PARAM_INTEGER, 'Boolean 1/0 hidemembersfrommembers - hide group members from group members and only show admin and tutor', VALUE_DEFAULT, '0'),
                             'category'        => new external_value(PARAM_TEXT, 'Group category - the title of an existing group category'),
                             'public'          => new external_value(PARAM_INTEGER, 'Boolean 1/0 public group', VALUE_DEFAULT, '0'),
                             'usersautoadded'  => new external_value(PARAM_INTEGER, 'Boolean 1/0 for auto-adding users', VALUE_DEFAULT, '0'),
@@ -401,9 +450,32 @@ class mahara_group_external extends external_api {
             // convert the category
             $groupcategory = get_record('group_category','title', $group['category']);
             if (empty($groupcategory)) {
-                throw new invalid_parameter_exception('create_groups: category invalid: '.$group['category']);
+                throw new invalid_parameter_exception('update_groups: category invalid: '.$group['category']);
             }
             $group['category'] = $groupcategory->id;
+
+            // validate the join type combinations
+            if ($group['open'] && $group['request']) {
+                throw new invalid_parameter_exception('update_groups: invalid join type combination open+request');
+            }
+            if ($group['open'] && $group['controlled']) {
+                throw new invalid_parameter_exception('update_groups: invalid join type combination open+controlled');
+            }
+
+            if (!$group['open'] && !$group['request'] && !$group['controlled']) {
+                throw new invalid_parameter_exception('update_groups: must select either open, request, or controlled');
+            }
+
+            // interim munging of jointype
+            if ($group['open']) {
+                $group['jointype'] = 'open';
+            }
+            else if ($group['controlled']) {
+                $group['jointype'] = 'controlled';
+            }
+            else if ($group['request']) {
+                $group['jointype'] = 'request';
+            }
 
             // check that the members exist and we are allowed to administer them
             $members = array($USER->get('id') => 'admin');
@@ -441,9 +513,13 @@ class mahara_group_external extends external_api {
                 'shortname'      => $dbgroup->shortname,
                 'institution'    => $dbgroup->institution,
                 );
-            foreach (array('name', 'description', 'grouptype', 'category',
-                            'jointype', 'usersautoadded', 'public', 'viewnotify') as $attr) {
-                if (isset($group[$attr])) {
+            foreach (array('name', 'description', 'grouptype', 'category', 
+                           'jointype',
+                           'open', 'controlled', 'request', 'submitpages',
+                           'hidemembers', 'invitefriends', 'suggestfriends',
+                           'hidden', 'hidemembersfrommembers',
+                           'usersautoadded', 'public', 'viewnotify') as $attr) {
+                if (isset($group[$attr]) && isset($dbgroup->{$attr})) {
                     $newvalues->{$attr} = ($dbgroup->{$attr} == $group[$attr] ? $dbgroup->{$attr} : $group[$attr]);
                 }
             }
@@ -554,7 +630,16 @@ class mahara_group_external extends external_api {
                         'description'    => $dbgroup->description,
                         'institution'    => $dbgroup->institution,
                         'grouptype'      => $dbgroup->grouptype,
-                        'jointype'       => $dbgroup->jointype,
+//                        'jointype'       => $dbgroup->jointype,
+                        'open'           => ($dbgroup->jointype == 'open' ? 1 : 0),
+                        'controlled'     => ($dbgroup->jointype == 'controlled' ? 1 : 0),
+                        'request'        => ($dbgroup->jointype == 'request' ? 1 : 0),
+                        'submitpages'    => (isset($dbgroup->submitpages) ? $dbgroup->submitpages : 0),
+                        'hidden'         => (isset($dbgroup->hidden) ? $dbgroup->hidden : 0),
+                        'hidemembers'    => (isset($dbgroup->hidemembers) ? $dbgroup->hidemembers : 0),
+                        'invitefriends'  => (isset($dbgroup->invitefriends) ? $dbgroup->invitefriends : 0),
+                        'suggestfriends' => (isset($dbgroup->suggestfriends) ? $dbgroup->suggestfriends : 0),
+                        'hidemembersfrommembers' => (isset($dbgroup->hidemembersfrommembers) ? $dbgroup->hidemembersfrommembers : 0),
                         'category'       => $dbgroup->category,
                         'public'         => $dbgroup->public,
                         'usersautoadded' => $dbgroup->usersautoadded,
@@ -581,7 +666,16 @@ class mahara_group_external extends external_api {
                     'description'     => new external_value(PARAM_NOTAGS, 'Group description'),
                     'institution'     => new external_value(PARAM_TEXT, 'Mahara institution - required for API controlled groups'),
                     'grouptype'       => new external_value(PARAM_ALPHANUMEXT, 'Group type: '.implode(',', $group_types)),
-                    'jointype'        => new external_value(PARAM_ALPHANUMEXT, 'Join type - these are specific to group type - the complete set are: open, invite, request or controlled'),
+//                    'jointype'        => new external_value(PARAM_ALPHANUMEXT, 'Join type - these are specific to group type - the complete set are: open, invite, request or controlled'),
+                    'open'            => new external_value(PARAM_INTEGER, 'Boolean 1/0 open - Users can join the group without approval from group administrators'),
+                    'controlled'      => new external_value(PARAM_INTEGER, 'Boolean 1/0 controlled - Group administrators can add users to the group without their consent, and members cannot choose to leave'),
+                    'request'         => new external_value(PARAM_INTEGER, 'Boolean 1/0 request - Users can send membership requests to group administrators'),
+                    'submitpages'     => new external_value(PARAM_INTEGER, 'Boolean 1/0 submitpages - Members can submit pages to the group'),
+                    'hidden'          => new external_value(PARAM_INTEGER, 'Boolean 1/0 hidden - Hide the group on the "Find Groups" page'),
+                    'hidemembers'     => new external_value(PARAM_INTEGER, 'Boolean 1/0 hidemembers - Hide the group members tab from non-members'),
+                    'invitefriends'   => new external_value(PARAM_INTEGER, 'Boolean 1/0 invitefriends - group members can invite friends'),
+                    'suggestfriends'  => new external_value(PARAM_INTEGER, 'Boolean 1/0 suggestfriends - group members can suggest the group to friends'),
+                    'hidemembersfrommembers' => new external_value(PARAM_INTEGER, 'Boolean 1/0 hidemembersfrommembers - hide group members from group members and only show admin and tutor'),
                     'category'        => new external_value(PARAM_ALPHANUMEXT, 'Group category - the title of an existing group category'),
                     'public'          => new external_value(PARAM_INTEGER, 'Boolean 1/0 public group'),
                     'usersautoadded'  => new external_value(PARAM_INTEGER, 'Boolean 1/0 for auto-adding users'),
