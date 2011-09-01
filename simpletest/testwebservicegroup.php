@@ -68,9 +68,9 @@ class webservice_test extends webservice_test_base {
 
 
         //protocols to test
-//        $this->testrest = true;
+        $this->testrest = true;
         $this->testxmlrpc = true;
-//        $this->testsoap = true;
+        $this->testsoap = true;
 
         ////// READ-ONLY DB tests ////
         $this->readonlytests = array(
