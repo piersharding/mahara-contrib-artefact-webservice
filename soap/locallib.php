@@ -87,6 +87,25 @@ class Zend_Soap_Server_Local extends Zend_Soap_Server {
             try {
                 $soap->handle($request);
             } catch (Exception $e) {
+                //log the error on the web service request
+                global $WEBSERVICE_FUNCTION_RUN, $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_START;
+
+                $time_end = microtime(true);
+                $time_taken = $time_end - $WEBSERVICE_START;
+
+                $log = (object)  array('timelogged' => time(),
+                                       'userid' => $USER->id,
+                                       'externalserviceid' => 0,
+                                       'institution' => $WEBSERVICE_INSTITUTION,
+                                       'protocol' => 'SOAP',
+                                       'auth' => 'unknown',
+                                       'functionname' => ($WEBSERVICE_FUNCTION_RUN ? $WEBSERVICE_FUNCTION_RUN : 'unknown'),
+                                       'timetaken' => ''.$time_taken,
+                                       'uri' => $_SERVER['REQUEST_URI'],
+                                       'info' => 'exception: ' . get_class($e) . ' message: ' . $e->getMessage() . ' debuginfo: ' . (isset($e->debuginfo) ? $e->debuginfo : ''),
+                                       'ip' => getremoteaddr());
+                insert_record('external_services_logs', $log, 'id', true);
+                // carry on with SOAP faulting
                 $fault = $this->fault($e);
                 if (isset($e->debuginfo)) {
                     $fault->faultstring .= ' '.$e->debuginfo;

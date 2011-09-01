@@ -385,6 +385,23 @@ function webservices_user_submit(Pieform $form, $values) {
 
 
 class PluginArtefactWebservice extends PluginArtefact {
+    /*
+     * cron cleanup service for web service logs
+     */
+    public static function get_cron() {
+        return array(
+            (object)array(
+                'callfunction' => 'clean_webservice_logs',
+                'hour'         => '01',
+                'minute'       => '05',
+            ),
+        );
+    }
+
+    public static function clean_webservice_logs() {
+        $LOG_AGE = 8 * 24 * 60 * 60; // 8 days
+        delete_records_select('external_services_logs', 'timelogged < ?', array(time() - $LOG_AGE));
+    }
 
     public static function get_artefact_types() {
         return array(

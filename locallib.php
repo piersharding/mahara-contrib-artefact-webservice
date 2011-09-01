@@ -588,6 +588,8 @@ abstract class webservice_server implements webservice_server_interface {
     /** @property int restrict call to one service id*/
     protected $restricted_serviceid = null;
 
+    /** @property string info to add to logging*/
+    protected $info = null;
     /**
      * Contructor
      * @param integer $authmethod authentication method one of WEBSERVICE_AUTHMETHOD_*
@@ -609,7 +611,7 @@ abstract class webservice_server implements webservice_server_interface {
         global $CFG, $USER, $SESSION, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
-
+            $this->auth = 'USER';
             //we check that authentication plugin is enabled
             //it is only required by simple authentication
             $plugin = get_record('auth_installed', 'name', 'webservice');
@@ -662,10 +664,12 @@ abstract class webservice_server implements webservice_server_interface {
 
         } 
         else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN){
+            $this->auth = 'TOKEN';
             $user = $this->authenticate_by_token(EXTERNAL_TOKEN_PERMANENT);
         } 
         else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_SESSION_TOKEN){
             //OAuth
+            $this->auth = 'OAUTH';
             // special web service login
             require_once(get_config('docroot')."/auth/webservice/lib.php");
 
@@ -685,6 +689,7 @@ abstract class webservice_server implements webservice_server_interface {
 //            error_log('OAuth running with: '.$this->oauth_token_details['user_id'].' service owner: '.$this->oauth_token_details['service_user']);
             $WEBSERVICE_OAUTH_USER = $this->oauth_token_details['service_user'];
         } else {
+            $this->auth = 'OTHER';
             $user = $this->authenticate_by_token(EXTERNAL_TOKEN_EMBEDDED);
         }
 
@@ -768,6 +773,9 @@ abstract class webservice_zend_server extends webservice_server {
      * @return void
      */
     public function run() {
+        global $WEBSERVICE_FUNCTION_RUN, $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_START;
+        $WEBSERVICE_START = microtime(true);
+
         // we will probably need a lot of memory in some functions
         raise_memory_limit(MEMORY_EXTRA);
 
@@ -815,11 +823,13 @@ abstract class webservice_zend_server extends webservice_server {
         // set additional functions
         $this->fixup_functions();
 
-        //log the web service request
-//        ws_add_to_log(0, 'webservice', $this->functionname, '' , getremoteaddr() , 0, $this->userid);
-
         // execute and return response, this sends some headers too
         $response = $this->zend_server->handle($xml);
+        // store the info of the error
+        if (is_object($response) && get_class($response) == 'Zend_XmlRpc_Server_Fault') {
+            $ex = $response->getException();
+            $this->info = 'exception: ' . get_class($ex) . ' message: ' . $ex->getMessage() . ' debuginfo: ' . (isset($ex->debuginfo) ? $ex->debuginfo : '');
+        }
 
         // session cleanup
         $this->session_cleanup();
@@ -831,6 +841,36 @@ abstract class webservice_zend_server extends webservice_server {
 
         // modify the result
         $response = $this->modify_result($response);
+
+        $time_end = microtime(true);
+        $time_taken = $time_end - $WEBSERVICE_START;
+
+        //log the web service request
+        if (!isset($_REQUEST['wsdl']) && !empty($WEBSERVICE_FUNCTION_RUN)) {
+            $class = get_class($this);
+            if (preg_match('/soap/', $class)) {
+                $class = 'SOAP';
+            }
+            else if (preg_match('/xmlrpc/', $class)) {
+                $class = 'XML-RPC';
+            }
+            $log = (object)  array('timelogged' => time(),
+                                   'userid' => $USER->id,
+                                   'externalserviceid' => $this->restricted_serviceid,
+                                   'institution' => $WEBSERVICE_INSTITUTION,
+                                   'protocol' => $class,
+                                   'auth' => $this->auth,
+                                   'functionname' => $WEBSERVICE_FUNCTION_RUN,
+                                   'timetaken' => "".$time_taken,
+                                   'uri' => $_SERVER['REQUEST_URI'],
+                                   'info' => ($this->info ? $this->info : ''),
+                                   'ip' => getremoteaddr());
+            ws_add_to_log(0, 'webservice', $WEBSERVICE_FUNCTION_RUN, '', getremoteaddr() , 0, $this->userid);
+            insert_record('external_services_logs', $log, 'id', true);
+        }
+        else {
+            // this is WSDL or methodsignature for XML-RPC
+        }
 
         //finally send the result
         $this->send_headers();
@@ -1097,6 +1137,8 @@ class '.$classname.' {
 '.$return.'
      */
     public function '.$function->name.'('.$paramanddefaults.') {
+        global $WEBSERVICE_FUNCTION_RUN;
+        $WEBSERVICE_FUNCTION_RUN = \''.$function->name.'\';
 '.$serviceclassmethodbody.'
     }
 ';
@@ -1295,6 +1337,9 @@ abstract class webservice_base_server extends webservice_server {
      */
     public function run() {
 //        global $WEBSERVICE_OAUTH_USER;
+        global $WEBSERVICE_FUNCTION_RUN, $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_START;
+
+        $WEBSERVICE_START = microtime(true);
 
         // we will probably need a lot of memory in some functions
         raise_memory_limit(MEMORY_EXTRA);
@@ -1319,15 +1364,29 @@ abstract class webservice_base_server extends webservice_server {
         // find all needed function info and make sure user may actually execute the function
         $this->load_function_info();
 
-        //log the web service request
-        ws_add_to_log(0, 'webservice', $this->functionname, '' , getremoteaddr() , 0, $this->userid);
-
         // finally, execute the function - any errors are catched by the default exception handler
-
 //        if ($WEBSERVICE_OAUTH_USER) {
 //            error_log('function info: '.var_export($this->function, true));
 //        }
         $this->execute();
+
+        $time_end = microtime(true);
+        $time_taken = $time_end - $WEBSERVICE_START;
+
+        //log the web service request
+        $log = (object)  array('timelogged' => time(),
+                               'userid' => $USER->id,
+                               'externalserviceid' => $this->restricted_serviceid,
+                               'institution' => $WEBSERVICE_INSTITUTION,
+                               'protocol' => 'REST',
+                               'auth' => $this->auth,
+                               'functionname' => $this->functionname,
+                               'timetaken' => "".$time_taken,
+                               'uri' => $_SERVER['REQUEST_URI'],
+                               'info' => '',
+                               'ip' => getremoteaddr());
+//        ws_add_to_log(0, 'webservice', $this->functionname, '', getremoteaddr() , 0, $this->userid);
+        insert_record('external_services_logs', $log, 'id', true);
 
         // send the results back in correct format
         $this->send_response();
@@ -1346,8 +1405,28 @@ abstract class webservice_base_server extends webservice_server {
      * @return void does not return
      */
     public function exception_handler($ex) {
+        global $WEBSERVICE_FUNCTION_RUN, $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_START;
+
         // detect active db transactions, rollback and log as error
         db_rollback();
+
+        $time_end = microtime(true);
+        $time_taken = $time_end - $WEBSERVICE_START;
+                
+        //log the error on the web service request
+        $log = (object)  array('timelogged' => time(),
+                               'userid' => $USER->id,
+                               'externalserviceid' => $this->restricted_serviceid,
+                               'institution' => $WEBSERVICE_INSTITUTION,
+                               'protocol' => 'REST',
+                               'auth' => $this->auth,
+                               'functionname' => ($WEBSERVICE_FUNCTION_RUN ? $WEBSERVICE_FUNCTION_RUN : $this->functionname),
+                               'timetaken' => ''.$time_taken,
+                               'uri' => $_SERVER['REQUEST_URI'],
+                               'info' => 'exception: ' . get_class($ex) . ' message: ' . $ex->getMessage() . ' debuginfo: ' . (isset($ex->debuginfo) ? $ex->debuginfo : ''),
+                               'ip' => getremoteaddr());
+//        ws_add_to_log(0, 'webservice', $WEBSERVICE_FUNCTION_RUN, '', getremoteaddr() , 0, $this->userid);
+        insert_record('external_services_logs', $log, 'id', true);
 
         // some hacks might need a cleanup hook
         $this->session_cleanup($ex);

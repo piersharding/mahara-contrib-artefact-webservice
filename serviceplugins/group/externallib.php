@@ -578,7 +578,7 @@ class mahara_group_external extends external_api {
 
         if (empty($params['groups'])) {
             $params['groups'] = array();
-            $dbgroups =get_records_sql_array('SELECT * FROM {group} WHERE institution = ? AND deleted = 0', array($WEBSERVICE_INSTITUTION));
+            $dbgroups = get_records_sql_array('SELECT * FROM {group} WHERE institution = ? AND deleted = 0', array($WEBSERVICE_INSTITUTION));
             foreach ($dbgroups as $dbgroup) {
                 $params['groups'][] = array('id' => $dbgroup->id);
             }
@@ -590,19 +590,19 @@ class mahara_group_external extends external_api {
             // Make sure that the group doesn't already exist
             if (!empty($group['id'])) {
                 if (!$dbgroup = get_record('group', 'id', $group['id'], 'deleted', 0)) {
-                    throw new invalid_parameter_exception('update_groups: Group does not exist: '.$group['id']);
+                    throw new invalid_parameter_exception('get_groups_by_id: Group does not exist: '.$group['id']);
                 }
             }
             else if (!empty($group['shortname'])) {
                 if (empty($group['institution'])) {
-                    throw new invalid_parameter_exception('update_groups: institution must be set for: '.$group['shortname']);
+                    throw new invalid_parameter_exception('get_groups_by_id: institution must be set for: '.$group['shortname']);
                 }
                 if (!$dbgroup = get_record('group', 'shortname', $group['shortname'], 'institution', $group['institution'], 'deleted', 0)) {
-                    throw new invalid_parameter_exception('update_groups: Group does not exist: '.$group['shortname']);
+                    throw new invalid_parameter_exception('get_groups_by_id: Group does not exist: '.$group['shortname']);
                 }
             }
             else {
-                throw new invalid_parameter_exception('update_groups: no group specified');
+                throw new invalid_parameter_exception('get_groups_by_id: no group specified');
             }
 
             // must have access to the related institution

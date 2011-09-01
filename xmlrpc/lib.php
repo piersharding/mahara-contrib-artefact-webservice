@@ -68,6 +68,7 @@ class webservice_xmlrpc_client extends Zend_XmlRpc_Client {
         $params = array_values($params);
 
         //traditional Zend soap client call (integrating the token into the URL)
+//        error_log('client calling: '.$functionname.'  '. var_export($params, true));
         $result = parent::call($functionname, $params);
 
         return $result;

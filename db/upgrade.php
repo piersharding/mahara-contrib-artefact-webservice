@@ -168,6 +168,29 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         create_table($table);
     }
 
+    if ($oldversion < 2010012707) {
+        // add logging table
+        $table = new XMLDBTable('external_services_logs');
+        $table->addFieldInfo('id', XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null, null, null);
+        $table->addFieldInfo('timelogged', XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, null, null, null, null);
+        $table->addFieldInfo('userid', XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL);
+        $table->addFieldInfo('externalserviceid', XMLDB_TYPE_INTEGER, 10, null, null);
+        $table->addFieldInfo('institution', XMLDB_TYPE_CHAR, 255, null, XMLDB_NOTNULL);
+        $table->addFieldInfo('protocol', XMLDB_TYPE_CHAR, 10, null, XMLDB_NOTNULL);
+        $table->addFieldInfo('auth', XMLDB_TYPE_CHAR, 10, null, XMLDB_NOTNULL);
+        $table->addFieldInfo('functionname', XMLDB_TYPE_CHAR, 200, null, XMLDB_NOTNULL);
+        $table->addFieldInfo('timetaken', XMLDB_TYPE_NUMBER, '10, 5', null, XMLDB_NOTNULL, null, null, null, null);
+        $table->addFieldInfo('uri', XMLDB_TYPE_CHAR, 255, null, null);
+        $table->addFieldInfo('info', XMLDB_TYPE_CHAR, 255, null, null);
+        $table->addFieldInfo('ip', XMLDB_TYPE_CHAR, 45, null, null);
+        $table->addKeyInfo('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->addKeyInfo('userid', XMLDB_KEY_FOREIGN, array('userid'), 'usr', array('id'));
+        $table->addIndexInfo('externalserviceid', XMLDB_INDEX_NOTUNIQUE, array('externalserviceid'));
+        $table->addIndexInfo('institution', XMLDB_INDEX_NOTUNIQUE, array('institution'));
+        $table->addIndexInfo('functionname', XMLDB_INDEX_NOTUNIQUE, array('functionname'));
+        $table->addIndexInfo('timelogged', XMLDB_INDEX_NOTUNIQUE, array('timelogged'));
+        create_table($table);
+    }
     // sweep for webservice updates everytime
     $status = external_upgrade_webservices();
     return $status;

@@ -68,9 +68,9 @@ class webservice_test extends webservice_test_base {
 
 
         //protocols to test
-        $this->testrest = true;
+//        $this->testrest = true;
         $this->testxmlrpc = true;
-        $this->testsoap = true;
+//        $this->testsoap = true;
 
         ////// READ-ONLY DB tests ////
         $this->readonlytests = array(
@@ -110,7 +110,7 @@ class webservice_test extends webservice_test_base {
                 // iterate the token and user auth types
                 foreach (array('server', 'simpleserver') as $type) {
                     $restclient = new webservice_rest_client(get_config('wwwroot')
-                                    . '/artefact/webservice/rest/'.$type.'.php',
+                                    . 'artefact/webservice/rest/'.$type.'.php',
                                      ($type == 'server' ? array('wstoken' => $this->testtoken) :
                                                           array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)), $type);
                     for ($i = 1; $i <= $this->iteration; $i = $i + 1) {
@@ -141,7 +141,7 @@ class webservice_test extends webservice_test_base {
                 // iterate the token and user auth types
                 foreach (array('server', 'simpleserver') as $type) {
                     $xmlrpcclient = new webservice_xmlrpc_client(get_config('wwwroot')
-                                    . '/artefact/webservice/xmlrpc/'.$type.'.php',
+                                    . 'artefact/webservice/xmlrpc/'.$type.'.php',
                                      ($type == 'server' ? array('wstoken' => $this->testtoken) :
                                                           array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)));
 
@@ -172,12 +172,14 @@ class webservice_test extends webservice_test_base {
                 require_once(get_config('docroot') . "/artefact/webservice/soap/lib.php");
 
                 // iterate the token and user auth types
-                foreach (array('server' => array('wstoken' => $this->testtoken),
-                               'simpleserver' => array('wsusername' => $this->testuser, 'wspassword' => $this->testuser),
-                               'simpleserver' => array('wsse' => 1)) as $type => $parms) {
+                foreach (array(array('wstoken' => $this->testtoken, 'type' => 'server'),
+                               array('type' => 'simpleserver', 'wsusername' => $this->testuser, 'wspassword' => $this->testuser),
+                               array('type' => 'simpleserver', 'wsse' => 1)) as $parms) {
+                    $type = $parms['type'];
+                    unset($parms['type']);
                     if (isset($parms['wsse'])) {
                         $soapclient = new webservice_soap_client(get_config('wwwroot')
-                                        . '/artefact/webservice/soap/'.$type.'.php', array('wsservice' => $this->servicename),
+                                        . 'artefact/webservice/soap/'.$type.'.php', array('wsservice' => $this->servicename),
                                             array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
                                                                                            //when function return null
                         $wsseSoapClient = new webservice_soap_client_wsse(array($soapclient, '_doRequest'), $soapclient->wsdl, $soapclient->getOptions());
@@ -186,7 +188,7 @@ class webservice_test extends webservice_test_base {
                     }
                     else {
                         $soapclient = new webservice_soap_client(get_config('wwwroot')
-                                        . '/artefact/webservice/soap/'.$type.'.php', $parms,
+                                        . 'artefact/webservice/soap/'.$type.'.php', $parms,
                                             array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
                                                                                            //when function return null
                     }
