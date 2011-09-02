@@ -77,6 +77,11 @@ $string['wssigenc'] = 'Enble WS-Security (XML-RPC Only)';
 $string['titlewssigenc'] = 'WSSecurity';
 $string['last_access'] = 'Last Access';
 
+$string['webservicelogs'] = 'Web Service Logs';
+$string['nologs'] = 'There are currently no logs available';
+$string['timetaken'] = 'Time taken';
+$string['timelogged'] = 'When';
+
 $string['manageserviceusers'] = 'Manage Service Users';
 $string['sudescription'] = 'Allocate users to Service Groups and Institutions.  User must only be configured once.  All users must have the "webservice" authentication method.  The instance of the "webservice" authentication method of the user must be from an institution that they are a member of.';
 $string['serviceuser'] = 'Service owner';
@@ -113,12 +118,13 @@ $string['testclient'] = 'Web Services test client';
 $string['tokenauth'] = 'Token';
 $string['userauth'] = 'User';
 $string['authtype'] = 'Authentication Type';
+$string['sauthtype'] = 'AuthType';
 $string['enterparameters'] = 'Enter Function Parameters';
 $string['testclientinstructions'] = 'This is the interactive test client facility for Web Services.  This enables you to select a function and then execute it live against the current system.  Please be aware that ANY function you eecute will run for real.';
 $string['executed'] = 'Function call executed';
 $string['invaliduser'] = 'Invalid wsusername/wspassword supplied';
 $string['invalidtoken'] = 'Invalid wstoken supplied';
-$string['topinstructions'] = 'Go <a href="%s">here</a> to access the Web Services interactive test client.';
+$string['topinstructions'] = 'Go <a href="%s">here</a> to access the Web Services logs. <br/>Go <a href="%s">here</a> to access the Web Services interactive test client.';
 
 //oauth server registry
 $string['accesstokens'] = 'OAuth Access Tokens';

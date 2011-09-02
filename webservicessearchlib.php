@@ -107,14 +107,6 @@ function build_webservice_user_search_results($search, $offset, $limit, $sortby,
                                      'template' => 'admin/users/searchinstitutioncolumn.tpl');
     }
 
-/*
-    $cols['select'] = array(
-        'headhtml' => '<a href="" id="selectall">' . get_string('All') . '</a>&nbsp;<a href="" id="selectnone">' . get_string('none') . '</a>',
-        'template' => 'admin/users/searchselectcolumn.tpl',
-        'class'    => 'center nojs-hidden-table-cell',
-    );
-*/
-
     $smarty = smarty_core();
     $smarty->assign_by_ref('results', $results);
     $smarty->assign_by_ref('institutions', $institutions);
@@ -133,3 +125,180 @@ function build_webservice_user_search_results($search, $offset, $limit, $sortby,
     return $smarty->fetch('searchresulttable.tpl');
 }
 
+
+
+function build_webservice_log_search_results($search, $offset, $limit, $sortby, $sortdir) {
+    global $USER;
+
+    $results = get_log_search_results($search, $offset, $limit, $sortby, $sortdir);
+
+    $params = array();
+    foreach ($search as $k => $v) {
+        if (!empty($v)) {
+            $params[] = $k . '=' . $v;
+        }
+    }
+
+    $searchurl = get_config('wwwroot') . 'artefact/webservice/webservicelogs.php?' . join('&', $params) . '&limit=' . $limit;
+
+    $results['pagination'] = build_pagination(array(
+            'id' => 'admin_usersearch_pagination',
+            'class' => 'center',
+            'url' => $searchurl,
+            'count' => $results['count'],
+            'limit' => $limit,
+            'offset' => $offset,
+            'datatable' => 'searchresults',
+            'jsonscript' => 'artefact/webservice/logsearch.json.php',
+    ));
+    $cols = array(
+            'username'      => array('name'     => get_string('userauth', 'artefact.webservice')),
+            'institution'   => array('name'     => get_string('institution'),),
+            'protocol'      => array('name'     => get_string('protocol', 'artefact.webservice')),
+            'auth'          => array('name'     => get_string('authtype', 'artefact.webservice')),
+            'functionname'  => array('name'     => get_string('function', 'artefact.webservice')),
+            'timetaken'     => array('name'     => get_string('timetaken', 'artefact.webservice')),
+            'timelogged'    => array('name'     => get_string('timelogged', 'artefact.webservice')),
+    );
+
+    $institutions = get_records_assoc('institution', '', '', '', 'name,displayname');
+    if (count($institutions) > 1) {
+        $cols['institution'] = array('name'     => get_string('institution'),
+                                     'template' => 'admin/users/searchinstitutioncolumn.tpl');
+    }
+
+    $smarty = smarty_core();
+    $smarty->assign_by_ref('results', $results);
+    $smarty->assign_by_ref('institutions', $institutions);
+    $smarty->assign('USER', $USER);
+    $smarty->assign('searchurl', $searchurl);
+    $smarty->assign('sortby', $sortby);
+    $smarty->assign('sortdir', $sortdir);
+    $smarty->assign('limitoptions', array(10, 50, 100, 200, 500));
+    $smarty->assign('pagebaseurl', $searchurl . '&sortby=' . $sortby . '&sortdir=' . $sortdir);
+    $smarty->assign('cols', $cols);
+    $smarty->assign('ncols', count($cols));
+    return $smarty->fetch('searchresulttable.tpl');
+}
+
+/**
+ * Split a query string into search terms.
+ *
+ * Contents of double-quoted strings are counted as a single term,
+ * '"' can be entered as '\"', '\' as '\\'.
+ */
+function split_query_string($query) {
+    $terms = array();
+
+    // Split string on unescaped double quotes
+    $quotesplit = preg_split('/(?<!\\\)(\")/', $query, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+    $inphrase = false;
+
+    foreach ($quotesplit as $q) {
+        if ($q == '"') {
+            $inphrase = !$inphrase;
+            continue;
+        }
+
+        // Remove escaping
+        $q = preg_replace(array('/\x5C(?!\x5C)/u', '/\x5C\x5C/u'), array('','\\'), $q);
+        if ($inphrase) {
+            if ($trimmed = trim($q)) {
+                $terms[] = $trimmed;
+            }
+        }
+        else {
+            // Split unquoted sequences on spaces
+            foreach (preg_split('/\s+/', $q, -1, PREG_SPLIT_NO_EMPTY) as $word) {
+                if ($word) {
+                    $terms[] = $word;
+                }
+            }
+        }
+    }
+    return $terms;
+}
+
+function get_log_search_results($search, $offset, $limit) {
+    $sort = 'TRUE';
+    if (preg_match('/^[a-zA-Z_0-9"]+$/', $search->sortby)) {
+        $sort = $search->sortby;
+        if (strtoupper($search->sortdir) != 'DESC') {
+            $sort .= ' ASC';
+        }
+        else {
+            $sort .= ' DESC';
+        }
+    }
+    $where = '';
+    $ilike = db_ilike();
+    $wheres = array();
+    if ($search->protocol != 'all') {
+        $wheres[]= ' el.protocol = \''.$search->protocol.'\' ';
+    }
+    if ($search->authtype != 'all') {
+        $wheres[]= ' el.auth = \''.$search->authtype.'\' ';
+    }
+    if ($search->institution != 'all') {
+        $wheres[]= ' el.institution = \''.$search->institution.'\' ';
+    }
+    if ($search->userquery) {
+        $userwheres = array();
+        $terms = split_query_string(strtolower(trim($search->userquery)));
+        foreach ($terms as $term) {
+            foreach (array('u.username', 'u.firstname', 'u.lastname') as $tests) {
+                $userwheres[]= ' '.$tests.' ' . $ilike . ' \'%'.addslashes($term).'%\'';
+            }
+        }
+        if (!empty($userwheres)) {
+            $wheres[]= ' ( '.implode(' OR ', $userwheres) .' ) ';
+        }
+    }
+    if ($search->functionquery) {
+        $functionwheres = array();
+        $terms = split_query_string(strtolower(trim($search->functionquery)));
+        foreach ($terms as $term) {
+                $functionwheres[]= ' el.functionname ' . $ilike . ' \'%'.addslashes($term).'%\'';
+        }
+        if (!empty($functionwheres)) {
+            $wheres[]= ' ( '.implode(' OR ', $functionwheres) .' ) ';
+        }
+    }
+    if (empty($wheres)) {
+        $wheres[]= ' TRUE ';
+    }
+    $where = ' WHERE '.implode(' AND ', $wheres);
+
+    $options = array();
+    $count = count_records_sql('
+            SELECT  COUNT(*)
+            FROM {external_services_logs} el
+            JOIN {usr} u
+            ON el.userid = u.id
+            '.$where, $options);
+    $data = get_records_sql_array('
+            SELECT  u.username,
+                    u.firstname,
+                    u.lastname,
+                    u.email,
+                    el.*
+            FROM {external_services_logs} el
+            JOIN {usr} u
+            ON el.userid = u.id
+            '.$where.' ORDER BY '.$sort.' OFFSET '.$offset, $options);
+
+    $results = array(
+            'count'   => $count,
+            'limit'   => $limit,
+            'offset'  => $offset,
+            'data'    => array(),
+        );
+    if (!empty($data)) {
+        foreach ($data as $row) {
+            $row->timelogged = date("H:i:s  -  d.m.Y", $row->timelogged);
+            $results['data'][] = (array) $row;
+        }
+    }
+    return $results;
+}

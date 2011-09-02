@@ -1167,6 +1167,7 @@ class ArtefactTypeWebservice extends ArtefactType {
         $elements = array(
                 'topinstructions' => array('type' => 'html',
                                            'value' => get_string('topinstructions', 'artefact.webservice',
+                                           get_config('wwwroot') . 'artefact/webservice/webservicelogs.php',
                                            get_config('wwwroot') . 'artefact/webservice/testclient.php')),
                 // fieldset of master switch
                 'webservicesmaster' => array(
