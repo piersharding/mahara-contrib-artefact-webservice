@@ -152,13 +152,16 @@ function build_webservice_log_search_results($search, $offset, $limit, $sortby, 
             'jsonscript' => 'artefact/webservice/logsearch.json.php',
     ));
     $cols = array(
-            'username'      => array('name'     => get_string('userauth', 'artefact.webservice')),
+            'username'        => array('name'     => get_string('userauth', 'artefact.webservice'),
+                               'template' => get_config('docroot').'artefact/webservice/theme/raw/username.tpl',
+                               'class'    => 'center'),
             'institution'   => array('name'     => get_string('institution'),),
             'protocol'      => array('name'     => get_string('protocol', 'artefact.webservice')),
             'auth'          => array('name'     => get_string('authtype', 'artefact.webservice')),
             'functionname'  => array('name'     => get_string('function', 'artefact.webservice')),
             'timetaken'     => array('name'     => get_string('timetaken', 'artefact.webservice')),
             'timelogged'    => array('name'     => get_string('timelogged', 'artefact.webservice')),
+            'info'          => array('name'     => get_string('info', 'artefact.webservice'), 'class' => 'webservicelogs-info'),
     );
 
     $institutions = get_records_assoc('institution', '', '', '', 'name,displayname');

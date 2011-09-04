@@ -5,6 +5,10 @@
  * This file is distributed under the same terms as Mahara itself
  */
 
+.webservicelogs-info {
+	max-width: 150px;
+	color: red;
+}
 
 th {
     white-space: nowrap;

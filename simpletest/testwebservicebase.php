@@ -139,8 +139,8 @@ class webservice_test_base extends UnitTestCase {
             $new_user = new StdClass;
             $new_user->authinstance = $authinstance->id;
             $new_user->username     = $this->testuser;
-            $new_user->firstname    = $this->testuser;
-            $new_user->lastname     = $this->testuser;
+            $new_user->firstname    = 'Firstname';
+            $new_user->lastname     = 'Lastname';
             $new_user->password     = $this->testuser;
             $new_user->email        = $this->testuser.'@hogwarts.school.nz';
             $new_user->passwordchange = 0;

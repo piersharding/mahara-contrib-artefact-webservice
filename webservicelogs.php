@@ -61,7 +61,7 @@ if ($USER->get('admin')) {
     $search->institution_requested = param_alphanum('institution_requested', 'all');
 }
 
-$smarty = smarty(array('artefact/webservice/js/usersearch.js'));
+$smarty = smarty(array('artefact/webservice/js/usersearch.js'), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('search', $search);
 $smarty->assign('alphabet', explode(',', get_string('alphabet')));
 $smarty->assign('cancel', get_string('cancel'));

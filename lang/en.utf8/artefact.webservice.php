@@ -81,6 +81,7 @@ $string['webservicelogs'] = 'Web Service Logs';
 $string['nologs'] = 'There are currently no logs available';
 $string['timetaken'] = 'Time taken';
 $string['timelogged'] = 'When';
+$string['info'] = 'Info';
 
 $string['manageserviceusers'] = 'Manage Service Users';
 $string['sudescription'] = 'Allocate users to Service Groups and Institutions.  User must only be configured once.  All users must have the "webservice" authentication method.  The instance of the "webservice" authentication method of the user must be from an institution that they are a member of.';
