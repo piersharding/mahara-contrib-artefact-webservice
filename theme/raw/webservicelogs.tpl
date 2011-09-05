@@ -40,6 +40,9 @@
             <label>{str tag='function' section='artefact.webservice'}:</label>
             <input type="text" name="functionquery" id="query"{if $search->functionquery} value="{$search->functionquery}"{/if}>
             <button id="query-button" class="btn-search" type="submit">{str tag="go"}</button>
+            <br/>
+            <label>{str tag='errors' section='artefact.webservice'}:</label>
+            <input type="checkbox" name="onlyerrors" id="query"{if $search->onlyerrors} CHECKED{/if}>
         </div>
         <div id="results" class="section">
             {$results|safe}

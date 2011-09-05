@@ -42,11 +42,13 @@ $sortdir = param_alpha('sortdir', 'desc');
 $offset  = param_integer('offset', 0);
 $limit   = param_integer('limit', 10);
 
+error_log('REQUEST: '.var_export($_REQUEST, true));
 $search = (object) array(
     'userquery'      => trim(param_variable('userquery', '')),
     'functionquery'  => trim(param_variable('functionquery', '')),
     'protocol'       => trim(param_alphanum('protocol', 'all')),
     'authtype'       => trim(param_alphanum('authtype', 'all')),
+    'onlyerrors'     => ('on' == param_alphanum('onlyerrors', 'off') ? 1 : 0),
     'sortby'         => $sortby,
     'sortdir'        => $sortdir,
     'offset'         => $offset,

@@ -246,6 +246,9 @@ function get_log_search_results($search, $offset, $limit) {
     if ($search->institution != 'all') {
         $wheres[]= ' el.institution = \''.$search->institution.'\' ';
     }
+    if ($search->onlyerrors == 1) {
+        $wheres[]= ' TRIM(el.info) > \' \' ';
+    }    
     if ($search->userquery) {
         $userwheres = array();
         $terms = split_query_string(strtolower(trim($search->userquery)));
