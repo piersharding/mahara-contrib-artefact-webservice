@@ -678,13 +678,16 @@ abstract class webservice_server implements webservice_server_interface {
             if (empty($user)) {
                 throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
             }
-            // determine the internal auth instance
-            $auth_instance = get_record('auth_instance', 'institution', $this->oauth_token_details['institution'], 'authname', 'webservice');
-            if (empty($auth_instance)) {
+            // check user is member of configured OAuth institution
+            $institutions = array_keys(load_user_institutions($this->oauth_token_details['user_id']));
+            $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
+            $institutions[]= $auth_instance->institution;
+            if (!in_array($this->oauth_token_details['institution'], $institutions)) {
                 throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
             }
+
             // set the global for the web service users defined institution
-            $WEBSERVICE_INSTITUTION = $auth_instance->institution;
+            $WEBSERVICE_INSTITUTION = $this->oauth_token_details['institution'];
             // set the note of the OAuth service owner
 //            error_log('OAuth running with: '.$this->oauth_token_details['user_id'].' service owner: '.$this->oauth_token_details['service_user']);
             $WEBSERVICE_OAUTH_USER = $this->oauth_token_details['service_user'];
