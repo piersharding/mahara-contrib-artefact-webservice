@@ -241,7 +241,6 @@ function activate_webservice_proto_submit(Pieform $form, $values) {
 function webservices_function_groups_submit(Pieform $form, $values) {
     global $SESSION;
 
-    error_log('form: '.var_export($values, true));
     if ($values['action'] == 'add') {
         $service = preg_replace('/[^a-zA-Z0-9_ ]+/', '', $values['service']);
         $service = trim($service);
