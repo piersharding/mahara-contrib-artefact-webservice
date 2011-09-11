@@ -76,6 +76,10 @@ $string['noservices'] = 'No services configured';
 $string['wssigenc'] = 'Enble WS-Security (XML-RPC Only)';
 $string['titlewssigenc'] = 'WSSecurity';
 $string['last_access'] = 'Last Access';
+$string['verifier'] = 'Verifier Token';
+$string['oob'] = 'Out Of Band OAuth Verfication';
+$string['oobinfo'] = 'The following is your verification code that will authorise your external application to have access to the approved data.  Please copy and paste the code into the associated application prompt to continue.';
+$string['instructions'] = 'Instructions';
 
 $string['webservicelogs'] = 'Web Service Logs';
 $string['nologs'] = 'There are currently no logs available';

@@ -686,6 +686,10 @@ class OAuthRequest
                 oauth_nonce="kllo9940pd9333jh",
                 oauth_version="1.0"';
 */		
+	    // fix tollerance of header capitalisation
+	    if (isset($this->headers['authorization'])) {
+	        $this->headers['Authorization'] = $this->headers['authorization'];
+	    }
 		if (isset($this->headers['Authorization']))
 		{
 			$auth = trim($this->headers['Authorization']);

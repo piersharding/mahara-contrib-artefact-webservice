@@ -10,6 +10,10 @@
 	color: red;
 }
 
+tr#authorise_instructions_container th {
+    vertical-align: top;
+}
+
 th {
     white-space: nowrap;
 }
@@ -28,6 +32,11 @@ span.actions {
 
 img#usersearch {
     vertical-align: middle;
+}
+
+
+div#verifier {
+    margin-top: 5px;
 }
 
 .arguments {

@@ -80,12 +80,17 @@ class webservice_rest_server extends webservice_base_server {
         $this->parameters = $_REQUEST;
         if ($OAUTH_SERVER) {
             $oauth_token = null;
+            $headers = OAuthRequestLogger::getAllHeaders();
             try {
                 $oauth_token = $OAUTH_SERVER->verifyExtended();
             }
             catch (OAuthException2 $e) {
                 // let all others fail
 //                error_log('could not get oauth: '.var_export($e, true));
+                if (isset($_REQUEST['oauth_token']) || preg_grep('/oauth/', array_values($headers))) {
+                    $this->auth = 'OAUTH';
+                    throw $e;
+                }
             }
             if ($oauth_token) {
                 $this->authmethod = WEBSERVICE_AUTHMETHOD_SESSION_TOKEN;
@@ -97,12 +102,17 @@ class webservice_rest_server extends webservice_base_server {
                $this->oauth_token_details = $secrets;
 
                // the content type might be different for the OAuth client 
-                $headers = OAuthRequestLogger::getAllHeaders();
-                if ($headers['Content-Type'] == 'application/octet-stream' && $this->format != 'json') {
+                if (isset($headers['Content-Type']) && $headers['Content-Type'] == 'application/octet-stream' && $this->format != 'json') {
                     $body = file_get_contents('php://input');
                     parse_str($body, $parameters);
                     $this->parameters = array_merge($this->parameters, $parameters);
                 }
+            }
+        }
+        // make sure oauth parameters are gone
+        foreach (array('oauth_nonce', 'oauth_timestamp', 'oauth_consumer_key', 'oauth_signature_method', 'oauth_version', 'oauth_token', 'oauth_signature',) as $param) {
+            if (isset($this->parameters[$param])) {
+                unset($this->parameters[$param]);
             }
         }
 
@@ -114,6 +124,7 @@ class webservice_rest_server extends webservice_base_server {
                 $this->parameters = array_merge($this->parameters, $values);
             }
         }
+//        error_log('VALUES AFTER: '.var_export($this->parameters, true));
 
         if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
             $this->username = isset($this->parameters['wsusername']) ? trim($this->parameters['wsusername']) : null;

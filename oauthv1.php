@@ -159,6 +159,37 @@ else if ($_SERVER['PATH_INFO'] == '/authorize') {
         $smarty->display('artefact:webservice:tokenconfig.tpl');    
         exit;
 }
+else if ($_SERVER['PATH_INFO'] == '/oob') {
+        // display the verifier token
+        $verifier = $SESSION->get('oauh_verifier');
+        $SESSION->set('oauh_verifier', null);
+        $form = array(
+            'renderer' => 'table',
+            'type' => 'div',
+            'id' => 'maintable',
+            'name' => 'authorise',
+            'jsform' => false,
+            'successcallback' => 'oauth_authorise_submit',
+            'elements' => array(
+                                'instructions' => array(
+                                    'title'        => get_string('instructions', 'artefact.webservice'),
+                                    'value'        =>  get_string('oobinfo', 'artefact.webservice'),
+                                    'type'         => 'html',
+                                ),
+                                'verifier' => array(
+                                    'title'        => get_string('verifier', 'artefact.webservice'),
+                                    'value'        =>  '<div id="verifier">'.$verifier.'</div>',
+                                    'type'         => 'html',
+                                ),
+            ),
+        );
+        $form = pieform($form);
+        $smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
+        $smarty->assign('form', $form);
+        $smarty->assign('PAGEHEADING', get_string('oob', 'artefact.webservice'));
+        $smarty->display('artefact:webservice:tokenconfig.tpl');
+        exit;
+}
 else {
     header('HTTP/1.1 500 Internal Server Error');
     header('Content-Type: text/plain');
@@ -167,10 +198,12 @@ else {
 
 
 function oauth_authorise_submit(Pieform $form, $values) {
-    global $server, $USER;
+    global $server, $USER, $SESSION;
     try {
         $server->authorizeVerify();
-        $server->authorizeFinish(true, $USER->id);
+        $verifier = $server->authorizeFinish(true, $USER->id);
+        $SESSION->set('oauh_verifier', $verifier);
+        redirect('/artefact/webservice/oauthv1.php/oob');
     }
     catch (OAuthException2 $e) {
         header('HTTP/1.1 400 Bad Request');

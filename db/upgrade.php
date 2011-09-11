@@ -191,6 +191,15 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         $table->addIndexInfo('timelogged', XMLDB_INDEX_NOTUNIQUE, array('timelogged'));
         create_table($table);
     }
+
+    if ($oldversion < 2010012708) {
+        // add logging table
+        $table = new XMLDBTable('external_services_logs');
+        $field = new XMLDBField('info');
+        $field->setAttributes(XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
+        change_field_type($table, $field);
+    }
+
     // sweep for webservice updates everytime
     $status = external_upgrade_webservices();
     return $status;
