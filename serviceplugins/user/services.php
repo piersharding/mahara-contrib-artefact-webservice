@@ -67,6 +67,14 @@ $functions = array(
         'type'        => 'read',
     ),
 
+    'mahara_user_get_my_user' => array(
+        'classname'   => 'mahara_user_external',
+        'methodname'  => 'get_my_user',
+        'classpath'   => 'artefact/webservice/serviceplugins/user',
+        'description' => 'Get the current user details',
+        'type'        => 'read',
+    ),
+
     'mahara_user_delete_users' => array(
         'classname'   => 'mahara_user_external',
         'methodname'  => 'delete_users',
@@ -120,6 +128,11 @@ $services = array(
                 'functions' => array ('mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id'),
                 'enabled'=>1,
                 'restrictedusers'=>1,
+        ),
+        'UserToken User Query' => array(
+                'functions' => array ('mahara_user_get_my_user'),
+                'enabled'=>1,
+                'tokenusers'=>1,
         ),
 );
 

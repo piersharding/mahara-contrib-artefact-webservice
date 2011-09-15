@@ -10,7 +10,8 @@
         <FIELD NAME="name" TYPE="char" LENGTH="200" NOTNULL="true" SEQUENCE="false" PREVIOUS="id" NEXT="enabled"/>
         <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="name" NEXT="restrictedusers"/>
         <!--  FIELD NAME="requiredcapability" TYPE="char" LENGTH="150" NOTNULL="false" SEQUENCE="false" PREVIOUS="enabled" NEXT="restrictedusers"/ -->
-        <FIELD NAME="restrictedusers" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="enabled" NEXT="component"/>
+        <FIELD NAME="restrictedusers" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="enabled" NEXT="tokenusers"/>
+        <FIELD NAME="tokenusers" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="restrictedusers" NEXT="component"/>
         <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" PREVIOUS="restrictedusers" NEXT="timecreated"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="component" NEXT="timemodified"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" PREVIOUS="timecreated"/>

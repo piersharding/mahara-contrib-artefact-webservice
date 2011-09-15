@@ -409,6 +409,12 @@ define('EXTERNAL_TOKEN_EMBEDDED', 1);
  * OAuth Token type for registered applications oauth v1
  */
 define('EXTERNAL_TOKEN_OAUTH1', 2);
+
+/**
+ * OAuth Token type for registered applications oauth v1
+ */
+define('EXTERNAL_TOKEN_USER', 3);
+
 /**
  * The home page should be the site home
  */

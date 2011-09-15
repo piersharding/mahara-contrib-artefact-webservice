@@ -51,6 +51,14 @@ $functions = array(
         'type'        => 'write',
     ),
 
+    'mahara_group_update_group_members' => array(
+        'classname'   => 'mahara_group_external',
+        'methodname'  => 'update_group_members',
+        'classpath'   => 'artefact/webservice/serviceplugins/group',
+        'description' => 'Update group members',
+        'type'        => 'write',
+    ),
+
     'mahara_group_get_groups' => array(
         'classname'   => 'mahara_group_external',
         'methodname'  => 'get_groups',
@@ -79,7 +87,7 @@ $functions = array(
 
 $services = array(
         'Group Provisioning' => array(
-                'functions' => array ('mahara_group_get_groups', 'mahara_group_get_groups_by_id', 'mahara_group_create_groups', 'mahara_group_delete_groups', 'mahara_group_update_groups'),
+                'functions' => array ('mahara_group_get_groups', 'mahara_group_get_groups_by_id', 'mahara_group_create_groups', 'mahara_group_delete_groups', 'mahara_group_update_groups', 'mahara_group_update_group_members'),
                 'enabled'=>1,
         ),
         'Group Query' => array(
@@ -87,7 +95,7 @@ $services = array(
                 'enabled'=>1,
         ),
         'Simple Group Provisioning' => array(
-                'functions' => array ('mahara_group_get_groups', 'mahara_group_get_groups_by_id', 'mahara_group_create_groups', 'mahara_group_delete_groups', 'mahara_group_update_groups'),
+                'functions' => array ('mahara_group_get_groups', 'mahara_group_get_groups_by_id', 'mahara_group_create_groups', 'mahara_group_delete_groups', 'mahara_group_update_groups', 'mahara_group_update_group_members'),
                 'enabled'=>1,
                 'restrictedusers'=>1,
         ),
@@ -97,5 +105,3 @@ $services = array(
                 'restrictedusers'=>1,
         ),
 );
-
-

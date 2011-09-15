@@ -83,6 +83,7 @@ class webservice_test extends webservice_test_base {
             'mahara_group_create_groups' => true,
             'mahara_group_update_groups' => true,
             'mahara_group_delete_groups' => true,
+            'mahara_group_update_group_members' => true,
         );
 
         //performance testing: number of time the web service are run
@@ -415,7 +416,7 @@ class webservice_test extends webservice_test_base {
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
         $group1->category       = $category->id;
-        $group1->jointype       = 'open';
+//        $group1->jointype       = 'open';
         $group1->open           = 1;
         $group1->request        = 0;
         $group1->controlled     = 0;
@@ -428,7 +429,7 @@ class webservice_test extends webservice_test_base {
         $group1->public         = 0;
         $group1->usersautoadded = 0;
 //        $group1->viewnotify     = 0;
-        $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'), array('id' => $dbuser2->id, 'role' => 'admin'));
+        $group1->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
 
         //a small group: group2
         $group2 = new stdClass();
@@ -438,7 +439,7 @@ class webservice_test extends webservice_test_base {
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
         $group2->category       = $category->id;
-        $group2->jointype       = 'open';
+//        $group2->jointype       = 'open';
         $group2->open           = 1;
         $group2->request        = 0;
         $group2->controlled     = 0;
@@ -451,7 +452,7 @@ class webservice_test extends webservice_test_base {
         $group2->public         = 0;
         $group2->usersautoadded = 0;
 //        $group2->viewnotify     = 0;
-        $group2->members        = array(array('username' => $dbuser1->username, 'role' => 'admin'), array('username' => $dbuser2->username, 'role' => 'admin'));
+        $group2->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
 
         //do not run the test if group1 or group2 already exists
         foreach (array($group1->shortname, $group2->shortname) as $shortname) {
@@ -503,7 +504,7 @@ class webservice_test extends webservice_test_base {
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
         $group1->category       = $category->id;
-        $group1->jointype       = 'invite';
+//        $group1->jointype       = 'invite';
         $group1->open           = 1;
         $group1->request        = 0;
         $group1->controlled     = 0;
@@ -516,7 +517,7 @@ class webservice_test extends webservice_test_base {
         $group1->public         = 0;
         $group1->usersautoadded = 0;
 //        $group1->viewnotify     = 0;
-        $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'), array('id' => $dbuser2->id, 'role' => 'admin'));
+        $group1->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
 
         //a small group: group2
         $group2 = new stdClass();
@@ -526,7 +527,7 @@ class webservice_test extends webservice_test_base {
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
         $group2->category       = $category->id;
-        $group2->jointype       = 'invite';
+//        $group2->jointype       = 'invite';
         $group2->open           = 1;
         $group2->request        = 0;
         $group2->controlled     = 0;
@@ -539,7 +540,7 @@ class webservice_test extends webservice_test_base {
         $group2->public         = 0;
         $group2->usersautoadded = 0;
 //        $group2->viewnotify     = 0;
-        $group2->members        = array(array('username' => $dbuser1->username, 'role' => 'admin'), array('username' => $dbuser2->username, 'role' => 'admin'));
+        $group2->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
 
         //do not run the test if group1 or group2 already exists
         foreach (array($group1->shortname, $group2->shortname) as $shortname) {
@@ -580,7 +581,7 @@ class webservice_test extends webservice_test_base {
         $group1->public         = 0;
         $group1->usersautoadded = 0;
 //        $group1->viewnotify     = 0;
-        $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'));
+        $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'), array('id' => $dbuser2->id, 'role' => 'admin'));
 
         //a small group: group2
         $group2 = new stdClass();
@@ -679,4 +680,112 @@ class webservice_test extends webservice_test_base {
         $this->assertEqual(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
     }
 
+
+
+    // update user test
+    function mahara_group_update_group_members($client) {
+        global $DB, $CFG;
+
+        error_log('updating group members');
+
+        //Set test data
+        $dbuser1 = $this->create_user1_for_update();
+        $dbuser2 = $this->create_user2_for_update();
+
+        $groupcategories = get_records_array('group_category','','','displayorder');
+        $category = array_shift($groupcategories);
+        //Test data
+        //a full group: group1
+        $group1 = new stdClass();
+        $group1->name           = 'The test group 1 - create';
+        $group1->shortname      = 'testgroupshortname1';
+        $group1->description    = 'a description for test group 1';
+        $group1->institution    = 'mahara';
+        $group1->grouptype      = 'standard';
+        $group1->category       = $category->id;
+//        $group1->jointype       = 'invite';
+        $group1->open           = 1;
+        $group1->request        = 0;
+        $group1->controlled     = 0;
+        $group1->submitpages    = 0;
+        $group1->hidemembers    = 0;
+        $group1->invitefriends  = 0;
+        $group1->suggestfriends = 0;
+        $group1->hidden         = 0;
+        $group1->hidemembersfrommembers = 0;
+        $group1->public         = 0;
+        $group1->usersautoadded = 0;
+//        $group1->viewnotify     = 0;
+        $group1->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
+
+        //a small group: group2
+        $group2 = new stdClass();
+        $group2->shortname      = 'testgroupshortname2';
+        $group2->name           = 'The test group 2 - create';
+        $group2->description    = 'a description for test group 2';
+        $group2->institution    = 'mahara';
+        $group2->grouptype      = 'standard';
+        $group2->category       = $category->id;
+//        $group2->jointype       = 'invite';
+        $group2->open           = 1;
+        $group2->request        = 0;
+        $group2->controlled     = 0;
+        $group2->submitpages    = 0;
+        $group2->hidemembers    = 0;
+        $group2->invitefriends  = 0;
+        $group2->suggestfriends = 0;
+        $group2->hidden         = 0;
+        $group2->hidemembersfrommembers = 0;
+        $group2->public         = 0;
+        $group2->usersautoadded = 0;
+//        $group2->viewnotify     = 0;
+        $group2->members        = array($dbuser1->id => 'admin');
+
+        //do not run the test if group1 or group2 already exists
+        foreach (array($group1->shortname, $group2->shortname) as $shortname) {
+            $existinggroup = get_record('group', 'shortname', $shortname, 'institution', 'mahara');
+            if (!empty($existinggroup)) {
+                group_delete($existinggroup->id);
+            }
+        }
+
+        // setup test groups
+        $groupid1 = group_create((array) $group1);
+        $groupid2 = group_create((array) $group2);
+        $this->created_groups[]= $groupid1;
+        $this->created_groups[]= $groupid2;
+
+        $dbgroup1 = get_record('group', 'shortname', $group1->shortname, 'institution', 'mahara');
+        $dbgroup2 = get_record('group', 'shortname', $group2->shortname, 'institution', 'mahara');
+
+        //update the test data
+        $group1 = new stdClass();
+        $group1->id             = $dbgroup1->id;
+        $group1->shortname      = 'testgroupshortname1';
+        $group1->institution    = 'mahara';
+        $group1->members        = array(array('id' => $dbuser1->id, 'action' => 'remove'));
+
+        //a small group: group2
+        $group2 = new stdClass();
+//        $group2->id             = $dbgroup2->id;
+        $group2->shortname      = 'testgroupshortname2';
+        $group2->institution    = 'mahara';
+        $group2->members        = array(array('username' => $dbuser2->username, 'role' => 'admin', 'action' => 'add'));
+        $groups = array($group1, $group2);
+
+        //update the users by web service
+        $function = 'mahara_group_update_group_members';
+        $params = array('groups' => $groups);
+        $client->call($function, $params);
+
+        $dbgroup1 = get_record('group', 'id', $groupid1);
+        $dbgroupmembers1 = get_records_array('group_member', 'group', $dbgroup1->id);
+
+        $dbgroup2 = get_record('group', 'id', $groupid2);
+        $dbgroupmembers2 = get_records_array('group_member', 'group', $dbgroup2->id);
+
+        //compare DB group with the test data
+        $this->assertEqual(count($dbgroupmembers1), 1); // current user added as admin
+        $this->assertEqual(count($dbgroupmembers2), 2); // current user added as admin
+    }
 }

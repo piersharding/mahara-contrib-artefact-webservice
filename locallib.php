@@ -104,7 +104,9 @@ require_once(get_config('docroot').'/artefact/webservice/libs/weblib.php');
 
 define('WEBSERVICE_AUTHMETHOD_USERNAME', 0);
 define('WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN', 1);
-define('WEBSERVICE_AUTHMETHOD_SESSION_TOKEN', 2);
+define('WEBSERVICE_AUTHMETHOD_SESSION_TOKEN', 2); // legacy from Moodle
+define('WEBSERVICE_AUTHMETHOD_OAUTH_TOKEN', 3);
+define('WEBSERVICE_AUTHMETHOD_USER_TOKEN', 4);
 
 /// Debug levels ///
 /** no warnings at all */
@@ -667,7 +669,7 @@ abstract class webservice_server implements webservice_server_interface {
             $this->auth = 'TOKEN';
             $user = $this->authenticate_by_token(EXTERNAL_TOKEN_PERMANENT);
         } 
-        else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_SESSION_TOKEN){
+        else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_OAUTH_TOKEN){
             //OAuth
             $this->auth = 'OAUTH';
             // special web service login
@@ -682,8 +684,9 @@ abstract class webservice_server implements webservice_server_interface {
             $institutions = array_keys(load_user_institutions($this->oauth_token_details['user_id']));
             $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
             $institutions[]= $auth_instance->institution;
+//            error_log('institutions: '.var_export($institutions, true));
             if (!in_array($this->oauth_token_details['institution'], $institutions)) {
-                throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
+                throw new webservice_access_exception(get_string('institutiondenied', 'artefact.webservice'));
             }
 
             // set the global for the web service users defined institution
@@ -693,7 +696,7 @@ abstract class webservice_server implements webservice_server_interface {
             $WEBSERVICE_OAUTH_USER = $this->oauth_token_details['service_user'];
         } else {
             $this->auth = 'OTHER';
-            $user = $this->authenticate_by_token(EXTERNAL_TOKEN_EMBEDDED);
+            $user = $this->authenticate_by_token(EXTERNAL_TOKEN_USER);
         }
 
         // now fake user login, the session is completely empty too
@@ -703,10 +706,20 @@ abstract class webservice_server implements webservice_server_interface {
     protected function authenticate_by_token($tokentype){
         global $WEBSERVICE_INSTITUTION;
 
-        if (!$token = get_record('external_tokens', 'token', $this->token, 'tokentype', $tokentype)) {
+        if ($tokentype == EXTERNAL_TOKEN_PERMANENT || $tokentype == EXTERNAL_TOKEN_USER) {
+            $token = get_record('external_tokens', 'token', $this->token);
+        }
+        else {
+            $token = get_record('external_tokens', 'token', $this->token, 'tokentype', $tokentype);
+        }
+        if (!$token) {
             // log failed login attempts
-            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice').": ".$this->token. " - ".getremoteaddr() , 0);
+            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), ''.$tokentype , get_string('failedtolog', 'artefact.webservice').": ".$this->token. " - ".getremoteaddr() , 0);
             throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
+        }
+        // tidy up the uath method - this could be user token or session token
+        if ($token->tokentype != EXTERNAL_TOKEN_PERMANENT) {
+            $this->auth = 'OTHER';
         }
 
         if ($token->validuntil and $token->validuntil < time()) {
@@ -1493,14 +1506,14 @@ abstract class webservice_base_server extends webservice_server {
 
         $sql = "SELECT s.*, NULL AS iprestriction
                   FROM {external_services} s
-                  JOIN {external_services_functions} sf ON (sf.externalserviceid = s.id AND s.restrictedusers = 0 AND sf.functionname = '".$function->name."')
+                  JOIN {external_services_functions} sf ON (sf.externalserviceid = s.id AND (s.restrictedusers = 0 OR s.tokenusers = 1) AND sf.functionname = '".addslashes($function->name)."')
                  WHERE s.enabled = 1 $wscond1
 
                  UNION
 
                 SELECT s.*, su.iprestriction
                   FROM {external_services} s
-                  JOIN {external_services_functions} sf ON (sf.externalserviceid = s.id AND s.restrictedusers = 1 AND sf.functionname = '".$function->name."')
+                  JOIN {external_services_functions} sf ON (sf.externalserviceid = s.id AND s.restrictedusers = 1 AND sf.functionname = '".addslashes($function->name)."')
                   JOIN {external_services_users} su ON (su.externalserviceid = s.id AND su.userid = ".$USER->id.")
                  WHERE s.enabled = 1 AND su.validuntil IS NULL OR su.validuntil < ".time()." $wscond2";
 

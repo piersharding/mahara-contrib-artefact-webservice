@@ -93,7 +93,7 @@ class webservice_rest_server extends webservice_base_server {
                 }
             }
             if ($oauth_token) {
-                $this->authmethod = WEBSERVICE_AUTHMETHOD_SESSION_TOKEN;
+                $this->authmethod = WEBSERVICE_AUTHMETHOD_OAUTH_TOKEN;
                 $token = $OAUTH_SERVER->getParam('oauth_token');
                 $store = OAuthStore::instance();
                 $secrets = $store->getSecretsForVerify($oauth_token['consumer_key'], 
@@ -133,17 +133,14 @@ class webservice_rest_server extends webservice_base_server {
             $this->password = isset($this->parameters['wspassword']) ? trim($this->parameters['wspassword']) : null;
             unset($this->parameters['wspassword']);
 
-            $this->functionname = isset($this->parameters['wsfunction']) ? trim($this->parameters['wsfunction']) : null;
-            unset($this->parameters['wsfunction']);
         }
-        else {
-            // is this our token based auth or OAuth?
+        else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN){
+            // is some other form of token - what kind is it?
             $this->token = isset($this->parameters['wstoken']) ? trim($this->parameters['wstoken']) : null;
             unset($this->parameters['wstoken']);
-
-            $this->functionname = isset($this->parameters['wsfunction']) ? trim($this->parameters['wsfunction']) : null;
-            unset($this->parameters['wsfunction']);
         }
+        $this->functionname = isset($this->parameters['wsfunction']) ? trim($this->parameters['wsfunction']) : null;
+        unset($this->parameters['wsfunction']);
     }
 
     /**

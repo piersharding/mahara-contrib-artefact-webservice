@@ -505,9 +505,9 @@ function external_generate_token($tokentype, $serviceorid, $userid, $institution
     $newtoken->externalserviceid = $service->id;
     $newtoken->tokentype = $tokentype;
     $newtoken->userid = $userid;
-    if ($tokentype == EXTERNAL_TOKEN_EMBEDDED){
-        $newtoken->sid = session_id();
-    }
+//    if ($tokentype == EXTERNAL_TOKEN_EMBEDDED){
+//        $newtoken->sid = session_id();
+//    }
 
     $newtoken->institution = $institution;
     $newtoken->creatorid = $USER->id;

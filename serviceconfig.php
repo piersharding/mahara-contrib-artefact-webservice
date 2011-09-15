@@ -42,6 +42,7 @@ if (empty($dbservice)) {
 }
 $enabled = $dbservice->enabled;
 $restrictedusers = ($dbservice->restrictedusers <= 0 ? 0 : 1);
+$tokenusers = ($dbservice->tokenusers <= 0 ? 0 : 1);
 
 $plugintype = 'artefact';
 $pluginname = 'webservice';
@@ -174,6 +175,32 @@ $elements = array(
                                                 )
                                             ),
                                     ),
+                                          'funnylittleform3' => array(
+                                                         'type' => 'html',
+                                                         'value' =>
+                                                              pieform(
+                                                                      array(
+                                                                             'name'            => 'activate_webservices_tokenusers',
+                                                                             'renderer'        => 'oneline',
+                                                                             'elementclasses'  => false,
+                                                                             'successcallback' => 'serviceconfig_submit',
+                                                                             'class'           => 'oneline inline',
+                                                                             'jsform'          => false,
+                                                                             'action'          => get_config('wwwroot') . 'artefact/webservice/serviceconfig.php',
+                                                                             'elements' => array(
+                                                                                 'label'      => array('type' => 'html', 'value' => get_string('fortokenusers', 'artefact.webservice'),),
+                                                                                 'service'    => array('type' => 'hidden', 'value' => $dbservice->id),
+                                                                                 'tokenusers' => array('type' => 'hidden', 'value' => $tokenusers),
+                                                                                 'submit'     => array(
+                                                                                     'type'  => 'submit',
+                                                                                     'class' => 'linkbtn',
+                                                                                     'value' => $tokenusers ? get_string('disable') : get_string('enable')
+                                                                                 ),
+                                                                                 'state'     => array('type' => 'html', 'value' => '['.($tokenusers ? get_string('enabled', 'artefact.webservice') : get_string('disabled', 'artefact.webservice')).']',),
+                                                    ),
+                                                )
+                                            ),
+                                    ),
                             ),
                             'collapsible' => false,
                             'collapsed'   => false,
@@ -263,6 +290,12 @@ function serviceconfig_submit(Pieform $form, $values) {
     if (isset($values['enabled'])) {
         $enabled = $values['enabled'] ? 0 : 1;
         $dbservice->enabled = $enabled;
+        update_record('external_services', $dbservice);
+        $SESSION->add_ok_msg(get_string('configsaved', 'artefact.webservice'));
+    }
+    else if (isset($values['tokenusers'])) {
+        $tokenusers = $values['tokenusers'] ? 0 : 1;
+        $dbservice->tokenusers = $tokenusers;
         update_record('external_services', $dbservice);
         $SESSION->add_ok_msg(get_string('configsaved', 'artefact.webservice'));
     }

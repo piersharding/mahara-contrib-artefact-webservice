@@ -36,9 +36,9 @@ require_once($CFG->docroot.'/lib/group.php');
 
 global $WEBSERVICE_OAUTH_USER;
 
-if ($WEBSERVICE_OAUTH_USER) {
-    throw new Exception('Not enabled for OAuth');
-}
+//if ($WEBSERVICE_OAUTH_USER) {
+//    throw new Exception('Not enabled for OAuth');
+//}
 
 /**
  * Adds a member to a group.
@@ -191,17 +191,6 @@ class mahara_group_external extends external_api {
                 throw new invalid_parameter_exception('create_groups: must select either open, request, or controlled');
             }
 
-            // interim munging of jointype
-            if ($group['open']) {
-                $group['jointype'] = 'open';
-            }
-            else if ($group['controlled']) {
-                $group['jointype'] = 'controlled';
-            }
-            else if ($group['request']) {
-                $group['jointype'] = 'request';
-            }
-
             // check that the members exist and we are allowed to administer them
             $members = array($USER->get('id') => 'admin');
             foreach ($group['members'] as $member) {
@@ -239,7 +228,6 @@ class mahara_group_external extends external_api {
                 'institution'    => (isset($group['institution']) ? $group['institution'] : null),
                 'grouptype'      => $group['grouptype'],
                 'category'       => $group['category'],
-                'jointype'       => $group['jointype'],
                 'open'           => $group['open'],
                 'controlled'     => $group['controlled'],
                 'request'        => $group['request'],
@@ -466,17 +454,6 @@ class mahara_group_external extends external_api {
                 throw new invalid_parameter_exception('update_groups: must select either open, request, or controlled');
             }
 
-            // interim munging of jointype
-            if ($group['open']) {
-                $group['jointype'] = 'open';
-            }
-            else if ($group['controlled']) {
-                $group['jointype'] = 'controlled';
-            }
-            else if ($group['request']) {
-                $group['jointype'] = 'request';
-            }
-
             // check that the members exist and we are allowed to administer them
             $members = array($USER->get('id') => 'admin');
             foreach ($group['members'] as $member) {
@@ -514,13 +491,13 @@ class mahara_group_external extends external_api {
                 'institution'    => $dbgroup->institution,
                 );
             foreach (array('name', 'description', 'grouptype', 'category', 
-                           'jointype',
+//                           'jointype',
                            'open', 'controlled', 'request', 'submitpages',
                            'hidemembers', 'invitefriends', 'suggestfriends',
                            'hidden', 'hidemembersfrommembers',
                            'usersautoadded', 'public', 'viewnotify') as $attr) {
-                if (isset($group[$attr]) && isset($dbgroup->{$attr})) {
-                    $newvalues->{$attr} = ($dbgroup->{$attr} == $group[$attr] ? $dbgroup->{$attr} : $group[$attr]);
+                if (isset($group[$attr])) {
+                    $newvalues->{$attr} = $group[$attr];
                 }
             }
             group_update($newvalues);
@@ -539,6 +516,157 @@ class mahara_group_external extends external_api {
      * @return external_description
      */
     public static function update_groups_returns() {
+        return null;
+    }
+
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function update_group_members_parameters() {
+
+        return new external_function_parameters(
+            array(
+                'groups' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            'id'              => new external_value(PARAM_NUMBER, 'ID of the group', VALUE_OPTIONAL),
+                            'name'            => new external_value(PARAM_RAW, 'Group name', VALUE_OPTIONAL),
+                            'shortname'       => new external_value(PARAM_RAW, 'Group shortname for API only controlled groups', VALUE_OPTIONAL),
+                            'institution'     => new external_value(PARAM_TEXT, 'Mahara institution - required for API controlled groups', VALUE_OPTIONAL),
+                            'members'         => new external_multiple_structure(
+                                                            new external_single_structure(
+                                                                array(
+                                                                    'id' => new external_value(PARAM_NUMBER, 'member user Id', VALUE_OPTIONAL),
+                                                                    'username' => new external_value(PARAM_RAW, 'member username', VALUE_OPTIONAL),
+                                                                    'role' => new external_value(PARAM_ALPHANUMEXT, 'member role: admin, ', VALUE_OPTIONAL),
+                                                                    'action' => new external_value(PARAM_ALPHANUMEXT, 'member action: add, or remove')
+                                                                ), 'Group membership actions')
+                                                        ),
+                            )
+                    )
+                )
+            )
+        );
+    }
+
+
+    /**
+     * update one or more sets of group membership
+     *
+     * @param array $users
+     */
+    public static function update_group_members($groups) {
+        global $USER, $WEBSERVICE_INSTITUTION;
+
+        // Do basic automatic PARAM checks on incoming data, using params description
+        $params = self::validate_parameters(self::update_group_members_parameters(), array('groups'=>$groups));
+
+        db_begin();
+        $groupids = array();
+        foreach ($params['groups'] as $group) {
+            // Make sure that the group doesn't already exist
+            if (!empty($group['id'])) {
+                if (!$dbgroup = get_record('group', 'id', $group['id'], 'deleted', 0)) {
+                    throw new invalid_parameter_exception('update_group_members: Group does not exist: '.$group['id']);
+                }
+            }
+//            else if (!empty($group['name'])) {
+//                if (!$dbgroup = get_record('group', 'name', $group['name'], 'deleted', 0)) {
+//                    throw new invalid_parameter_exception('update_groups: Group does not exist: '.$group['name']);
+//                }
+//            }
+            else if (!empty($group['shortname'])) {
+                if (empty($group['institution'])) {
+                    throw new invalid_parameter_exception('update_group_members: institution must be set for: '.$group['shortname']);
+                }
+                if (!$dbgroup = get_record('group', 'shortname', $group['shortname'], 'deleted', 0)) {
+                    throw new invalid_parameter_exception('update_group_members: Group does not exist: '.$group['shortname']);
+                }
+            }
+            else {
+                throw new invalid_parameter_exception('update_group_members: no group specified');
+            }
+
+            // are we allowed to delete for this institution
+            if ($WEBSERVICE_INSTITUTION != $dbgroup->institution) {
+                throw new invalid_parameter_exception('update_group_members: access denied for institution: '.$group['institution'].' on group: '.$group['name']);
+            }
+            if (!$USER->can_edit_institution($dbgroup->institution)) {
+                throw new invalid_parameter_exception('update_groups: access denied for institution: '.$group['institution'].' on group: '.$group['shortname']);
+            }
+            // get old members
+            $oldmembers = get_records_array('group_member', 'group', $dbgroup->id, '', 'member,role');
+            $existingmembers = array();
+            if (!empty($oldmembers)) {
+                foreach ($oldmembers as $member) {
+                    $existingmembers[$member->member] = $member->role;
+                }
+            }
+
+            // check that the members exist and we are allowed to administer them
+            foreach ($group['members'] as $member) {
+                if (!empty($member['id'])) {
+                    $dbuser = get_record('usr', 'id', $member['id'], 'deleted', 0);
+                }
+                else if (!empty($member['username'])) {
+                    $dbuser = get_record('usr', 'username', $member['username'], 'deleted', 0);
+                }
+                else {
+                    throw new invalid_parameter_exception('update_group_members: no username or id for member - group: '.$group['name']);
+                }
+                if (empty($dbuser)) {
+                    throw new invalid_parameter_exception('update_group_members: invalid user: '.$member['id'].'/'.$member['username'].' - group: '.$group['name']);
+                }
+
+                // Make sure auth is valid
+                if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
+                    throw new invalid_parameter_exception('update_group_members: Invalid authentication type: '.$dbuser->authinstance);
+                }
+
+                // check the institution is allowed
+                // basic check authorisation to edit for the current institution of the user
+                if (!$USER->can_edit_institution($authinstance->institution)) {
+                    throw new invalid_parameter_exception('update_group_members: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->username);
+                }
+
+                // determine the changes to the group membership
+                if ($member['action'] == 'remove') {
+                    if (isset($existingmembers[$dbuser->id])) {
+                        unset($existingmembers[$dbuser->id]);
+                    }
+                    else {
+                        throw new invalid_parameter_exception('update_group_members: user does not exist in group for remove: '.$member['id'].'/'.$member['username'].' - group: '.$group['name']);
+                    }
+                }
+                else if ($member['action'] == 'add') {
+                    if (isset($existingmembers[$dbuser->id])) {
+                        throw new invalid_parameter_exception('update_group_members: user should not exist in group for add: '.$member['id'].'/'.$member['username'].' - group: '.$group['name']);
+                    }
+                    else {
+                        $existingmembers[$dbuser->id] = $member['role'];
+                    }
+                }
+                else {
+                    throw new invalid_parameter_exception('update_group_members: invalid action('.$member['action'].') for user: '.$member['id'].'/'.$member['username'].' - group: '.$group['name']);
+                }
+            }
+
+            // now update the group membership
+            group_update_members($dbgroup->id, $existingmembers);
+
+        }
+        db_commit();
+
+        return null;
+    }
+
+   /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function update_group_members_returns() {
         return null;
     }
 
@@ -579,8 +707,10 @@ class mahara_group_external extends external_api {
         if (empty($params['groups'])) {
             $params['groups'] = array();
             $dbgroups = get_records_sql_array('SELECT * FROM {group} WHERE institution = ? AND deleted = 0', array($WEBSERVICE_INSTITUTION));
-            foreach ($dbgroups as $dbgroup) {
-                $params['groups'][] = array('id' => $dbgroup->id);
+            if ($dbgroups) {
+                foreach ($dbgroups as $dbgroup) {
+                    $params['groups'][] = array('id' => $dbgroup->id);
+                }
             }
         }
 

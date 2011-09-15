@@ -475,6 +475,25 @@ class mahara_user_external extends external_api {
         }
     }
 
+
+    /**
+     * Check that a user is in the institution
+     *
+     * @param array $user array('id' => .., 'username' => ..)
+     * @param string $institution
+     * @return boolean true on yes
+     */
+    private static function in_institution($user, $institution) {
+        $institutions = array_keys(load_user_institutions($user->id));
+        $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
+        $institutions[]= $auth_instance->institution;
+        if (!in_array($institution, $institutions)) {
+            return false;
+        }
+        return true;
+    }
+
+
     /**
      * Get user information
      *
@@ -482,7 +501,7 @@ class mahara_user_external extends external_api {
      * @return array An array of arrays describing users
      */
     public static function get_users_by_id($users) {
-        global $CFG, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
+        global $CFG, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER, $USER;
 
         $params = self::validate_parameters(self::get_users_by_id_parameters(),
                 array('users'=>$users));
@@ -491,12 +510,16 @@ class mahara_user_external extends external_api {
         if (empty($params['users'])) {
             $params['users'] = array();
             $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u INNER JOIN {auth_instance} ai ON u.authinstance = ai.id WHERE u.deleted = 0 AND ai.institution = \''.$WEBSERVICE_INSTITUTION.'\'', null);
-            foreach ($dbusers as $dbuser) {
-                // eliminate bad uid
-                if ($dbuser->id == 0) {
-                    continue;
+//            $dbusers2 = (array)get_records_sql_array('SELECT i.usr AS id FROM {usr_institution} i INNER JOIN {usr} u ON i.usr = u.id WHERE u.deleted = 0 AND i.institution = \''.$WEBSERVICE_INSTITUTION.'\'', null);
+//            $dbusers = array_merge($dbusers1, $dbusers2);
+            if ($dbusers) {
+                foreach ($dbusers as $dbuser) {
+                    // eliminate bad uid
+                    if ($dbuser->id == 0) {
+                        continue;
+                    }
+                    $params['users'][] = array('id' => $dbuser->id);
                 }
-                $params['users'][] = array('id' => $dbuser->id);
             }
         }
 
@@ -511,10 +534,11 @@ class mahara_user_external extends external_api {
         foreach ($users as $user) {
             if (empty($user->deleted)) {
                 // check the institution
-                $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
-                if (empty($auth_instance) || $WEBSERVICE_INSTITUTION != $auth_instance->institution) {
+                if (!self::in_institution($user, $WEBSERVICE_INSTITUTION)) {
                     throw new invalid_parameter_exception('Not authorised for access to user id: '.$user->id.' institution: '.$auth_instance->institution);
                 }
+
+                $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
 
                 $userarray = array();
                //we want to return an array not an object
@@ -620,6 +644,73 @@ class mahara_user_external extends external_api {
      */
     public static function get_users_returns() {
         return self::get_users_by_id_returns();
+    }
+
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function get_my_user_parameters() {
+        return new external_function_parameters(array());
+    }
+
+    /**
+     * Get my user information
+     *
+     * @param array $userids  array of user ids
+     * @return array An array of arrays describing users
+     */
+    public static function get_my_user() {
+        global $USER;
+        return array_shift(self::get_users_by_id(array(array('id' => $USER->id))));
+    }
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function get_my_user_returns() {
+        return new external_single_structure(
+                 array(
+                    'id'              => new external_value(PARAM_NUMBER, 'ID of the user'),
+                    'username'        => new external_value(PARAM_RAW, 'Username policy is defined in Mahara security config'),
+                    'firstname'       => new external_value(PARAM_NOTAGS, 'The first name(s) of the user'),
+                    'lastname'        => new external_value(PARAM_NOTAGS, 'The family name of the user'),
+                    'email'           => new external_value(PARAM_TEXT, 'An email address - allow email as root@localhost'),
+                    'auth'            => new external_value(PARAM_SAFEDIR, 'Auth plugins include manual, ldap, imap, etc'),
+                    'studentid'       => new external_value(PARAM_RAW, 'An arbitrary ID code number perhaps from the institution'),
+                    'institution'     => new external_value(PARAM_SAFEDIR, 'Mahara institution'),
+                    'preferredname'   => new external_value(PARAM_RAW, 'User preferred name'),
+                    'introduction'    => new external_value(PARAM_RAW, 'User introduction'),
+                    'country'         => new external_value(PARAM_ALPHA, 'Home country code of the user, such as AU or CZ'),
+                    'city'            => new external_value(PARAM_NOTAGS, 'Home city of the user'),
+                    'address'         => new external_value(PARAM_RAW, 'Introduction text'),
+                    'town'            => new external_value(PARAM_NOTAGS, 'Home town of the user'),
+                    'homenumber'      => new external_value(PARAM_RAW, 'Home phone number'),
+                    'businessnumber'  => new external_value(PARAM_RAW, 'business phone number'),
+                    'mobilenumber'    => new external_value(PARAM_RAW, 'mobile phone number'),
+                    'faxnumber'       => new external_value(PARAM_RAW, 'fax number'),
+                    'officialwebsite' => new external_value(PARAM_RAW, 'Official user website'),
+                    'personalwebsite' => new external_value(PARAM_RAW, 'Personal website'),
+                    'blogaddress'     => new external_value(PARAM_RAW, 'Blog web address'),
+                    'aimscreenname'   => new external_value(PARAM_ALPHANUMEXT, 'AIM screen name'),
+                    'icqnumber'       => new external_value(PARAM_ALPHANUMEXT, 'ICQ Number'),
+                    'msnnumber'       => new external_value(PARAM_ALPHANUMEXT, 'MSN Number'),
+                    'yahoochat'       => new external_value(PARAM_ALPHANUMEXT, 'Yahoo chat'),
+                    'skypeusername'   => new external_value(PARAM_ALPHANUMEXT, 'Skype username'),
+                    'jabberusername'  => new external_value(PARAM_RAW, 'Jabber/XMPP username'),
+                    'occupation'      => new external_value(PARAM_TEXT, 'Occupation'),
+                    'industry'        => new external_value(PARAM_TEXT, 'Industry'),
+                    'auths'           => new external_multiple_structure(
+                                            new external_single_structure(
+                                                array(
+                                                    'auth' => new external_value(PARAM_SAFEDIR, 'Auth plugins include manual, ldap, imap, etc'),
+                                                    'remoteuser' => new external_value(PARAM_RAW, 'remote username'),
+                                                ), 'Connected Remote Users')
+                                        ),
+                        )
+                );
     }
 
 
@@ -755,8 +846,7 @@ class mahara_user_external extends external_api {
         foreach ($params['users'] as $user) {
             $dbuser = self::checkuser($user);
             // check the institution
-            $auth_instance = get_record('auth_instance', 'id', $dbuser->authinstance);
-            if (empty($auth_instance) || $WEBSERVICE_INSTITUTION != $auth_instance->institution) {
+            if (!self::in_institution($dbuser, $WEBSERVICE_INSTITUTION)) {
                 throw new invalid_parameter_exception('get_favourites: Not authorised for access to user id: '.$user['userid'].' institution: '.$auth_instance->institution);
             }
 

@@ -229,7 +229,7 @@ class webservice_test_base extends UnitTestCase {
             'institution'    => 'mahara',
             'grouptype'      => 'standard',
             'category'       => $category->id,
-            'jointype'       => 'open',
+//            'jointype'       => 'open',
             'open'           => 1,
             'controlled'     => 0,
             'request'        => 0,

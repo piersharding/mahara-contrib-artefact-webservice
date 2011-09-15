@@ -164,6 +164,7 @@ function external_upgrade_webservices() {
                     unset($services[$dbservice->name]);
                     $service['enabled'] = empty($service['enabled']) ? 0 : $service['enabled'];
                     $service['restrictedusers'] = ((isset($service['restrictedusers']) && $service['restrictedusers'] == 1) ? 1 : 0);
+                    $service['tokenusers'] = ((isset($service['tokenusers']) && $service['tokenusers'] == 1) ? 1 : 0);
 
                     $update = false;
                     if ($dbservice->enabled != $service['enabled']) {
@@ -172,6 +173,10 @@ function external_upgrade_webservices() {
                     }
                     if ($dbservice->restrictedusers != $service['restrictedusers']) {
                         $dbservice->restrictedusers = $service['restrictedusers'];
+                        $update = true;
+                    }
+                    if ($dbservice->tokenusers != $service['tokenusers']) {
+                        $dbservice->tokenusers = $service['tokenusers'];
                         $update = true;
                     }
                     if ($update) {
@@ -203,6 +208,7 @@ function external_upgrade_webservices() {
                 $dbservice->name               = $name;
                 $dbservice->enabled            = empty($service['enabled']) ? 0 : $service['enabled'];
                 $dbservice->restrictedusers    = ((isset($service['restrictedusers']) && $service['restrictedusers'] == 1) ? 1 : 0);
+                $dbservice->tokenusers         = ((isset($service['tokenusers']) && $service['tokenusers'] == 1) ? 1 : 0);
                 $dbservice->component          = $module;
                 $dbservice->timecreated        = time();
                 $dbservice->id = insert_record('external_services', $dbservice, 'id', true);
@@ -619,6 +625,12 @@ class ArtefactTypeWebservice extends ArtefactType {
                                 'type'  => 'html',
                                 'value' => get_string('restrictedusers', 'artefact.webservice'),
                             ),
+                            'tokenusers' => array(
+                                'title' => ' ',
+                                'class' => 'header',
+                                'type'  => 'html',
+                                'value' => get_string('fortokenusers', 'artefact.webservice'),
+                            ),
                             'functions' => array(
                                 'title' => ' ',
                                 'class' => 'header',
@@ -652,7 +664,12 @@ class ArtefactTypeWebservice extends ArtefactType {
                 'disabled'     => true,
                 'key'          => $service->name,
             );
-
+            $form['elements']['id'. $service->id . '_tokenusers'] = array(
+                'defaultvalue' => (($service->tokenusers == 1) ? 'checked' : ''),
+                'type'         => 'checkbox',
+                'disabled'     => true,
+                'key'          => $service->name,
+            );
             $functions = get_records_array('external_services_functions', 'externalserviceid', $service->id);
             $function_list = array();
             if ($functions) {

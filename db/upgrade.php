@@ -200,6 +200,13 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         change_field_type($table, $field);
     }
 
+    if ($oldversion < 2010012709) {
+        // add logging table
+        $table = new XMLDBTable('external_services');
+        $field = new XMLDBField('tokenusers');
+        $field->setAttributes(XMLDB_TYPE_INTEGER, 1, null, XMLDB_NOTNULL, null, null, null, 0);
+        add_field($table, $field);
+    }
     // sweep for webservice updates everytime
     $status = external_upgrade_webservices();
     return $status;
