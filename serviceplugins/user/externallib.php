@@ -509,9 +509,11 @@ class mahara_user_external extends external_api {
         // if this is a get all users - then lets get them all
         if (empty($params['users'])) {
             $params['users'] = array();
-            $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u INNER JOIN {auth_instance} ai ON u.authinstance = ai.id WHERE u.deleted = 0 AND ai.institution = \''.$WEBSERVICE_INSTITUTION.'\'', null);
-//            $dbusers2 = (array)get_records_sql_array('SELECT i.usr AS id FROM {usr_institution} i INNER JOIN {usr} u ON i.usr = u.id WHERE u.deleted = 0 AND i.institution = \''.$WEBSERVICE_INSTITUTION.'\'', null);
-//            $dbusers = array_merge($dbusers1, $dbusers2);
+            $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u
+                                                INNER JOIN {auth_instance} ai ON u.authinstance = ai.id
+                                                LEFT JOIN {usr_institution} ui ON u.id = ui.usr AND ui.institution = \''.$WEBSERVICE_INSTITUTION.'\'
+                                                WHERE u.deleted = 0 AND (ai.institution = \''.$WEBSERVICE_INSTITUTION.'\'
+                                                                      OR ui.institution = \''.$WEBSERVICE_INSTITUTION.'\')', null);
             if ($dbusers) {
                 foreach ($dbusers as $dbuser) {
                     // eliminate bad uid
@@ -557,7 +559,9 @@ class mahara_user_external extends external_api {
                 }
                 $userarray['institution'] = $auth_instance->institution;
                 $userarray['auths'] = array();
-                $auths = get_records_sql_array('SELECT aru.remoteusername AS remoteusername, ai.authname AS authname FROM {auth_remote_user} aru INNER JOIN {auth_instance} ai ON aru.authinstance = ai.id WHERE ai.institution = ? AND aru.localusr = ?', array($auth_instance->institution, $user->id));
+                $auths = get_records_sql_array('SELECT aru.remoteusername AS remoteusername, ai.authname AS authname FROM {auth_remote_user} aru
+                                                  INNER JOIN {auth_instance} ai ON aru.authinstance = ai.id
+                                                  WHERE ai.institution = ? AND aru.localusr = ?', array($WEBSERVICE_INSTITUTION, $user->id));
                 if ($auths) {
                     foreach ($auths as $auth) {
                         $userarray['auths'][]= array('auth' => $auth->authname, 'remoteuser' => $auth->remoteusername);
@@ -711,6 +715,34 @@ class mahara_user_external extends external_api {
                                         ),
                         )
                 );
+    }
+
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function get_context_parameters() {
+        return new external_function_parameters(array());
+    }
+
+    /**
+     * Get my user information
+     *
+     * @param array $userids  array of user ids
+     * @return array An array of arrays describing users
+     */
+    public static function get_context() {
+        global $WEBSERVICE_INSTITUTION;
+        return $WEBSERVICE_INSTITUTION;
+    }
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function get_context_returns() {
+        return new external_value(PARAM_TEXT, 'The INSTITUTION context of the authenticated user');
     }
 
 

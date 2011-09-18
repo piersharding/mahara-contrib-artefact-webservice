@@ -42,7 +42,7 @@ $sortdir = param_alpha('sortdir', 'desc');
 $offset  = param_integer('offset', 0);
 $limit   = param_integer('limit', 10);
 
-error_log('REQUEST: '.var_export($_REQUEST, true));
+//error_log('REQUEST: '.var_export($_REQUEST, true));
 $search = (object) array(
     'userquery'      => trim(param_variable('userquery', '')),
     'functionquery'  => trim(param_variable('functionquery', '')),

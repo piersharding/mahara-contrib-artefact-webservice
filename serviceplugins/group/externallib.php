@@ -636,17 +636,19 @@ class mahara_group_external extends external_api {
                     if (isset($existingmembers[$dbuser->id])) {
                         unset($existingmembers[$dbuser->id]);
                     }
-                    else {
-                        throw new invalid_parameter_exception('update_group_members: user does not exist in group for remove: '.$member['id'].'/'.$member['username'].' - group: '.$group['name']);
-                    }
+                    // silently fail
+//                    else {
+//                        throw new invalid_parameter_exception('update_group_members: user does not exist in group for remove: '.$member['id'].'/'.$member['username'].' - group: '.$group['name']);
+//                    }
                 }
-                else if ($member['action'] == 'add') {
-                    if (isset($existingmembers[$dbuser->id])) {
-                        throw new invalid_parameter_exception('update_group_members: user should not exist in group for add: '.$member['id'].'/'.$member['username'].' - group: '.$group['name']);
-                    }
-                    else {
-                        $existingmembers[$dbuser->id] = $member['role'];
-                    }
+                else if ($member['action'] == 'add') { // add also can be used to update role
+//                    if (!isset($existingmembers[$dbuser->id])) {
+                    $existingmembers[$dbuser->id] = $member['role'];
+//                    }
+                    // silently fail
+//                    else {
+//                        throw new invalid_parameter_exception('update_group_members: user should not exist in group for add: '.$member['id'].'/'.$member['username'].' - group: '.$group['name']);
+//                    }
                 }
                 else {
                     throw new invalid_parameter_exception('update_group_members: invalid action('.$member['action'].') for user: '.$member['id'].'/'.$member['username'].' - group: '.$group['name']);
