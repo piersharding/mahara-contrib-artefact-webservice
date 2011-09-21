@@ -572,7 +572,7 @@ class mahara_group_external extends external_api {
                                                                 array(
                                                                     'id' => new external_value(PARAM_NUMBER, 'member user Id', VALUE_OPTIONAL),
                                                                     'username' => new external_value(PARAM_RAW, 'member username', VALUE_OPTIONAL),
-                                                                    'role' => new external_value(PARAM_ALPHANUMEXT, 'member role: admin, ', VALUE_OPTIONAL),
+                                                                    'role' => new external_value(PARAM_ALPHANUMEXT, 'member role: admin, tutor, member', VALUE_OPTIONAL),
                                                                     'action' => new external_value(PARAM_ALPHANUMEXT, 'member action: add, or remove')
                                                                 ), 'Group membership actions')
                                                         ),
