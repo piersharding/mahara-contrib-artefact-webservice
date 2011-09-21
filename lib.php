@@ -33,6 +33,7 @@ defined('INTERNAL') || die();
 $path = get_config('docroot').'artefact/webservice/libs/zend';
 set_include_path($path . PATH_SEPARATOR . get_include_path());
 
+require_once(get_config('docroot').'/artefact/lib.php');
 require_once(get_config('docroot')."/artefact/webservice/locallib.php");
 require_once(get_config('docroot') . 'api/xmlrpc/lib.php');
 

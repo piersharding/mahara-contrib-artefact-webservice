@@ -428,7 +428,6 @@ class webservice_test extends webservice_test_base {
         $user1->id = $dbuser1->id;
         $user1->username = 'veryimprobabletestusername1_updated';
         $user1->password = 'testpassword1_updated';
-        $user1->salt = $dbuser1->salt;
         $user1->firstname = 'testfirstname1_updated';
         $user1->lastname = 'testlastname1_updated';
         $user1->email = 'testemail1_updated@hogwarts.school.nz';
@@ -440,7 +439,6 @@ class webservice_test extends webservice_test_base {
         $user2->id = $dbuser2->id;
         $user2->username = 'veryimprobabletestusername2_updated';
         $user2->password = 'testpassword2_updated';
-        $user2->salt = $dbuser2->salt;
         $user2->firstname = 'testfirstname2_updated';
         $user2->lastname = 'testlastname2_updated';
         $user2->email = 'testemail1_updated@hogwarts.school.nz';

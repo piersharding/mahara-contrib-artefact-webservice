@@ -31,9 +31,7 @@
  * @author     Piers Harding
  */
 
-require_once("$CFG->docroot/artefact/webservice/libs/externallib.php");
-require_once($CFG->docroot.'/lib/user.php');
-require_once('institution.php');
+require_once("$CFG->docroot/artefact/webservice/serviceplugins/lib.php");
 
 
 class mahara_user_external extends external_api {
@@ -260,6 +258,11 @@ class mahara_user_external extends external_api {
             if (!$USER->can_edit_institution($authinstance->institution)) {
                 throw new invalid_parameter_exception('delete_users: access denied for institution: '.$authinstance->institution.' on user: '.$user->id);
             }
+            
+            // only allow deletion of users that have not signed in
+            if (!empty($user->lastlogin) && !$user->suspendedcusr) {
+                throw new invalid_parameter_exception('delete_users: cannot delete account that has been used and is not suspended: '.$user->id);
+            }
 
             // must not allow deleting of admins or self!!!
             if ($user->admin) {
@@ -298,7 +301,6 @@ class mahara_user_external extends external_api {
                             'id'              => new external_value(PARAM_NUMBER, 'ID of the user', VALUE_OPTIONAL),
                             'username'        => new external_value(PARAM_RAW, 'Username policy is defined in Mahara security config', VALUE_OPTIONAL),
                             'password'        => new external_value(PARAM_RAW, 'Plain text password consisting of any characters', VALUE_OPTIONAL),
-                            'salt'            => new external_value(PARAM_RAW, 'Set the password salt', VALUE_OPTIONAL),
                             'firstname'       => new external_value(PARAM_NOTAGS, 'The first name(s) of the user', VALUE_OPTIONAL),
                             'lastname'        => new external_value(PARAM_NOTAGS, 'The family name of the user', VALUE_OPTIONAL),
                             'email'           => new external_value(PARAM_EMAIL, 'A valid and unique email address', VALUE_OPTIONAL),
@@ -345,7 +347,7 @@ class mahara_user_external extends external_api {
     public static function update_users($users) {
         global $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
-        $params = self::validate_parameters(self::update_users_parameters(), array('users'=>$users));
+        $params = self::validate_parameters(self::update_users_parameters(), array('users' => $users));
 
         db_begin();
         foreach ($params['users'] as $user) {
@@ -386,7 +388,8 @@ class mahara_user_external extends external_api {
 
             $updated_user = $dbuser;
             $updated_user->authinstance = $authinstance->id;
-            foreach (array('username', 'firstname', 'lastname', 'email', 'quota', 'studentid', 'preferredname', 'password') as $field) {
+            $updated_user->password = (!empty($user['password']) ? $user['password'] : '');
+            foreach (array('username', 'firstname', 'lastname', 'email', 'quota', 'studentid', 'preferredname') as $field) {
                 if (isset($user[$field])) {
                     $updated_user->{$field} = $user[$field];
                 }
@@ -468,29 +471,20 @@ class mahara_user_external extends external_api {
         if ($user = get_user($id)) {
             // get the remoteuser
             $user->remoteuser = get_field('auth_remote_user', 'remoteusername', 'authinstance', $user->authinstance, 'localusr', $user->id);
+            foreach (array('jabberusername', 'introduction', 'country', 'city', 'address',
+                           'town', 'homenumber', 'businessnumber', 'mobilenumber', 'faxnumber',
+                           'officialwebsite', 'personalwebsite', 'blogaddress', 'aimscreenname',
+                           'icqnumber', 'msnnumber', 'yahoochat', 'skypeusername', 'jabberusername',
+                           'occupation', 'industry') as $attr) {
+                if ($art = get_record('artefact', 'artefacttype', $attr, 'owner', $user->id)) {
+                    $user->{$attr} = $art->title;
+                }
+            }
             return $user;
         }
         else {
             throw new invalid_parameter_exception('Invalid user id: '.$id);
         }
-    }
-
-
-    /**
-     * Check that a user is in the institution
-     *
-     * @param array $user array('id' => .., 'username' => ..)
-     * @param string $institution
-     * @return boolean true on yes
-     */
-    private static function in_institution($user, $institution) {
-        $institutions = array_keys(load_user_institutions($user->id));
-        $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
-        $institutions[]= $auth_instance->institution;
-        if (!in_array($institution, $institutions)) {
-            return false;
-        }
-        return true;
     }
 
 
@@ -536,7 +530,7 @@ class mahara_user_external extends external_api {
         foreach ($users as $user) {
             if (empty($user->deleted)) {
                 // check the institution
-                if (!self::in_institution($user, $WEBSERVICE_INSTITUTION)) {
+                if (!mahara_external_in_institution($user, $WEBSERVICE_INSTITUTION)) {
                     throw new invalid_parameter_exception('Not authorised for access to user id: '.$user->id.' institution: '.$auth_instance->institution);
                 }
 
@@ -878,7 +872,7 @@ class mahara_user_external extends external_api {
         foreach ($params['users'] as $user) {
             $dbuser = self::checkuser($user);
             // check the institution
-            if (!self::in_institution($dbuser, $WEBSERVICE_INSTITUTION)) {
+            if (!mahara_external_in_institution($dbuser, $WEBSERVICE_INSTITUTION)) {
                 throw new invalid_parameter_exception('get_favourites: Not authorised for access to user id: '.$user['userid'].' institution: '.$auth_instance->institution);
             }
 

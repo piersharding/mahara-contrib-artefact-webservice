@@ -199,7 +199,7 @@ class mahara_ws_exception extends Exception {
         $this->debuginfo = $debuginfo;
 
 //        if (get_string_manager()->string_exists($errorcode, $module)) {
-            $message = get_string($errorcode, $module, $a);
+            $message = get_string($errorcode, $module, $a).$debuginfo;
 //        } else {
 //            $message = $module . '/' . $errorcode;
 //        }
@@ -273,7 +273,7 @@ class external_api {
                         try {
                             $result[$key] = self::validate_parameters($subdesc, $subdesc->default);
                         } catch (invalid_parameter_exception $e) {
-                            throw new webservice_parameter_exception('invalidextparam',$key);
+                            throw new webservice_parameter_exception('invalidextparam', $key);
                         }
                     }
                 } else {

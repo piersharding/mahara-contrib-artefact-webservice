@@ -54,7 +54,7 @@ $create_user = array(
 $change_user = array(
                         array(
                             'username' => 'veryimprobabletestusername1',
-                            'password' => 'testpassword1_updated',
+//                            'password' => 'testpassword1_updated',
                             'firstname' => 'testfirstname1_updated',
                             'lastname' => 'testlastname1_updated',
                             'email' => 'testemail1_updated@hogwarts.school.nz',
