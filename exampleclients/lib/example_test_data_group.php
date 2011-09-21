@@ -64,9 +64,15 @@ $get_group = array(array('shortname' => 'testgroupshortname1', 'institution' => 
 
 $delete_group = array(array('shortname' => 'testgroupshortname1', 'institution' => 'mahara')); // this can be done by id eg: array('id' => 123)
 
+$update_members = array(
+                  array('shortname' => 'testgroupshortname1',
+                        'institution' => 'mahara',
+                        'members' => array( array('username' => 'veryimprobabletestusername1', 'role' => 'member', 'action' => 'add'))));
+
 $functions = array(
         'mahara_group_create_groups' => array('groups' => $create_group),
         'mahara_group_update_groups' => array('groups' => $change_group),
+        'mahara_group_update_group_members' => array('groups' => $update_members),
         'mahara_group_get_groups' => array(),
         'mahara_group_get_groups_by_id' => array('groups' => $get_group),
         'mahara_group_delete_groups' => array('groups' => $delete_group),
