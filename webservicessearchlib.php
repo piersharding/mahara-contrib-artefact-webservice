@@ -122,7 +122,7 @@ function build_webservice_user_search_results($search, $offset, $limit, $sortby,
     $smarty->assign('pagebaseurl', $searchurl . '&ouid=' . $ouid . '&suid=' . $suid  . '&token=' . $token . '&sortby=' . $sortby . '&sortdir=' . $sortdir);
     $smarty->assign('cols', $cols);
     $smarty->assign('ncols', count($cols));
-    return $smarty->fetch('searchresulttable.tpl');
+    return $smarty->fetch('artefact:webservice:searchresulttable.tpl');
 }
 
 
@@ -181,7 +181,7 @@ function build_webservice_log_search_results($search, $offset, $limit, $sortby, 
     $smarty->assign('pagebaseurl', $searchurl . '&sortby=' . $sortby . '&sortdir=' . $sortdir);
     $smarty->assign('cols', $cols);
     $smarty->assign('ncols', count($cols));
-    return $smarty->fetch('searchresulttable.tpl');
+    return $smarty->fetch('artefact:webservice:searchresulttable.tpl');
 }
 
 /**
