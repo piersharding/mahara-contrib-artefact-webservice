@@ -133,7 +133,7 @@ $string['invalidtoken'] = 'Invalid wstoken supplied';
 $string['topinstructions'] = 'Go <a href="%s">here</a> to access the Web Services logs. <br/>Go <a href="%s">here</a> to access the Web Services interactive test client.';
 
 //oauth server registry
-$string['accesstokens'] = 'OAuth Access Tokens';
+$string['accesstokens'] = 'OAuth access tokens';
 $string['notokens'] = 'You have no application tokens';
 $string['oauth'] = 'OAuth';
 $string['oauthv1sregister'] = 'OAuth Register Server';
@@ -280,7 +280,7 @@ $string['restexception'] = 'REST';
 $string['restparam'] = 'REST (POST parameters)';
 $string['restrictedusers'] = 'Authorised users only';
 $string['fortokenusers'] = 'User Token Access';
-$string['usertokens'] = 'User Tokens';
+$string['usertokens'] = 'Personal user tokens';
 $string['serviceaccess'] = 'Service Access';
 $string['gen'] = 'Generate';
 $string['no_token'] = 'Token not generated';
