@@ -1767,7 +1767,7 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
 }
 
 
-require_once(get_config('docroot').'/artefact/webservice/libs/moodlelib.php');
+require_once(get_config('docroot').'/artefact/webservice/libs/externallib.php');
 /**
  * Returns most reliable client address
  *

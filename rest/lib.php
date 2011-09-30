@@ -21,9 +21,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL
  */
 
-require_once(get_config('docroot').'/artefact/webservice/libs/moodlelib.php');
-require_once(get_config('docroot').'/artefact/webservice/libs/weblib.php');
-require_once(get_config('docroot')."/artefact/webservice/libs/filelib.php");
+require_once(get_config('docroot').'/artefact/webservice/libs/externallib.php');
 /**
  * Mahara REST client class
  * TODO: XML to PHP

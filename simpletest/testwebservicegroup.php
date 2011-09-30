@@ -399,7 +399,7 @@ class webservice_test extends webservice_test_base {
 
     // delete user test
     function mahara_group_delete_groups($client) {
-        global $DB, $CFG;
+        global $CFG;
 
         error_log('deleting groups');
 
@@ -487,7 +487,7 @@ class webservice_test extends webservice_test_base {
 
     // update user test
     function mahara_group_update_groups($client) {
-        global $DB, $CFG;
+        global $CFG;
 
         error_log('updating groups');
 
@@ -686,7 +686,7 @@ class webservice_test extends webservice_test_base {
 
     // update user test
     function mahara_group_update_group_members($client) {
-        global $DB, $CFG;
+        global $CFG;
 
         error_log('updating group members');
 

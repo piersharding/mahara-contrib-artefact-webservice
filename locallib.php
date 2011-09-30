@@ -99,8 +99,6 @@ function get_in_or_equal($items, $type=SQL_PARAMS_QM, $start='param0000', $equal
 
 
 require_once(get_config('docroot').'/artefact/webservice/libs/externallib.php');
-require_once(get_config('docroot').'/artefact/webservice/libs/moodlelib.php');
-require_once(get_config('docroot').'/artefact/webservice/libs/weblib.php');
 
 define('WEBSERVICE_AUTHMETHOD_USERNAME', 0);
 define('WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN', 1);

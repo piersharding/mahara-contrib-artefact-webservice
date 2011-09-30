@@ -61,8 +61,6 @@ $path = get_config('docroot').'artefact/webservice/libs/zend';
 set_include_path($path . PATH_SEPARATOR . get_include_path());
 
 require_once(get_config('docroot').'/artefact/webservice/libs/externallib.php');
-require_once(get_config('docroot').'/artefact/webservice/libs/moodlelib.php');
-require_once(get_config('docroot').'/artefact/webservice/libs/weblib.php');
 require_once(get_config('docroot').'/artefact/lib.php');
 require_once('institution.php');
 require_once('group.php');

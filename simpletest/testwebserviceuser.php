@@ -348,7 +348,7 @@ class webservice_test extends webservice_test_base {
 
     // delete user test
     function mahara_user_delete_users($client) {
-        global $DB, $CFG;
+        global $CFG;
 
         error_log('deleting users');
 
@@ -415,7 +415,7 @@ class webservice_test extends webservice_test_base {
 
     // update user test
     function mahara_user_update_users($client) {
-        global $DB, $CFG;
+        global $CFG;
 
         error_log('updating users');
 
@@ -474,7 +474,7 @@ class webservice_test extends webservice_test_base {
 
     // update user test
     function mahara_user_update_favourites($client) {
-        global $DB, $CFG;
+        global $CFG;
 
         error_log('updating & reading favourites');
         //Set test data
