@@ -28,7 +28,6 @@
  */
 
 define('INTERNAL', 1);
-define('ADMIN', 1);
 define('MENUITEM', 'settings/apps');
 
 require(dirname(dirname(dirname(__FILE__))) . '/init.php');
@@ -37,26 +36,19 @@ define('TITLE', get_string('apptokens', 'artefact.webservice'));
 require_once('pieforms/pieform.php');
 
 
-$dbtokens = get_records_sql_assoc('
-        SELECT  es.id                  as id,
-                t.token                as token,
-                es.enabled             as enabled,
-                es.name                as service_name,
-                t.timecreated          as timecreated,
-                t.lastaccess           as lastaccess,
-                t.institution          as institution
-        FROM {external_services} es
-        LEFT JOIN {external_tokens} t
-        ON es.id = t.externalserviceid
-        WHERE es.tokenusers = 1 AND
-            ( t.userid = ? OR
-              t.userid IS NULL ) AND
-            ( t.tokentype = '.EXTERNAL_TOKEN_USER.' OR
-              t.tokentype IS NULL )
-        ORDER BY service_name
-        ', array($USER->id));
+$dbservices = get_records_array('external_services', 'tokenusers', 1);
+foreach ($dbservices as $dbservice) {
+    $dbtoken = get_record('external_tokens', 'externalserviceid', $dbservice->id, 'userid', $USER->id, 'tokentype', EXTERNAL_TOKEN_USER);
+    if ($dbtoken) {
+        $dbservice->token = $dbtoken->token;
+        $dbservice->timecreated = $dbtoken->timecreated;
+        $dbservice->lastaccess = $dbtoken->lastaccess;
+        $dbservice->institution = $dbtoken->institution;
+    }
+}
+
 $userform = get_string('notokens', 'artefact.webservice');
-if (!empty($dbtokens)) {
+if (!empty($dbservices)) {
     $userform = array(
         'name'            => 'webservices_user_tokens',
         'elementclasses'  => false,
@@ -81,6 +73,12 @@ if (!empty($dbtokens)) {
                             'type'  => 'html',
                             'value' => get_string('token', 'artefact.webservice'),
                         ),
+                        'functions' => array(
+                            'title' => ' ',
+                            'class' => 'header',
+                            'type'  => 'html',
+                            'value' => get_string('functions', 'artefact.webservice'),
+                        ),
                         'last_access' => array(
                             'title' => ' ',
                             'class' => 'header',
@@ -89,36 +87,49 @@ if (!empty($dbtokens)) {
                         ),
                     ),
         );
-        foreach ($dbtokens as $token) {
-        $userform['elements']['id'. $token->id . '_service_name'] = array(
-            'value'        =>  $token->service_name,
+        foreach ($dbservices as $service) {
+        $userform['elements']['id'. $service->id . '_service_name'] = array(
+            'value'        =>  $service->name,
             'type'         => 'html',
-            'key'        => $token->id,
+            'key'        => $service->id,
         );
-        $userform['elements']['id'. $token->id . '_enabled'] = array(
-            'defaultvalue' => (($token->enabled == 1) ? 'checked' : ''),
+        $userform['elements']['id'. $service->id . '_enabled'] = array(
+            'defaultvalue' => (($service->enabled == 1) ? 'checked' : ''),
             'type'         => 'checkbox',
             'disabled'     => true,
-            'key'          => $token->id,
+            'key'          => $service->id,
         );
-        $userform['elements']['id'. $token->id . '_token'] = array(
-            'value'        =>  (empty($token->token) ? get_string('no_token', 'artefact.webservice') : $token->token),
+        $userform['elements']['id'. $service->id . '_token'] = array(
+            'value'        =>  (empty($service->token) ? get_string('no_token', 'artefact.webservice') : $service->token),
             'type'         => 'html',
-            'key'        => $token->id,
+            'key'        => $service->id,
         );
-        $userform['elements']['id'. $token->id . '_last_access'] = array(
-            'value'        =>  (empty($token->lastaccess) ? ' ' : date("F j, Y H:i", $token->lastaccess)),
+        $functions = get_records_array('external_services_functions', 'externalserviceid', $service->id);
+        $function_list = array();
+        if ($functions) {
+            foreach ($functions as $function) {
+                $dbfunction = get_record('external_functions', 'name', $function->functionname);
+                $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
+            }
+        }
+        $userform['elements']['id'. $service->id . '_functions'] = array(
+            'value'        =>  implode(', ', $function_list),
             'type'         => 'html',
-            'key'        => $token->id,
+            'key'        => $service->id,
+        );
+        $userform['elements']['id'. $service->id . '_last_access'] = array(
+            'value'        =>  (empty($service->lastaccess) ? ' ' : date("F j, Y H:i", $service->lastaccess)),
+            'type'         => 'html',
+            'key'        => $service->id,
         );
 
         // generate button
         // delete button
-//        if (!empty($token->token)) {
-            $userform['elements']['id'. $token->id . '_actions'] = array(
+//        if (!empty($service->token)) {
+            $userform['elements']['id'. $service->id . '_actions'] = array(
                 'value'        => '<span class="actions inline">'.
                                 pieform(array(
-                                    'name'            => 'webservices_user_token_generate_'.$token->id,
+                                    'name'            => 'webservices_user_token_generate_'.$service->id,
                                     'renderer'        => 'div',
                                     'elementclasses'  => false,
                                     'successcallback' => 'webservices_user_token_submit',
@@ -126,7 +137,7 @@ if (!empty($dbtokens)) {
                                     'jsform'          => false,
                                     'action'          => get_config('wwwroot') . 'artefact/webservice/pluginconfig.php',
                                     'elements' => array(
-                                        'service'    => array('type' => 'hidden', 'value' => $token->id),
+                                        'service'    => array('type' => 'hidden', 'value' => $service->id),
                                         'action'     => array('type' => 'hidden', 'value' => 'generate'),
                                         'submit'     => array(
                                                 'type'  => 'submit',
@@ -136,16 +147,16 @@ if (!empty($dbtokens)) {
                                     ),
                                 ))
                                 .
-                                (empty($token->token) ? ' ' :
+                                (empty($service->token) ? ' ' :
                                 pieform(array(
-                                    'name'            => 'webservices_user_token_delete_'.$token->id,
+                                    'name'            => 'webservices_user_token_delete_'.$service->id,
                                     'renderer'        => 'div',
                                     'elementclasses'  => false,
                                     'successcallback' => 'webservices_user_token_submit',
                                     'class'           => 'oneline inline',
                                     'jsform'          => true,
                                     'elements' => array(
-                                        'service'    => array('type' => 'hidden', 'value' => $token->id),
+                                        'service'    => array('type' => 'hidden', 'value' => $service->id),
                                         'action'     => array('type' => 'hidden', 'value' => 'delete'),
                                         'submit'     => array(
                                                 'type'  => 'submit',
@@ -156,7 +167,7 @@ if (!empty($dbtokens)) {
                                 ))) . '</span>'
                                 ,
                 'type'         => 'html',
-                'key'        => $token->id,
+                'key'        => $service->id,
                 'class'        => 'actions',
             );
 //        }
@@ -218,6 +229,12 @@ if (!empty($dbtokens)) {
                             'type'  => 'html',
                             'value' => get_string('token', 'artefact.webservice'),
                         ),
+                        'functions' => array(
+                            'title' => ' ',
+                            'class' => 'header',
+                            'type'  => 'html',
+                            'value' => get_string('functions', 'artefact.webservice'),
+                        ),
                         'last_access' => array(
                             'title' => ' ',
                             'class' => 'header',
@@ -239,6 +256,19 @@ if (!empty($dbtokens)) {
         );
         $oauthform['elements']['id'. $token->id . '_token'] = array(
             'value'        =>  $token->token,
+            'type'         => 'html',
+            'key'        => $token->id,
+        );
+        $functions = get_records_array('external_services_functions', 'externalserviceid', $token->externalserviceid);
+        $function_list = array();
+        if ($functions) {
+            foreach ($functions as $function) {
+                $dbfunction = get_record('external_functions', 'name', $function->functionname);
+                $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
+            }
+        }
+        $oauthform['elements']['id'. $token->id . '_functions'] = array(
+            'value'        =>  implode(', ', $function_list),
             'type'         => 'html',
             'key'        => $token->id,
         );
