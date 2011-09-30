@@ -189,7 +189,7 @@ $serviceuser_details['elements']['publickeyexpires']= array(
 
 $serviceuser_details['elements']['submit'] = array(
     'type'  => 'submitcancel',
-    'value' => array(get_string('save'), get_string('cancel')),
+    'value' => array(get_string('save'), get_string('back')),
     'goto'  => get_config('wwwroot') . 'artefact/webservice/pluginconfig.php',
 );
 

@@ -271,7 +271,7 @@ function webservice_server_edit_form($dbserver, $sopts, $iopts) {
     
     $server_details['elements']['submit'] = array(
         'type'  => 'submitcancel',
-        'value' => array(get_string('save'), get_string('cancel')),
+        'value' => array(get_string('save'), get_string('back')),
         'goto'  => get_config('wwwroot') . 'artefact/webservice/oauthv1sregister.php',
     );
     
