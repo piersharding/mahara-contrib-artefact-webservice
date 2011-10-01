@@ -1640,6 +1640,12 @@ define('EXTERNAL_TOKEN_OAUTH1', 2);
  */
 define('EXTERNAL_TOKEN_USER', 3);
 
+/**
+ * Personal User Tokens expiry time
+ */
+define('EXTERNAL_TOKEN_USER_EXPIRES', (30 * 24 * 60 * 60));
+
+
 /// PARAMETER HANDLING ////////////////////////////////////////////////////
 
 
