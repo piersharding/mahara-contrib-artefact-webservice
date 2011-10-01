@@ -85,6 +85,12 @@ if (!empty($dbservices)) {
                             'type'  => 'html',
                             'value' => get_string('last_access', 'artefact.webservice'),
                         ),
+                        'expires' => array(
+                            'title' => ' ',
+                            'class' => 'header',
+                            'type'  => 'html',
+                            'value' => get_string('expires', 'artefact.webservice'),
+                        ),
                     ),
         );
         foreach ($dbservices as $service) {
@@ -122,7 +128,11 @@ if (!empty($dbservices)) {
             'type'         => 'html',
             'key'        => $service->id,
         );
-
+        $userform['elements']['id'. $service->id . '_expires'] = array(
+            'value'        => date("F j, Y H:i", (empty($service->validuntil) ? $service->lastaccess + EXTERNAL_TOKEN_USER_EXPIRES : $service->validuntil)),
+            'type'         => 'html',
+            'key'        => $service->id,
+        );
         // generate button
         // delete button
 //        if (!empty($service->token)) {
@@ -355,7 +365,7 @@ function webservices_user_token_submit(Pieform $form, $values) {
         else {
             $service = array_shift($services); // just pass the first one for the moment
             $authinstance = get_record('auth_instance', 'id', $USER->authinstance);
-            $token = external_generate_token(EXTERNAL_TOKEN_USER, $service, $USER->id, $authinstance->institution);
+            $token = external_generate_token(EXTERNAL_TOKEN_USER, $service, $USER->id, $authinstance->institution, (time() + EXTERNAL_TOKEN_USER_EXPIRES));
             $SESSION->add_ok_msg(get_string('token_generated', 'artefact.webservice'));
         }
     }

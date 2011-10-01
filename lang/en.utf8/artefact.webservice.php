@@ -223,6 +223,7 @@ $string['errorscalartype'] = 'Scalar type expected, array or object received.';
 $string['errorunexpectedkey'] = 'Unexpected keys (%s) detected in parameter array.';
 $string['execute'] = 'Execute';
 $string['executewarnign'] = 'WARNING: If you press execute your database will be modified and changes can not be reverted automatically!';
+$string['expires'] = 'Expires';
 $string['externalservice'] = 'External service';
 $string['externalservicefunctions'] = 'External service functions';
 $string['externalservices'] = 'External services';
