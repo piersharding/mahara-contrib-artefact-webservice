@@ -158,6 +158,7 @@ $string['oauth_access'] = 'This application will have access to your users detai
 $string['oauth_instructions'] = 'If you wish to grant access to this application then "Authorise application access".  If you do not want to grant access the press "Cancel".';
 
 // running webservices messages
+$string['accesstofunctionnotallowed'] = 'Access to the function %s() is not allowed. Please check if a service containing the function is enabled. In the service settings: if the service is restricted check that the user is listed. Still in the service settings check for IP restriction or if the service requires a capability.';
 $string['accessexception'] = 'Access control exception';
 $string['accessnotallowed'] = 'Access to web service not allowed';
 $string['actwebserviceshhdr'] = 'Active web service protocols';

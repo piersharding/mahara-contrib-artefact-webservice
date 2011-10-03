@@ -387,6 +387,8 @@ class webservice {
      * @return array functions
      */
     public function get_external_functions($serviceids) {
+        global $WS_FUNCTIONS;
+
         if (!empty($serviceids)) {
             list($serviceids, $params) = get_in_or_equal($serviceids);
             $sql = "SELECT f.*
@@ -398,6 +400,13 @@ class webservice {
         } else {
             $functions = array();
         }
+
+        // stash functions for intro spective RPC calls later
+        $WS_FUNCTIONS = array();
+        foreach ($functions as $function) {
+            $WS_FUNCTIONS[$function->name] = array('id' => $function->id);
+        }
+
         return $functions;
     }
 
@@ -845,6 +854,9 @@ abstract class webservice_zend_server extends webservice_server {
         // set additional functions
         $this->fixup_functions();
 
+        //send headers
+        $this->send_headers();
+
         // execute and return response, this sends some headers too
         $response = $this->zend_server->handle($xml);
         // store the info of the error
@@ -895,7 +907,6 @@ abstract class webservice_zend_server extends webservice_server {
         }
 
         //finally send the result
-        $this->send_headers();
         // force the content length as this was going wrong
         header('Content-Length: '.strlen($response));
         echo $response;
@@ -1103,22 +1114,7 @@ class '.$classname.' {
             }
             $params[] = $param;
             $paramanddefaults[] = $paramanddefault;
-            $type = 'string';
-            if ($keydesc instanceof external_value) {
-                switch($keydesc->type) {
-                    case PARAM_BOOL: // 0 or 1 only for now
-                    case PARAM_INT:
-                        $type = 'int'; break;
-                    case PARAM_FLOAT;
-                        $type = 'double'; break;
-                    default:
-                        $type = 'string';
-                }
-            } else if ($keydesc instanceof external_single_structure) {
-                $type = 'object|struct';
-            } else if ($keydesc instanceof external_multiple_structure) {
-                $type = 'array';
-            }
+            $type = $this->get_phpdoc_type($keydesc);
             $params_desc[] = '     * @param '.$type.' $'.$name.' '.$keydesc->desc;
         }
         $params                = implode(', ', $params);
@@ -1130,22 +1126,7 @@ class '.$classname.' {
         if (is_null($function->returns_desc)) {
             $return = '     * @return void';
         } else {
-            $type = 'string';
-            if ($function->returns_desc instanceof external_value) {
-                switch($function->returns_desc->type) {
-                    case PARAM_BOOL: // 0 or 1 only for now
-                    case PARAM_INT:
-                        $type = 'int'; break;
-                    case PARAM_FLOAT;
-                        $type = 'double'; break;
-                    default:
-                        $type = 'string';
-                }
-            } else if ($function->returns_desc instanceof external_single_structure) {
-                $type = 'object|struct'; //only 'object' is supported by SOAP, 'struct' by XML-RPC MDL-23083
-            } else if ($function->returns_desc instanceof external_multiple_structure) {
-                $type = 'array';
-            }
+            $type = $this->get_phpdoc_type($function->returns_desc);
             $return = '     * @return '.$type.' '.$function->returns_desc->desc;
         }
 
@@ -1165,6 +1146,33 @@ class '.$classname.' {
     }
 ';
         return $code;
+    }
+    
+    protected function get_phpdoc_type($keydesc) {
+        if ($keydesc instanceof external_value) {
+            switch($keydesc->type) {
+                case PARAM_BOOL: // 0 or 1 only for now
+                case PARAM_INT:
+                    $type = 'int'; break;
+                case PARAM_FLOAT;
+                    $type = 'double'; break;
+                default:
+                    $type = 'string';
+            }
+
+        } else if ($keydesc instanceof external_single_structure) {
+            $classname = $this->generate_simple_struct_class($keydesc);
+            $type = $classname;
+
+        } else if ($keydesc instanceof external_multiple_structure) {
+            $type = 'array';
+        }
+
+        return $type;
+    }
+
+    protected function generate_simple_struct_class(external_single_structure $structdesc) {
+        return 'object|struct'; //only 'object' is supported by SOAP, 'struct' by XML-RPC MDL-23083
     }
 
     /**
@@ -1527,7 +1535,9 @@ abstract class webservice_base_server extends webservice_server {
         // now make sure user may access at least one service
         $remoteaddr = getremoteaddr();
         $allowed = false;
+        $serviceids = array();
         foreach ($rs as $service) {
+            $serviceids[]= $service['id'];
             if ($service['iprestriction'] and !address_in_subnet($remoteaddr, $service['iprestriction'])) {
                 continue; // wrong request source ip, sorry
             }
@@ -1536,8 +1546,12 @@ abstract class webservice_base_server extends webservice_server {
         }
         $rs->close();
         if (!$allowed) {
-            throw new webservice_access_exception('Access to external function not allowed');
+            throw new webservice_access_exception(get_string('accesstofunctionnotallowed', 'artefact.webservice', $this->functionname));
         }
+        // now get the list of all functions - this triggers the stashing of 
+        // functions in the context
+        $wsmanager = new webservice();
+        $functions = $wsmanager->get_external_functions($serviceids);
 
         // we have all we need now
         $this->function = $function;

@@ -744,6 +744,69 @@ class mahara_user_external extends external_api {
      * Returns description of method parameters
      * @return external_function_parameters
      */
+    public static function get_extended_context_parameters() {
+        return new external_function_parameters(array());
+    }
+
+    /**
+     * Get my user information
+     *
+     * @param array $userids  array of user ids
+     * @return array An array of arrays describing users
+     */
+    public static function get_extended_context() {
+        global $USER, $WEBSERVICE_INSTITUTION, $WS_FUNCTIONS;
+        $functions = array();
+        foreach ((empty($WS_FUNCTIONS) ? array() : $WS_FUNCTIONS) as $name => $function) {
+            $functions[]= array('function' => $name, 'wsdoc' => get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$function['id']);
+        }
+        return array('institution' => $WEBSERVICE_INSTITUTION,
+                     'institutionname' => get_field('institution', 'displayname', 'name', $WEBSERVICE_INSTITUTION),
+                     'sitename' => get_config('sitename'),
+                     'siteurl' => get_config('wwwroot'),
+                     'userid' => $USER->id,
+                     'username' => $USER->username,
+                     'firstname' => $USER->firstname,
+                     'lastname' => $USER->lastname,
+                     'fullname' => display_name($USER, null, true),
+                     'functions' => $functions,
+                );
+    }
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function get_extended_context_returns() {
+        return new external_value(PARAM_TEXT, 'The INSTITUTION context of the authenticated user');
+        return new external_single_structure(
+                array(
+                    'institution'     => new external_value(PARAM_TEXT, 'The INSTITUTION context of the authenticated user'),
+                    'institutionname' => new external_value(PARAM_TEXT, 'The INSTITUTION FULLNAME context of the authenticated user'),
+                    'sitename'        => new external_value(PARAM_RAW, 'Site name', VALUE_OPTIONAL),
+                    'siteurl'         => new external_value(PARAM_RAW, 'Site URL', VALUE_OPTIONAL),
+                    'userid'          => new external_value(PARAM_NUMBER, 'ID of the authenticated user', VALUE_OPTIONAL),
+                    'username'        => new external_value(PARAM_RAW, 'Username of the authenticated user', VALUE_OPTIONAL),
+                    'firstname'       => new external_value(PARAM_TEXT, 'Firstname of the authenticated user', VALUE_OPTIONAL),
+                    'lastname'        => new external_value(PARAM_TEXT, 'Last of the authenticated user', VALUE_OPTIONAL),
+                    'fullname'        => new external_value(PARAM_TEXT, 'Fullname of the authenticated user', VALUE_OPTIONAL),
+                    'functions'       => new external_multiple_structure(
+                                                    new external_single_structure(
+                                                        array(
+                                                            'function' => new external_value(PARAM_RAW, 'functon name', VALUE_OPTIONAL),
+                                                            'wsdoc' => new external_value(PARAM_RAW, 'function documentation URI', VALUE_OPTIONAL),
+                                                        ), 'Available functions')
+                                                ),
+                    )
+            );
+        
+    }
+    
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
     public static function update_favourites_parameters() {
 
        return new external_function_parameters(
