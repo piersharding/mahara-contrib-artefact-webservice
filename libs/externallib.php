@@ -1714,7 +1714,7 @@ function validate_param($param, $type, $allownull=NULL_NOT_ALLOWED, $debuginfo='
     $cleaned = clean_param($param, $type);
     if ((string)$param !== (string)$cleaned) {
         // conversion to string is usually lossless
-        throw new invalid_parameter_exception($debuginfo);
+        throw new invalid_parameter_exception($debuginfo.' value: '.$param);
     }
 
     return $cleaned;
