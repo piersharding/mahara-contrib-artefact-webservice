@@ -69,24 +69,7 @@ $smarty->display('admin/extensions/pluginconfig.tpl');
 
 
 function pluginconfig_submit(Pieform $form, $values) {
-    $success = false;
 
-    global $plugintype, $pluginname, $classname;
-
-    try {
-        call_static_method($classname, 'save_config_options', $values);
-        $success = true;
-    }
-    catch (Exception $e) {
-        $success = false;
-    }
-
-    if ($success) {
-        $form->json_reply(PIEFORM_OK, get_string('settingssaved'));
-    }
-    else {
-        $form->json_reply(PIEFORM_ERR, array('message' => get_string('settingssavefailed')));
-    }
 }
 
 function pluginconfig_validate(PieForm $form, $values) {
