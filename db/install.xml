@@ -9,7 +9,6 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="name"/>
         <FIELD NAME="name" TYPE="char" LENGTH="200" NOTNULL="true" SEQUENCE="false" PREVIOUS="id" NEXT="enabled"/>
         <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="name" NEXT="restrictedusers"/>
-        <!--  FIELD NAME="requiredcapability" TYPE="char" LENGTH="150" NOTNULL="false" SEQUENCE="false" PREVIOUS="enabled" NEXT="restrictedusers"/ -->
         <FIELD NAME="restrictedusers" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="enabled" NEXT="tokenusers"/>
         <FIELD NAME="tokenusers" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="restrictedusers" NEXT="component"/>
         <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" PREVIOUS="restrictedusers" NEXT="timecreated"/>
@@ -31,7 +30,6 @@
         <FIELD NAME="methodname" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" PREVIOUS="classname" NEXT="classpath"/>
         <FIELD NAME="classpath" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" PREVIOUS="methodname" NEXT="component"/>
         <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" PREVIOUS="classpath"/>
-        <!-- FIELD NAME="capabilities" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="all capabilities that are required to be run by the function (separated by comma)" PREVIOUS="component"/ -->
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -56,12 +54,11 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="token"/>
         <FIELD NAME="token" TYPE="char" LENGTH="128" NOTNULL="true" SEQUENCE="false" COMMENT="security token, aka private access key" PREVIOUS="id" NEXT="tokentype"/>
         <FIELD NAME="tokentype" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="type of token: 0=permanent, no session; 1=linked to current browser session via sid; 2=permanent, with emulated session" PREVIOUS="token" NEXT="userid"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="owner of the token" PREVIOUS="tokentype" NEXT="institution"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" COMMENT="owner of the token" PREVIOUS="tokentype" NEXT="institution"/>
         <FIELD NAME="institution" TYPE="char" LENGTH="255" NOTNULL="true" PREVIOUS="userid" NEXT="externalserviceid" />
         <FIELD NAME="externalserviceid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="institution" NEXT="sid"/>
         <FIELD NAME="sid" TYPE="char" LENGTH="128" NOTNULL="false" SEQUENCE="false" COMMENT="link to browser or emulated session" PREVIOUS="externalserviceid" NEXT="creatorid"/>
-        <!--  FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="context id where in token valid" PREVIOUS="sid" NEXT="creatorid"/ -->
-        <FIELD NAME="creatorid" TYPE="int" LENGTH="20" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" COMMENT="user id of the token creator (useful to know when the administrator created a token and so display the token to a specific administrator)" PREVIOUS="sid" NEXT="iprestriction"/>
+        <FIELD NAME="creatorid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" DEFAULT="1" SEQUENCE="false" COMMENT="user id of the token creator (useful to know when the administrator created a token and so display the token to a specific administrator)" PREVIOUS="sid" NEXT="iprestriction"/>
         <FIELD NAME="iprestriction" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="ip restriction" PREVIOUS="creatorid" NEXT="validuntil"/>
         <FIELD NAME="validuntil" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" COMMENT="timestampt - valid until data" PREVIOUS="iprestriction" NEXT="timecreated"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="created timestamp" PREVIOUS="validuntil" NEXT="lastaccess"/>
@@ -75,15 +72,17 @@
         <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="usr" REFFIELDS="id" PREVIOUS="primary" NEXT="institutionfk"/>
         <KEY NAME="institutionfk" TYPE="foreign" FIELDS="institution" REFTABLE="institution" REFFIELDS="name"  PREVIOUS="userid" NEXT="externalserviceid"/>
         <KEY NAME="externalserviceid" TYPE="foreign" FIELDS="externalserviceid" REFTABLE="external_services" REFFIELDS="id" PREVIOUS="institutionfk" NEXT="creatorid"/>
-        <!-- KEY NAME="contextid" TYPE="foreign" FIELDS="contextid" REFTABLE="context" REFFIELDS="id" PREVIOUS="externalserviceid" NEXT="creatorid"/ -->
         <KEY NAME="creatorid" TYPE="foreign" FIELDS="creatorid" REFTABLE="usr" REFFIELDS="id" PREVIOUS="externalserviceid"/>
       </KEYS>
+      <INDEXES>
+          <INDEX NAME="token" UNIQUE="true" FIELDS="token"/>
+      </INDEXES>
     </TABLE>
     <TABLE NAME="external_services_users" COMMENT="users allowed to use services with restricted users flag">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="externalserviceid"/>
         <FIELD NAME="externalserviceid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="id" NEXT="userid"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="externalserviceid" NEXT="institution"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" PREVIOUS="externalserviceid" NEXT="institution"/>
         <FIELD NAME="institution" TYPE="char" LENGTH="255" NOTNULL="true" PREVIOUS="userid" NEXT="iprestriction" />
         <FIELD NAME="iprestriction" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="ip restriction" PREVIOUS="institution" NEXT="validuntil"/>
         <FIELD NAME="validuntil" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" COMMENT="timestampt - valid until data" PREVIOUS="iprestriction" NEXT="timecreated"/>
@@ -103,7 +102,7 @@
      <TABLE NAME="oauth_consumer_registry" COMMENT="This is a registry of all consumer codes we got from other servers">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"  COMMENT="ocr id" NEXT="userid"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="id" NEXT="consumer_key"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="id" NEXT="consumer_key"/>
         <FIELD NAME="consumer_key" TYPE="char" LENGTH="128" NOTNULL="true" DEFAULT="" COMMENT="consumer key" PREVIOUS="userid" NEXT="consumer_secret" />
         <FIELD NAME="consumer_secret" TYPE="char" LENGTH="128" NOTNULL="true" SEQUENCE="false" COMMENT="consumer secret" PREVIOUS="consumer_key" NEXT="signature_methods"/>
         <FIELD NAME="signature_methods" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="signature methods" PREVIOUS="consumer_secret" NEXT="server_uri"/>
@@ -125,7 +124,7 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"  COMMENT="oct id" NEXT="ocr_id_ref"/>
         <FIELD NAME="ocr_id_ref" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="ocr ref" PREVIOUS="id" NEXT="userid"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="ocr_id_ref" NEXT="name"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="ocr_id_ref" NEXT="name"/>
         <FIELD NAME="name" TYPE="char" LENGTH="64" NOTNULL="true" DEFAULT="" COMMENT="consumer name" PREVIOUS="userid" NEXT="token" />
         <FIELD NAME="token" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="consumer token" PREVIOUS="name" NEXT="token_secret"/>
         <FIELD NAME="token_secret" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="consumer secret" PREVIOUS="token" NEXT="token_type"/>
@@ -147,7 +146,7 @@
      <TABLE NAME="oauth_server_registry" COMMENT="Table holding consumer key/secret combos an user issued to consumers">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"  COMMENT="osr id" NEXT="userid"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="id" NEXT="consumer_key"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="id" NEXT="consumer_key"/>
         <FIELD NAME="externalserviceid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="userid" NEXT="institution"/>
         <FIELD NAME="institution" TYPE="char" LENGTH="255" NOTNULL="true" PREVIOUS="externalserviceid" NEXT="consumer_key" />
         <FIELD NAME="consumer_key" TYPE="char" LENGTH="128" NOTNULL="true" DEFAULT="" COMMENT="consumer key" PREVIOUS="institution" NEXT="consumer_secret" />
@@ -190,7 +189,7 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"  COMMENT="ost id" NEXT="osr_id_ref"/>
         <FIELD NAME="osr_id_ref" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="osr ref" PREVIOUS="id" NEXT="userid"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="osr_id_ref" NEXT="token"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="osr_id_ref" NEXT="token"/>
         <FIELD NAME="token" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="token" PREVIOUS="userid" NEXT="token_secret"/>
         <FIELD NAME="token_secret" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="token secret" PREVIOUS="token" NEXT="token_type"/>
         <FIELD NAME="token_type" TYPE="char" LENGTH="20" NOTNULL="true" COMMENT="token type" ENUM="true" ENUMVALUES="'request', 'access'"  PREVIOUS="token_secret" NEXT="authorized"/>
@@ -212,7 +211,7 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="timelogged"/>
         <FIELD NAME="timelogged" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" PREVIOUS="id" NEXT="userid"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="timelogged" NEXT="externalserviceid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="timelogged" NEXT="externalserviceid"/>
         <FIELD NAME="externalserviceid" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" SEQUENCE="false" PREVIOUS="userid" NEXT="institution"/>
         <FIELD NAME="institution" TYPE="char" LENGTH="255" NOTNULL="true" PREVIOUS="externalserviceid" NEXT="funcitonname" />
         <FIELD NAME="protocol" TYPE="char" LENGTH="10" NOTNULL="true" PREVIOUS="institution" NEXT="auth" />
