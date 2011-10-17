@@ -99,50 +99,6 @@
         <KEY NAME="institutionfk" TYPE="foreign" FIELDS="institution" REFTABLE="institution" REFFIELDS="name"  PREVIOUS="userid"/>
       </KEYS>
     </TABLE>
-     <TABLE NAME="oauth_consumer_registry" COMMENT="This is a registry of all consumer codes we got from other servers">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"  COMMENT="ocr id" NEXT="userid"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="id" NEXT="consumer_key"/>
-        <FIELD NAME="consumer_key" TYPE="char" LENGTH="128" NOTNULL="true" DEFAULT="" COMMENT="consumer key" PREVIOUS="userid" NEXT="consumer_secret" />
-        <FIELD NAME="consumer_secret" TYPE="char" LENGTH="128" NOTNULL="true" SEQUENCE="false" COMMENT="consumer secret" PREVIOUS="consumer_key" NEXT="signature_methods"/>
-        <FIELD NAME="signature_methods" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="signature methods" PREVIOUS="consumer_secret" NEXT="server_uri"/>
-        <FIELD NAME="server_uri" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="server URI" PREVIOUS="signature_methods" NEXT="server_uri_host"/>
-        <FIELD NAME="server_uri_host" TYPE="char" LENGTH="128" NOTNULL="true" SEQUENCE="false" COMMENT="Server URI Host" PREVIOUS="server_uri" NEXT="server_uri_path"/>
-        <FIELD NAME="server_uri_path" TYPE="char" LENGTH="128" NOTNULL="true" SEQUENCE="false" COMMENT="Server URI Path" PREVIOUS="server_uri_host" NEXT="request_token_uri"/>
-        <FIELD NAME="request_token_uri" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="request token URI" PREVIOUS="server_uri_path" NEXT="authorize_uri"/>
-        <FIELD NAME="authorize_uri" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="authrize URI" PREVIOUS="request_token_uri" NEXT="access_token_uri"/>
-        <FIELD NAME="access_token_uri" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="access token URI" PREVIOUS="authorize_uri" NEXT="timestamp"/>
-        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" COMMENT="creation timestamp" PREVIOUS="access_token_uri"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="uk_userid_server_uri"/>
-        <KEY NAME="uk_userid_server_uri" TYPE="unique" FIELDS="consumer_key,userid,server_uri" PREVIOUS="primary" NEXT="userid"/>
-        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="usr" REFFIELDS="id" PREVIOUS="uk_userid_server_uri"/>
-      </KEYS>
-    </TABLE>    
-     <TABLE NAME="oauth_consumer_token" COMMENT="Table used to sign requests for sending to a server by the consumer">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"  COMMENT="oct id" NEXT="ocr_id_ref"/>
-        <FIELD NAME="ocr_id_ref" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="ocr ref" PREVIOUS="id" NEXT="userid"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" COMMENT="usr ref" PREVIOUS="ocr_id_ref" NEXT="name"/>
-        <FIELD NAME="name" TYPE="char" LENGTH="64" NOTNULL="true" DEFAULT="" COMMENT="consumer name" PREVIOUS="userid" NEXT="token" />
-        <FIELD NAME="token" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="consumer token" PREVIOUS="name" NEXT="token_secret"/>
-        <FIELD NAME="token_secret" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="consumer secret" PREVIOUS="token" NEXT="token_type"/>
-        <FIELD NAME="token_type" TYPE="char" LENGTH="20" NOTNULL="true" COMMENT="token type" ENUM="true" ENUMVALUES="'request', 'authorized', 'access'"  PREVIOUS="token_secret" NEXT="token_ttl"/>
-        <FIELD NAME="token_ttl" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" DEFAULT="'9999-12-31'" COMMENT="ttl for token" PREVIOUS="token_type" NEXT="timestamp"/>
-        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" COMMENT="creation timestamp" PREVIOUS="token_ttl"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="uk_ocr_id_ref_token"/>
-        <KEY NAME="uk_id_ref_token" TYPE="unique" FIELDS="ocr_id_ref,token" PREVIOUS="primary" NEXT="uk_userid_ocr_id_ref_type_name"/>
-        <KEY NAME="uk_userid_id_ref_type_name" TYPE="unique" FIELDS="userid,ocr_id_ref,token_type,name" PREVIOUS="uk_ocr_id_ref_token" NEXT="k_token_ttl"/>
-        <KEY NAME="fk_ocr_id_ref" TYPE="foreign" FIELDS="ocr_id_ref" REFTABLE="oauth_consumer_registry" REFFIELDS="id" PREVIOUS="k_token_ttl" NEXT="userid"/>
-        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="usr" REFFIELDS="id" PREVIOUS="fk_ocr_id_ref"/>
-      </KEYS>
-      <INDEXES>
-          <INDEX NAME="i_token_ttl" UNIQUE="false" FIELDS="token_ttl"/>
-      </INDEXES>
-    </TABLE>
      <TABLE NAME="oauth_server_registry" COMMENT="Table holding consumer key/secret combos an user issued to consumers">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"  COMMENT="osr id" NEXT="userid"/>
