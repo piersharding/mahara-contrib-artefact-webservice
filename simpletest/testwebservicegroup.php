@@ -98,7 +98,7 @@ class webservice_test extends webservice_test_base {
 
         if (!$this->testrest and !$this->testxmlrpc and !$this->testsoap) {
             print_r("Web service unit tests are not run as not setup.
-                (see /artefact/webservice/simpletest/testwebservice.php)");
+                (see artefact/webservice/simpletest/testwebservice.php)");
         }
 
         // need a token to test
@@ -261,8 +261,8 @@ class webservice_test extends webservice_test_base {
         $dbuser1 = $this->create_user1_for_update();
         $dbuser2 = $this->create_user2_for_update();
 
-        $groupcategories = get_records_array('group_category','','','displayorder');
-        $category = array_shift($groupcategories);
+//        $groupcategories = get_records_array('group_category','','','displayorder');
+//        $category = array_shift($groupcategories);
         //Test data
         //a full group: group1
         $group1 = new stdClass();
@@ -294,7 +294,7 @@ class webservice_test extends webservice_test_base {
         $group2->description    = 'a description for test group 2';
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
-        $group2->category       = $category->title;
+//        $group2->category       = $category->title;
 //        $group2->jointype       = 'invite';
         $group2->open           = 1;
         $group2->request        = 0;
@@ -379,7 +379,7 @@ class webservice_test extends webservice_test_base {
         $this->assertEqual($dbgroup2->name, $group2->name);
         $this->assertEqual($dbgroup2->description, $group2->description);
         $this->assertEqual($dbgroup2->grouptype, $group2->grouptype);
-        $this->assertEqual($dbgroup2->category, $category->id);
+//        $this->assertEqual($dbgroup2->category, $category->id);
 //        $this->assertEqual($dbgroup2->jointype, $group2->jointype);
         $this->assertEqual($dbgroup2->open, $group2->open);
         $this->assertEqual($dbgroup2->request, $group2->request);
@@ -407,8 +407,8 @@ class webservice_test extends webservice_test_base {
         $dbuser1 = $this->create_user1_for_update();
         $dbuser2 = $this->create_user2_for_update();
 
-        $groupcategories = get_records_array('group_category','','','displayorder');
-        $category = array_shift($groupcategories);
+//        $groupcategories = get_records_array('group_category','','','displayorder');
+//        $category = array_shift($groupcategories);
         //Test data
         //a full group: group1
         $group1 = new stdClass();
@@ -417,7 +417,7 @@ class webservice_test extends webservice_test_base {
         $group1->description    = 'a description for test group 1';
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
-        $group1->category       = $category->id;
+//        $group1->category       = $category->id;
 //        $group1->jointype       = 'open';
         $group1->open           = 1;
         $group1->request        = 0;
@@ -440,7 +440,7 @@ class webservice_test extends webservice_test_base {
         $group2->description    = 'a description for test group 2';
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
-        $group2->category       = $category->id;
+//        $group2->category       = $category->id;
 //        $group2->jointype       = 'open';
         $group2->open           = 1;
         $group2->request        = 0;
@@ -495,8 +495,8 @@ class webservice_test extends webservice_test_base {
         $dbuser1 = $this->create_user1_for_update();
         $dbuser2 = $this->create_user2_for_update();
 
-        $groupcategories = get_records_array('group_category','','','displayorder');
-        $category = array_shift($groupcategories);
+//        $groupcategories = get_records_array('group_category','','','displayorder');
+//        $category = array_shift($groupcategories);
         //Test data
         //a full group: group1
         $group1 = new stdClass();
@@ -505,7 +505,7 @@ class webservice_test extends webservice_test_base {
         $group1->description    = 'a description for test group 1';
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
-        $group1->category       = $category->id;
+//        $group1->category       = $category->id;
 //        $group1->jointype       = 'invite';
         $group1->open           = 1;
         $group1->request        = 0;
@@ -528,7 +528,7 @@ class webservice_test extends webservice_test_base {
         $group2->description    = 'a description for test group 2';
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
-        $group2->category       = $category->id;
+//        $group2->category       = $category->id;
 //        $group2->jointype       = 'invite';
         $group2->open           = 1;
         $group2->request        = 0;
@@ -569,7 +569,7 @@ class webservice_test extends webservice_test_base {
         $group1->description    = 'a description for test group 1 - changed';
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
-        $group1->category       = $category->title;
+//        $group1->category       = $category->title;
 //        $group1->jointype       = 'invite';
         $group1->open           = 1;
         $group1->request        = 0;
@@ -647,7 +647,7 @@ class webservice_test extends webservice_test_base {
         $this->assertEqual($dbgroup1->name, $group1->name);
         $this->assertEqual($dbgroup1->description, $group1->description);
         $this->assertEqual($dbgroup1->grouptype, $group1->grouptype);
-        $this->assertEqual($dbgroup1->category, $category->id);
+//        $this->assertEqual($dbgroup1->category, $category->id);
         $this->assertEqual($dbgroup1->open, $group1->open);
         $this->assertEqual($dbgroup1->request, $group1->request);
         $this->assertEqual($dbgroup1->controlled, $group1->controlled);
@@ -665,7 +665,7 @@ class webservice_test extends webservice_test_base {
         $this->assertEqual($dbgroup2->name, $group2->name);
         $this->assertEqual($dbgroup2->description, $group2->description);
         $this->assertEqual($dbgroup2->grouptype, $group2->grouptype);
-        $this->assertEqual($dbgroup2->category, $category->id);
+//        $this->assertEqual($dbgroup2->category, $category->id);
         $this->assertEqual($dbgroup2->editroles, $group2->editroles);
         $this->assertEqual($dbgroup2->open, 1);
         $this->assertEqual($dbgroup2->request, 0);
@@ -694,8 +694,8 @@ class webservice_test extends webservice_test_base {
         $dbuser1 = $this->create_user1_for_update();
         $dbuser2 = $this->create_user2_for_update();
 
-        $groupcategories = get_records_array('group_category','','','displayorder');
-        $category = array_shift($groupcategories);
+//        $groupcategories = get_records_array('group_category','','','displayorder');
+//        $category = array_shift($groupcategories);
         //Test data
         //a full group: group1
         $group1 = new stdClass();
@@ -704,7 +704,7 @@ class webservice_test extends webservice_test_base {
         $group1->description    = 'a description for test group 1';
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
-        $group1->category       = $category->id;
+//        $group1->category       = $category->id;
 //        $group1->jointype       = 'invite';
         $group1->open           = 1;
         $group1->request        = 0;
@@ -727,7 +727,7 @@ class webservice_test extends webservice_test_base {
         $group2->description    = 'a description for test group 2';
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
-        $group2->category       = $category->id;
+//        $group2->category       = $category->id;
 //        $group2->jointype       = 'invite';
         $group2->open           = 1;
         $group2->request        = 0;

@@ -152,7 +152,7 @@ class webservice_test_base extends UnitTestCase {
         // construct a test service from all available functions
         $dbservice = get_record('external_services', 'name', $this->servicename);
         if (empty($dbservice)) {
-            $service = array('name' => $this->servicename, 'restrictedusers' => 0, 'enabled' => 1, 'component' => 'webservice', 'timecreated' => time());
+            $service = array('name' => $this->servicename, 'tokenusers' => 0, 'restrictedusers' => 0, 'enabled' => 1, 'component' => 'webservice', 'timecreated' => time());
             insert_record('external_services', $service);
             $dbservice = get_record('external_services', 'name', $this->servicename);
         }
@@ -209,15 +209,17 @@ class webservice_test_base extends UnitTestCase {
         $dbserviceuser = (object) array('externalserviceid' => $dbservice->id,
                         'userid' => $dbuser->id,
                         'institution' => 'mahara',
-                        'timecreated' => time());
+                        'timecreated' => time(),
+                        'wssigenc' => 0,
+                        'publickeyexpires' => 0);
         $dbserviceuser->id = insert_record('external_services_users', $dbserviceuser, 'id', true);
 
 
-        $groupcategories = get_records_array('group_category','','','displayorder');
-        if (empty($groupcategories)) {
-            throw new Exception('missing group categories: you must create atleast one group category');
-        }
-        $category = array_shift($groupcategories);
+//        $groupcategories = get_records_array('group_category','','','displayorder');
+//        if (empty($groupcategories)) {
+//            throw new Exception('missing group categories: you must create atleast one group category');
+//        }
+//        $category = array_shift($groupcategories);
 
         // setup test groups
         $groupid = group_create(array(
@@ -226,7 +228,7 @@ class webservice_test_base extends UnitTestCase {
             'description'    => 'a description for test group 1',
             'institution'    => 'mahara',
             'grouptype'      => 'standard',
-            'category'       => $category->id,
+//            'category'       => $category->id,
 //            'jointype'       => 'open',
             'open'           => 1,
             'controlled'     => 0,
