@@ -31,40 +31,14 @@
  * @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
  */
 
-// must be run from the command line
-if (isset($_SERVER['REMOTE_ADDR']) || isset($_SERVER['GATEWAY_INTERFACE'])){
-    die('Direct access to this script is forbidden.');
-}
+require_once './TestBase.class.php';
 
-define('INTERNAL', 1);
-require_once('testwebservicebase.php');
-
-
-/**
- * How to configure this unit tests:
- * 0- Enable the web service you wish to test
- * 1- Create a service with all functions
- * 2- Create a token associate this service and to an admin (or a user with all required capabilities)
- * 3- Configure setUp() function:
- *      a- write the token
- *      b- activate the protocols you wish to test
- *      c- activate the functions you wish to test (readonlytests and writetests arrays)
- *      d- set the number of times the web services are run
- * Do not run WRITE test function on a production site as they impact the DB (even though every
- * test should clean the modified data)
- *
- * How to write a new function:
- * 1- Add the function name to the array readonlytests/writetests
- * 2- Set it as false when you commit!
- * 3- write the function  - Do not prefix the function name by 'test'
- */
-class webservice_test extends webservice_test_base {
+class WebServiceInstitutionTest extends TestBase {
 
 
     function setUp() {
         // default current user to admin
         parent::setUp();
-
 
         //protocols to test
         $this->testrest = true;
@@ -89,7 +63,6 @@ class webservice_test extends webservice_test_base {
         $this->iteration = 1;
 
     }
-
 
 
     function testRun() {
@@ -128,10 +101,6 @@ class webservice_test extends webservice_test_base {
                 }
 
                 $this->timerrest = time() - $this->timerrest;
-                //here you could call a log function to display the timer
-                //example:
-//                error_log('REST time: ');
-//                error_log(print_r($this->timerrest));
             }
 
             // test the XML-RPC interface
@@ -160,10 +129,6 @@ class webservice_test extends webservice_test_base {
                 }
 
                 $this->timerxmlrpc = time() - $this->timerxmlrpc;
-                //here you could call a log function to display the timer
-                //example:
-//                error_log('XML-RPC time: ');
-//                error_log(print_r($this->timerxmlrpc));
             }
 
             // test the SOAP interface
@@ -208,10 +173,6 @@ class webservice_test extends webservice_test_base {
                 }
 
                 $this->timersoap = time() - $this->timersoap;
-                //here you could call a log function to display the timer
-                //example:
-//                error_log('SOAP time: ');
-//                error_log(print_r($this->timersoap));
             }
         }
     }
@@ -232,7 +193,7 @@ class webservice_test extends webservice_test_base {
         $params = array('institution' => 'mahara');
         $users = $client->call($function, $params);
 
-        $this->assertEqual(count($users), $data['count']);
+        $this->assertEquals(count($users), $data['count']);
     }
 
 
@@ -254,7 +215,7 @@ class webservice_test extends webservice_test_base {
         $params = array('institution' => $this->testinstitution);
         $users = $client->call($function, $params);
 
-        $this->assertEqual(count($users), count($dbinvites));
+        $this->assertEquals(count($users), count($dbinvites));
     }
 
 
@@ -276,7 +237,7 @@ class webservice_test extends webservice_test_base {
         $dbinvites = get_records_array('usr_institution_request', 'institution', $this->testinstitution);
 
         //compare DB user with the test data
-        $this->assertEqual(count($params['users']), count($dbinvites));
+        $this->assertEquals(count($params['users']), count($dbinvites));
     }
 
 
@@ -301,7 +262,7 @@ class webservice_test extends webservice_test_base {
         $dbmembers = get_records_array('usr_institution', 'institution', $this->testinstitution);
 
         //compare DB user with the test data
-        $this->assertEqual(count($params['users']), count($dbmembers));
+        $this->assertEquals(count($params['users']), count($dbmembers));
     }
 
 
@@ -318,7 +279,7 @@ class webservice_test extends webservice_test_base {
         $institution = new Institution($this->testinstitution);
         $institution->add_members(array($dbuser1->id, $dbuser2->id));
         $dbmembers = get_records_array('usr_institution', 'institution', $this->testinstitution);
-        $this->assertEqual(2, count($dbmembers));
+        $this->assertEquals(2, count($dbmembers));
 
         //update the users by web service
         $function = 'mahara_institution_remove_members';
@@ -343,15 +304,9 @@ class webservice_test extends webservice_test_base {
         $institution = new Institution($this->testinstitution);
         $institution->addRequestFromUser($dbuser1);
         $institution->addRequestFromUser($dbuser2);
-//        $institution->invite_users(array($dbuser1->id, $dbuser2->id));
-
-//        // XXXXXXXXXXXXXXXXX this could be a hack - not sure if this is due to a bug in $institution->decline_requests
-//
-//        set_field('usr_institution_request', 'confirmedusr', 1, 'institution', $this->testinstitution, 'usr', $dbuser1->id);
-//        set_field('usr_institution_request', 'confirmedusr', 1, 'institution', $this->testinstitution, 'usr', $dbuser2->id);
 
         $dbinvites = get_records_array('usr_institution_request', 'institution', $this->testinstitution);
-        $this->assertEqual(2, count($dbinvites));
+        $this->assertEquals(2, count($dbinvites));
 
         //update the users by web service
         $function = 'mahara_institution_decline_members';

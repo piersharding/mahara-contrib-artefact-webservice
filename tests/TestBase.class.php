@@ -31,17 +31,8 @@
  * @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
  */
 
-// do not allow to run directly
-if (!defined('INTERNAL')) {
-    die();
-}
-
 // disable the WSDL cache
 ini_set("soap.wsdl_cache_enabled", "0");
-
-//define('NO_DEBUG_DISPLAY', true);
-define('PUBLIC', 1);
-
 
 // must be run from the command line
 if (isset($_SERVER['REMOTE_ADDR']) || isset($_SERVER['GATEWAY_INTERFACE'])){
@@ -51,21 +42,26 @@ if (isset($_SERVER['REMOTE_ADDR']) || isset($_SERVER['GATEWAY_INTERFACE'])){
 // disable the WSDL cache
 ini_set("soap.wsdl_cache_enabled", "0");
 
+define('TESTSRUNNING', 1);
+define('INTERNAL', 1);
+define('PUBLIC', 1);
 
-// Catch anything that goes wrong in init.php
-ob_start();
-    require(dirname(dirname(dirname(dirname(__FILE__)))).'/init.php');
-    $errors = trim(ob_get_contents());
-ob_end_clean();
+// necessary since we're running in a limited scope
+global $CFG, $db, $SESSION, $USER, $THEME;
+
+require(dirname(dirname(dirname(dirname(__FILE__)))) . '/init.php');
+require_once(get_config('libroot') . 'ddl.php');
+require_once(get_config('libroot') . 'upgrade.php');
+require_once(get_config('libroot') . 'phpunit.php');
+
 $path = get_config('docroot').'artefact/webservice/libs/zend';
 set_include_path($path . PATH_SEPARATOR . get_include_path());
 
 require_once(get_config('docroot').'/artefact/webservice/libs/externallib.php');
+require_once(get_config('docroot').'/artefact/webservice/locallib.php');
 require_once(get_config('docroot').'/artefact/lib.php');
 require_once('institution.php');
 require_once('group.php');
-
-require_once(dirname(dirname(__FILE__)) . '/libs/simpletestlib/autorun.php');
 
 
 /**
@@ -86,7 +82,9 @@ require_once(dirname(dirname(__FILE__)) . '/libs/simpletestlib/autorun.php');
  * 2- Set it as false when you commit!
  * 3- write the function  - Do not prefix the function name by 'test'
  */
-class webservice_test_base extends UnitTestCase {
+
+
+class TestBase extends PHPUnit_Framework_TestCase {
 
     public $testtoken;
     public $testrest;
@@ -108,11 +106,15 @@ class webservice_test_base extends UnitTestCase {
     public $request_token;
     public $access_token;
 
-    function setUp() {
+    protected function setUp() {
         // default current user to admin
         global $USER;
         $USER->id = 1;
         $USER->admin = 1;
+
+        if (!webservice_protocol_is_enabled('rest') || !webservice_protocol_is_enabled('xmlrpc') || !webservice_protocol_is_enabled('soap') || !webservice_protocol_is_enabled('oauth')) {
+            throw new Exception('Web Services have not been activated - cannot continue until all of them are activated');
+        }
 
         //token to test
         $this->servicename = 'test webservices';
@@ -170,7 +172,7 @@ class webservice_test_base extends UnitTestCase {
         // create an OAuth registry object
         require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthServer.php');
         require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthStore.php');
-        require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthRequester.php');        
+        require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthRequester.php');
         $store = OAuthStore::instance('Mahara');
         $new_app = array(
                     'application_title' => 'Test Application',
@@ -183,23 +185,18 @@ class webservice_test_base extends UnitTestCase {
           );
         $this->consumer_key = $store->updateConsumer($new_app, $dbuser->id, true);
         $this->consumer = (object) $store->getConsumer($this->consumer_key, $dbuser->id);
-        //$store->deleteConsumerRequestToken($token);
-//        error_log('consumer: '.var_export($this->consumer,true));
-        
+
         // Now do the request and access token
         $this->request_token  = $store->addConsumerRequestToken($this->consumer_key, array());
-//        error_log('request token: '.var_export($this->request_token,true));
-        
+
         // authorise
         $verifier = $store->authorizeConsumerRequestToken($this->request_token['token'], $dbuser->id, 'localhost');
-//        error_log('verifier: '.var_export($verifier,true));
-        
+
         // exchange access token
         $options = array();
         $options['verifier'] = $verifier;
         $this->access_token  = $store->exchangeConsumerRequestForAccessToken($this->request_token['token'], $options);
-//        error_log('access token: '.var_export($this->access_token,true));
-        
+
         // generate a test token
         $token = external_generate_token(EXTERNAL_TOKEN_PERMANENT, $dbservice, $dbuser->id);
         $dbtoken = get_record('external_tokens', 'token', $token);
@@ -214,13 +211,6 @@ class webservice_test_base extends UnitTestCase {
                         'publickeyexpires' => 0);
         $dbserviceuser->id = insert_record('external_services_users', $dbserviceuser, 'id', true);
 
-
-//        $groupcategories = get_records_array('group_category','','','displayorder');
-//        if (empty($groupcategories)) {
-//            throw new Exception('missing group categories: you must create atleast one group category');
-//        }
-//        $category = array_shift($groupcategories);
-
         // setup test groups
         $groupid = group_create(array(
             'shortname'      => 'mytestgroup1',
@@ -228,8 +218,6 @@ class webservice_test_base extends UnitTestCase {
             'description'    => 'a description for test group 1',
             'institution'    => 'mahara',
             'grouptype'      => 'standard',
-//            'category'       => $category->id,
-//            'jointype'       => 'open',
             'open'           => 1,
             'controlled'     => 0,
             'request'        => 0,
@@ -259,7 +247,6 @@ class webservice_test_base extends UnitTestCase {
             $newinstitution->defaultquota           = get_config_plugin('artefact', 'file', 'defaultquota');
             $newinstitution->defaultmembershipperiod  = null;
             $newinstitution->maxuseraccounts        = null;
-    //        $newinstitution->expiry               = db_format_timestamp($values['expiry']);
             $newinstitution->allowinstitutionpublicviews  = 1;
             insert_record('institution', $newinstitution);
             $authinstance = (object)array(
@@ -302,7 +289,6 @@ class webservice_test_base extends UnitTestCase {
     }
 
 
-
     public function clean_institution() {
 
         // clean down the institution
@@ -331,7 +317,7 @@ class webservice_test_base extends UnitTestCase {
     }
 
 
-    function tearDown() {
+    protected function tearDown() {
 
         // clean down the institution
         $this->clean_institution();
@@ -423,7 +409,7 @@ class webservice_test_base extends UnitTestCase {
         $userid = create_user($user1, $profilefields, $this->institution, $this->authinstance);
         db_commit();
         $dbuser1 = get_record('usr', 'username', $user1->username);
-        $this->assertTrue($dbuser1);
+        $this->assertInstanceOf('stdClass', $dbuser1);
         $userobj = new User();
         $userobj = $userobj->find_by_id($dbuser1->id);
         $authobj_tmp = AuthFactory::create($dbuser1->authinstance);
@@ -461,7 +447,7 @@ class webservice_test_base extends UnitTestCase {
         $userid = create_user($user2, $profilefields, $this->institution, $this->authinstance);
         db_commit();
         $dbuser2 = get_record('usr', 'username', $user2->username);
-        $this->assertTrue($dbuser2);
+        $this->assertInstanceOf('stdClass', $dbuser2);
         $userobj = new User();
         $userobj = $userobj->find_by_id($dbuser2->id);
         $authobj_tmp = AuthFactory::create($dbuser2->authinstance);

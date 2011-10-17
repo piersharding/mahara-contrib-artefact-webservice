@@ -31,40 +31,14 @@
  * @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
  */
 
-// must be run from the command line
-if (isset($_SERVER['REMOTE_ADDR']) || isset($_SERVER['GATEWAY_INTERFACE'])){
-    die('Direct access to this script is forbidden.');
-}
+require_once './TestBase.class.php';
 
-define('INTERNAL', 1);
-require_once('testwebservicebase.php');
-
-
-/**
- * How to configure this unit tests:
- * 0- Enable the web service you wish to test
- * 1- Create a service with all functions
- * 2- Create a token associate this service and to an admin (or a user with all required capabilities)
- * 3- Configure setUp() function:
- *      a- write the token
- *      b- activate the protocols you wish to test
- *      c- activate the functions you wish to test (readonlytests and writetests arrays)
- *      d- set the number of times the web services are run
- * Do not run WRITE test function on a production site as they impact the DB (even though every
- * test should clean the modified data)
- *
- * How to write a new function:
- * 1- Add the function name to the array readonlytests/writetests
- * 2- Set it as false when you commit!
- * 3- write the function  - Do not prefix the function name by 'test'
- */
-class webservice_test extends webservice_test_base {
+class WebServiceUserTest extends TestBase {
 
 
     function setUp() {
         // default current user to admin
         parent::setUp();
-
 
         //protocols to test
         $this->testrest = true;
@@ -142,10 +116,6 @@ class webservice_test extends webservice_test_base {
                 }
 
                 $this->timerrest = time() - $this->timerrest;
-                //here you could call a log function to display the timer
-                //example:
-//                error_log('REST time: ');
-//                error_log(print_r($this->timerrest));
             }
 
             // test the XML-RPC interface
@@ -174,10 +144,6 @@ class webservice_test extends webservice_test_base {
                 }
 
                 $this->timerxmlrpc = time() - $this->timerxmlrpc;
-                //here you could call a log function to display the timer
-                //example:
-//                error_log('XML-RPC time: ');
-//                error_log(print_r($this->timerxmlrpc));
             }
 
             // test the SOAP interface
@@ -222,10 +188,6 @@ class webservice_test extends webservice_test_base {
                 }
 
                 $this->timersoap = time() - $this->timersoap;
-                //here you could call a log function to display the timer
-                //example:
-//                error_log('SOAP time: ');
-//                error_log(print_r($this->timersoap));
             }
         }
     }
@@ -249,11 +211,11 @@ class webservice_test extends webservice_test_base {
 
         // standard call
         $users = $client->call($function, $params);
-        $this->assertEqual(count($users), count($users_in));
+        $this->assertEquals(count($users), count($users_in));
 
         // JSON call
         $users = $client->call($function, $params, true);
-        $this->assertEqual(count($users), count($users_in));
+        $this->assertEquals(count($users), count($users_in));
     }
 
 
@@ -272,7 +234,7 @@ class webservice_test extends webservice_test_base {
         $params = array();
         $users = $client->call($function, $params);
 
-        $this->assertEqual(count($users), count($userids));
+        $this->assertEquals(count($users), count($userids));
     }
 
     // create user test
@@ -321,29 +283,29 @@ class webservice_test extends webservice_test_base {
         foreach ($resultusers as $u) {
             $this->created_users[]= $u['id'];
         }
-        $this->assertEqual(count($users), count($resultusers));
+        $this->assertEquals(count($users), count($resultusers));
 
         //retrieve user1 from the DB and check values
         $dbuser1 = get_record('usr', 'username', $user1->username);
-        $this->assertEqual($dbuser1->firstname, $user1->firstname);
-        $this->assertEqual($dbuser1->password,
+        $this->assertEquals($dbuser1->firstname, $user1->firstname);
+        $this->assertEquals($dbuser1->password,
                 self::encrypt_password($user1->password, $dbuser1->salt));
-        $this->assertEqual($dbuser1->lastname, $user1->lastname);
-        $this->assertEqual($dbuser1->email, $user1->email);
-        $this->assertEqual($dbuser1->studentid, $user1->studentid);
-        $this->assertEqual($dbuser1->preferredname, $user1->preferredname);
+        $this->assertEquals($dbuser1->lastname, $user1->lastname);
+        $this->assertEquals($dbuser1->email, $user1->email);
+        $this->assertEquals($dbuser1->studentid, $user1->studentid);
+        $this->assertEquals($dbuser1->preferredname, $user1->preferredname);
         foreach (array('city', 'country') as $field) {
             $artefact = get_profile_field($dbuser1->id, $field);
-            $this->assertEqual($artefact, $user1->{$field});
+            $this->assertEquals($artefact, $user1->{$field});
         }
 
         //retrieve user2 from the DB and check values
         $dbuser2 = get_record('usr', 'username', $user2->username);
-        $this->assertEqual($dbuser2->firstname, $user2->firstname);
-        $this->assertEqual($dbuser2->password,
+        $this->assertEquals($dbuser2->firstname, $user2->firstname);
+        $this->assertEquals($dbuser2->password,
                 self::encrypt_password($user2->password, $dbuser2->salt));
-        $this->assertEqual($dbuser2->lastname, $user2->lastname);
-        $this->assertEqual($dbuser2->email, $user2->email);
+        $this->assertEquals($dbuser2->lastname, $user2->lastname);
+        $this->assertEquals($dbuser2->email, $user2->email);
     }
 
     // delete user test
@@ -380,7 +342,7 @@ class webservice_test extends webservice_test_base {
         $userid = create_user($new_user, $profilefields, $institution, $authinstance);
         db_commit();
         $dbuser1 = get_record('usr', 'username', $new_user->username);
-        $this->assertTrue($dbuser1);
+        $this->assertInstanceOf('stdClass', $dbuser1);
         $this->created_users[]= $dbuser1->id;
 
         db_begin();
@@ -397,7 +359,7 @@ class webservice_test extends webservice_test_base {
         $userid = create_user($new_user, $profilefields, $institution, $authinstance);
         db_commit();
         $dbuser2 = get_record('usr', 'username', $new_user->username);
-        $this->assertTrue($dbuser2);
+        $this->assertInstanceOf('stdClass', $dbuser2);
         $this->created_users[]= $dbuser2->id;
 
         //delete the users by webservice
@@ -451,24 +413,24 @@ class webservice_test extends webservice_test_base {
 
         //compare DB user with the test data
         $dbuser1 = get_record('usr', 'username', $user1->username);
-        $this->assertEqual($dbuser1->firstname, $user1->firstname);
-        $this->assertEqual($dbuser1->password,
+        $this->assertEquals($dbuser1->firstname, $user1->firstname);
+        $this->assertEquals($dbuser1->password,
                 self::encrypt_password($user1->password, $dbuser1->salt));
-        $this->assertEqual($dbuser1->lastname, $user1->lastname);
-        $this->assertEqual($dbuser1->email, $user1->email);
-        $this->assertEqual($dbuser1->studentid, $user1->studentid);
-        $this->assertEqual($dbuser1->preferredname, $user1->preferredname);
+        $this->assertEquals($dbuser1->lastname, $user1->lastname);
+        $this->assertEquals($dbuser1->email, $user1->email);
+        $this->assertEquals($dbuser1->studentid, $user1->studentid);
+        $this->assertEquals($dbuser1->preferredname, $user1->preferredname);
         foreach (array('city', 'country') as $field) {
             $artefact = get_profile_field($dbuser1->id, $field);
-            $this->assertEqual($artefact, $user1->{$field});
+            $this->assertEquals($artefact, $user1->{$field});
         }
 
         $dbuser2 = get_record('usr', 'username', $user2->username);
-        $this->assertEqual($dbuser2->firstname, $user2->firstname);
-        $this->assertEqual($dbuser2->password,
+        $this->assertEquals($dbuser2->firstname, $user2->firstname);
+        $this->assertEquals($dbuser2->password,
                 self::encrypt_password($user2->password, $dbuser2->salt));
-        $this->assertEqual($dbuser2->lastname, $user2->lastname);
-        $this->assertEqual($dbuser2->email, $user2->email);
+        $this->assertEquals($dbuser2->lastname, $user2->lastname);
+        $this->assertEquals($dbuser2->email, $user2->email);
     }
 
 
@@ -502,19 +464,19 @@ class webservice_test extends webservice_test_base {
         // check the new favourites lists
         $fav1 = self::prune_nasty_zero(get_user_favorites($dbuser1->id, 100, 0));
         $fav2 = self::prune_nasty_zero(get_user_favorites($dbuser2->id, 100, 0));
-        $this->assertEqual(count($fav1), count($user1->favourites));
-        $this->assertEqual($dbuser2->id, self::find_new_fav($fav1));
-        $this->assertEqual(count($fav2), count($user2->favourites));
-        $this->assertEqual($dbuser1->id, self::find_new_fav($fav2));
+        $this->assertEquals(count($fav1), count($user1->favourites));
+        $this->assertEquals($dbuser2->id, self::find_new_fav($fav1));
+        $this->assertEquals(count($fav2), count($user2->favourites));
+        $this->assertEquals($dbuser1->id, self::find_new_fav($fav2));
 
         $function = 'mahara_user_get_favourites';
         $params = array('users' => array(array('shortname' => 'testshortname1', 'userid' => $dbuser1->id),array('shortname' => 'testshortname1', 'userid' => $dbuser2->id)));
         $users = $client->call($function, $params);
         foreach ($users as $user) {
             $favs = self::prune_nasty_zero($user['favourites']);
-            $this->assertEqual(count($favs), count($user1->favourites));
-            $this->assertEqual($user['shortname'], $user1->shortname);
-            $this->assertEqual($user['institution'], $user1->institution);
+            $this->assertEquals(count($favs), count($user1->favourites));
+            $this->assertEquals($user['shortname'], $user1->shortname);
+            $this->assertEquals($user['institution'], $user1->institution);
         }
 
         // get all favourites
@@ -528,9 +490,9 @@ class webservice_test extends webservice_test_base {
                 continue;
             }
             $favs = self::prune_nasty_zero($user['favourites']);
-            $this->assertEqual(count($favs), count($user1->favourites));
-            $this->assertEqual($user['shortname'], $user1->shortname);
-            $this->assertEqual($user['institution'], $user1->institution);
+            $this->assertEquals(count($favs), count($user1->favourites));
+            $this->assertEquals($user['shortname'], $user1->shortname);
+            $this->assertEquals($user['institution'], $user1->institution);
         }
     }
 }

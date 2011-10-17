@@ -31,35 +31,9 @@
  * @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
  */
 
-// must be run from the command line
-if (isset($_SERVER['REMOTE_ADDR']) || isset($_SERVER['GATEWAY_INTERFACE'])){
-    die('Direct access to this script is forbidden.');
-}
+require_once './TestBase.class.php';
 
-define('INTERNAL', 1);
-require_once('testwebservicebase.php');
-
-
-
-/**
- * How to configure this unit tests:
- * 0- Enable the web service you wish to test
- * 1- Create a service with all functions
- * 2- Create a token associate this service and to an admin (or a user with all required capabilities)
- * 3- Configure setUp() function:
- *      a- write the token
- *      b- activate the protocols you wish to test
- *      c- activate the functions you wish to test (readonlytests and writetests arrays)
- *      d- set the number of times the web services are run
- * Do not run WRITE test function on a production site as they impact the DB (even though every
- * test should clean the modified data)
- *
- * How to write a new function:
- * 1- Add the function name to the array readonlytests/writetests
- * 2- Set it as false when you commit!
- * 3- write the function  - Do not prefix the function name by 'test'
- */
-class webservice_test extends webservice_test_base {
+class WebServiceGroupTest extends TestBase {
 
 
     function setUp() {
@@ -88,9 +62,7 @@ class webservice_test extends webservice_test_base {
 
         //performance testing: number of time the web service are run
         $this->iteration = 1;
-
     }
-
 
 
     function testRun() {
@@ -98,7 +70,7 @@ class webservice_test extends webservice_test_base {
 
         if (!$this->testrest and !$this->testxmlrpc and !$this->testsoap) {
             print_r("Web service unit tests are not run as not setup.
-                (see artefact/webservice/simpletest/testwebservice.php)");
+                (see /artefact/webservice/simpletest/testwebservice.php)");
         }
 
         // need a token to test
@@ -129,10 +101,6 @@ class webservice_test extends webservice_test_base {
                 }
 
                 $this->timerrest = time() - $this->timerrest;
-                //here you could call a log function to display the timer
-                //example:
-//                error_log('REST time: ');
-//                error_log(print_r($this->timerrest));
             }
 
             // test the XML-RPC interface
@@ -161,10 +129,6 @@ class webservice_test extends webservice_test_base {
                 }
 
                 $this->timerxmlrpc = time() - $this->timerxmlrpc;
-                //here you could call a log function to display the timer
-                //example:
-//                error_log('XML-RPC time: ');
-//                error_log(print_r($this->timerxmlrpc));
             }
 
             // test the SOAP interface
@@ -209,10 +173,6 @@ class webservice_test extends webservice_test_base {
                 }
 
                 $this->timersoap = time() - $this->timersoap;
-                //here you could call a log function to display the timer
-                //example:
-//                error_log('SOAP time: ');
-//                error_log(print_r($this->timersoap));
             }
         }
     }
@@ -235,7 +195,7 @@ class webservice_test extends webservice_test_base {
 
         $params = array('groups' => $groupids);
         $groups = $client->call($function, $params);
-        $this->assertEqual(count($groups), count($groupids));
+        $this->assertEquals(count($groups), count($groupids));
     }
 
 
@@ -249,7 +209,7 @@ class webservice_test extends webservice_test_base {
         $params = array();
         $groups = $client->call($function, $params);
 
-        $this->assertEqual(count($groups), count($groups));
+        $this->assertEquals(count($groups), count($groups));
     }
 
 
@@ -261,8 +221,6 @@ class webservice_test extends webservice_test_base {
         $dbuser1 = $this->create_user1_for_update();
         $dbuser2 = $this->create_user2_for_update();
 
-//        $groupcategories = get_records_array('group_category','','','displayorder');
-//        $category = array_shift($groupcategories);
         //Test data
         //a full group: group1
         $group1 = new stdClass();
@@ -272,19 +230,7 @@ class webservice_test extends webservice_test_base {
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'course';
         $group1->editroles      = 'notmember';
-//        $group1->category       = $category->title;
-//        $group1->open           = 1;
         $group1->request        = 1;
-//        $group1->controlled     = 0;
-//        $group1->submitpages    = 0;
-//        $group1->hidemembers    = 0;
-//        $group1->invitefriends  = 0;
-//        $group1->suggestfriends = 0;
-//        $group1->hidden         = 0;
-//        $group1->hidemembersfrommembers = 0;
-//        $group1->public         = 0;
-//        $group1->usersautoadded = 0;
-//        $group1->viewnotify     = 0;
         $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'), array('id' => $dbuser2->id, 'role' => 'admin'));
 
         //a small group: group2
@@ -294,20 +240,12 @@ class webservice_test extends webservice_test_base {
         $group2->description    = 'a description for test group 2';
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
-//        $group2->category       = $category->title;
-//        $group2->jointype       = 'invite';
         $group2->open           = 1;
         $group2->request        = 0;
         $group2->controlled     = 0;
         $group2->submitpages    = 0;
-//        $group2->hidemembers    = 0;
-//        $group2->invitefriends  = 0;
-//        $group2->suggestfriends = 0;
-//        $group2->hidden         = 0;
-//        $group2->hidemembersfrommembers = 0;
         $group2->public         = 0;
         $group2->usersautoadded = 0;
-//        $group2->viewnotify     = 0;
         $group2->members        = array(array('username' => $dbuser1->username, 'role' => 'admin'), array('username' => $dbuser2->username, 'role' => 'admin'));
         $groups = array($group1, $group2);
 
@@ -327,73 +265,46 @@ class webservice_test extends webservice_test_base {
         foreach ($resultgroups as $g) {
             $this->created_groups[]= $g['id'];
         }
-        $this->assertEqual(count($groups), count($resultgroups));
+        $this->assertEquals(count($groups), count($resultgroups));
         $dbgroup1 = get_record('group', 'shortname', $group1->shortname, 'institution', 'mahara');
         $dbgroupmembers1 = get_records_array('group_member', 'group', $dbgroup1->id);
 
         $dbgroup2 = get_record('group', 'shortname', $group2->shortname, 'institution', 'mahara');
         $dbgroupmembers2 = get_records_array('group_member', 'group', $dbgroup2->id);
 
-        // temporary hack untl group changes are sorted XXX
-//        error_log('dbgroup: '.var_export($dbgroup1, true));
         $dbgroup1->open = ($dbgroup1->jointype == 'open' ? 1 : 0);
-//        $dbgroup1->request = ($dbgroup1->jointype == 'request' ? 1 : 0);
         $dbgroup1->controlled = ($dbgroup1->jointype == 'controlled' ? 1 : 0);
         $dbgroup1->submitpages = (isset($dbgroup1->submitpages) ? $dbgroup1->submitpages : 0);
-//        $dbgroup1->hidemembers = (isset($dbgroup1->hidemembers) ? $dbgroup1->hidemembers : 0);
-//        $dbgroup1->invitefriends = (isset($dbgroup1->invitefriends) ? $dbgroup1->invitefriends : 0);
-//        $dbgroup1->suggestfriends = (isset($dbgroup1->suggestfriends) ? $dbgroup1->suggestfriends : 0);
-//        $dbgroup1->hidden = (isset($dbgroup1->hidden) ? $dbgroup1->hidden : 0);
-//        $dbgroup1->hidemembersfrommembers = (isset($dbgroup1->hidemembersfrommembers) ? $dbgroup1->hidemembersfrommembers : 0);
         $dbgroup2->open = ($dbgroup2->jointype == 'open' ? 1 : 0);
-//        $dbgroup2->request = ($dbgroup2->jointype == 'request' ? 1 : 0);
         $dbgroup2->controlled = ($dbgroup2->jointype == 'controlled' ? 1 : 0);
         $dbgroup2->submitpages = (isset($dbgroup2->submitpages) ? $dbgroup2->submitpages : 0);
-//        $dbgroup2->hidemembers = (isset($dbgroup2->hidemembers) ? $dbgroup2->hidemembers : 0);
-//        $dbgroup2->invitefriends = (isset($dbgroup2->invitefriends) ? $dbgroup2->invitefriends : 0);
-//        $dbgroup2->suggestfriends = (isset($dbgroup2->suggestfriends) ? $dbgroup2->suggestfriends : 0);
-//        $dbgroup2->hidden = (isset($dbgroup2->hidden) ? $dbgroup2->hidden : 0);
-//        $dbgroup2->hidemembersfrommembers = (isset($dbgroup2->hidemembersfrommembers) ? $dbgroup2->hidemembersfrommembers : 0);
 
         //retrieve groups from the DB and check values
-        $this->assertEqual($dbgroup1->name, $group1->name);
-        $this->assertEqual($dbgroup1->description, $group1->description);
-        $this->assertEqual($dbgroup1->grouptype, $group1->grouptype);
-        $this->assertEqual($dbgroup1->category, null);
-        $this->assertEqual($dbgroup1->editroles, $group1->editroles);
-//        $this->assertEqual($dbgroup1->jointype, $group1->jointype);
-        $this->assertEqual($dbgroup1->open, 0);
-        $this->assertEqual($dbgroup1->request, 1);
-        $this->assertEqual($dbgroup1->controlled, 0);
-        $this->assertEqual($dbgroup1->submitpages, 0);
-//        $this->assertEqual($dbgroup1->hidemembers, $group1->hidemembers);
-//        $this->assertEqual($dbgroup1->invitefriends, $group1->invitefriends);
-//        $this->assertEqual($dbgroup1->suggestfriends, $group1->suggestfriends);
-//        $this->assertEqual($dbgroup1->hidden, $group1->hidden);
-//        $this->assertEqual($dbgroup1->hidemembersfrommembers, $group1->hidemembersfrommembers);
-        $this->assertEqual($dbgroup1->public, 0);
-        $this->assertEqual($dbgroup1->usersautoadded, 0);
-        $this->assertEqual($dbgroup1->viewnotify, 1);
-        $this->assertEqual(count($dbgroupmembers1), count($group1->members)+1); // current user added as admin
+        $this->assertEquals($dbgroup1->name, $group1->name);
+        $this->assertEquals($dbgroup1->description, $group1->description);
+        $this->assertEquals($dbgroup1->grouptype, $group1->grouptype);
+        $this->assertEquals($dbgroup1->category, null);
+        $this->assertEquals($dbgroup1->editroles, $group1->editroles);
+        $this->assertEquals($dbgroup1->open, 0);
+        $this->assertEquals($dbgroup1->request, 1);
+        $this->assertEquals($dbgroup1->controlled, 0);
+        $this->assertEquals($dbgroup1->submitpages, 0);
+        $this->assertEquals($dbgroup1->public, 0);
+        $this->assertEquals($dbgroup1->usersautoadded, 0);
+        $this->assertEquals($dbgroup1->viewnotify, 1);
+        $this->assertEquals(count($dbgroupmembers1), count($group1->members)+1); // current user added as admin
 
-        $this->assertEqual($dbgroup2->name, $group2->name);
-        $this->assertEqual($dbgroup2->description, $group2->description);
-        $this->assertEqual($dbgroup2->grouptype, $group2->grouptype);
-//        $this->assertEqual($dbgroup2->category, $category->id);
-//        $this->assertEqual($dbgroup2->jointype, $group2->jointype);
-        $this->assertEqual($dbgroup2->open, $group2->open);
-        $this->assertEqual($dbgroup2->request, $group2->request);
-        $this->assertEqual($dbgroup2->controlled, $group2->controlled);
-        $this->assertEqual($dbgroup2->submitpages, $group2->submitpages);
-//        $this->assertEqual($dbgroup2->hidemembers, $group2->hidemembers);
-//        $this->assertEqual($dbgroup2->invitefriends, $group2->invitefriends);
-//        $this->assertEqual($dbgroup2->suggestfriends, $group2->suggestfriends);
-//        $this->assertEqual($dbgroup2->hidden, $group2->hidden);
-//        $this->assertEqual($dbgroup2->hidemembersfrommembers, $group2->hidemembersfrommembers);
-        $this->assertEqual($dbgroup2->public, $group2->public);
-        $this->assertEqual($dbgroup2->usersautoadded, $group2->usersautoadded);
-        $this->assertEqual($dbgroup2->viewnotify, 1);
-        $this->assertEqual(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
+        $this->assertEquals($dbgroup2->name, $group2->name);
+        $this->assertEquals($dbgroup2->description, $group2->description);
+        $this->assertEquals($dbgroup2->grouptype, $group2->grouptype);
+        $this->assertEquals($dbgroup2->open, $group2->open);
+        $this->assertEquals($dbgroup2->request, $group2->request);
+        $this->assertEquals($dbgroup2->controlled, $group2->controlled);
+        $this->assertEquals($dbgroup2->submitpages, $group2->submitpages);
+        $this->assertEquals($dbgroup2->public, $group2->public);
+        $this->assertEquals($dbgroup2->usersautoadded, $group2->usersautoadded);
+        $this->assertEquals($dbgroup2->viewnotify, 1);
+        $this->assertEquals(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
     }
 
 
@@ -407,8 +318,6 @@ class webservice_test extends webservice_test_base {
         $dbuser1 = $this->create_user1_for_update();
         $dbuser2 = $this->create_user2_for_update();
 
-//        $groupcategories = get_records_array('group_category','','','displayorder');
-//        $category = array_shift($groupcategories);
         //Test data
         //a full group: group1
         $group1 = new stdClass();
@@ -417,20 +326,12 @@ class webservice_test extends webservice_test_base {
         $group1->description    = 'a description for test group 1';
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
-//        $group1->category       = $category->id;
-//        $group1->jointype       = 'open';
         $group1->open           = 1;
         $group1->request        = 0;
         $group1->controlled     = 0;
         $group1->submitpages    = 0;
-//        $group1->hidemembers    = 0;
-//        $group1->invitefriends  = 0;
-//        $group1->suggestfriends = 0;
-//        $group1->hidden         = 0;
-//        $group1->hidemembersfrommembers = 0;
         $group1->public         = 0;
         $group1->usersautoadded = 0;
-//        $group1->viewnotify     = 0;
         $group1->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
 
         //a small group: group2
@@ -440,20 +341,12 @@ class webservice_test extends webservice_test_base {
         $group2->description    = 'a description for test group 2';
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
-//        $group2->category       = $category->id;
-//        $group2->jointype       = 'open';
         $group2->open           = 1;
         $group2->request        = 0;
         $group2->controlled     = 0;
         $group2->submitpages    = 0;
-//        $group2->hidemembers    = 0;
-//        $group2->invitefriends  = 0;
-//        $group2->suggestfriends = 0;
-//        $group2->hidden         = 0;
-//        $group2->hidemembersfrommembers = 0;
         $group2->public         = 0;
         $group2->usersautoadded = 0;
-//        $group2->viewnotify     = 0;
         $group2->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
 
         //do not run the test if group1 or group2 already exists
@@ -495,8 +388,6 @@ class webservice_test extends webservice_test_base {
         $dbuser1 = $this->create_user1_for_update();
         $dbuser2 = $this->create_user2_for_update();
 
-//        $groupcategories = get_records_array('group_category','','','displayorder');
-//        $category = array_shift($groupcategories);
         //Test data
         //a full group: group1
         $group1 = new stdClass();
@@ -505,20 +396,12 @@ class webservice_test extends webservice_test_base {
         $group1->description    = 'a description for test group 1';
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
-//        $group1->category       = $category->id;
-//        $group1->jointype       = 'invite';
         $group1->open           = 1;
         $group1->request        = 0;
         $group1->controlled     = 0;
         $group1->submitpages    = 0;
-//        $group1->hidemembers    = 0;
-//        $group1->invitefriends  = 0;
-//        $group1->suggestfriends = 0;
-//        $group1->hidden         = 0;
-//        $group1->hidemembersfrommembers = 0;
         $group1->public         = 0;
         $group1->usersautoadded = 0;
-//        $group1->viewnotify     = 0;
         $group1->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
 
         //a small group: group2
@@ -528,20 +411,12 @@ class webservice_test extends webservice_test_base {
         $group2->description    = 'a description for test group 2';
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
-//        $group2->category       = $category->id;
-//        $group2->jointype       = 'invite';
         $group2->open           = 1;
         $group2->request        = 0;
         $group2->controlled     = 0;
         $group2->submitpages    = 0;
-//        $group2->hidemembers    = 0;
-//        $group2->invitefriends  = 0;
-//        $group2->suggestfriends = 0;
-//        $group2->hidden         = 0;
-//        $group2->hidemembersfrommembers = 0;
         $group2->public         = 0;
         $group2->usersautoadded = 0;
-//        $group2->viewnotify     = 0;
         $group2->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
 
         //do not run the test if group1 or group2 already exists
@@ -569,45 +444,24 @@ class webservice_test extends webservice_test_base {
         $group1->description    = 'a description for test group 1 - changed';
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
-//        $group1->category       = $category->title;
-//        $group1->jointype       = 'invite';
         $group1->open           = 1;
         $group1->request        = 0;
         $group1->controlled     = 0;
         $group1->submitpages    = 0;
-//        $group1->hidemembers    = 0;
-//        $group1->invitefriends  = 0;
-//        $group1->suggestfriends = 0;
-//        $group1->hidden         = 0;
-//        $group1->hidemembersfrommembers = 0;
         $group1->public         = 0;
         $group1->usersautoadded = 0;
-//        $group1->viewnotify     = 0;
         $group1->members        = array(array('id' => $dbuser1->id, 'role' => 'admin'), array('id' => $dbuser2->id, 'role' => 'admin'));
 
         //a small group: group2
         $group2 = new stdClass();
-//        $group2->id             = $dbgroup2->id;
         $group2->shortname      = 'testgroupshortname2';
         $group2->name           = 'The test group 2 - changed';
         $group2->description    = 'a description for test group 2 - changed';
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'course';
         $group2->editroles      = 'notmember';
-//        $group2->category       = $category->title;
-//        $group2->jointype       = 'invite';
-//        $group2->open           = 1;
-//        $group2->request        = 0;
-//        $group2->controlled     = 0;
-//        $group2->submitpages    = 0;
-//        $group2->hidemembers    = 0;
-//        $group2->invitefriends  = 0;
-//        $group2->suggestfriends = 0;
-//        $group2->hidden         = 0;
-//        $group2->hidemembersfrommembers = 0;
         $group2->public         = 0;
         $group2->usersautoadded = 0;
-//        $group2->viewnotify     = 0;
         $group2->members        = array(array('username' => $dbuser2->username, 'role' => 'admin'));
         $groups = array($group1, $group2);
 
@@ -624,62 +478,36 @@ class webservice_test extends webservice_test_base {
 
         // temporary hack untl group changes are sorted XXX
         $dbgroup1->open = ($dbgroup1->jointype == 'open' ? 1 : 0);
-//        $dbgroup1->request = ($dbgroup1->jointype == 'request' ? 1 : 0);
         $dbgroup1->controlled = ($dbgroup1->jointype == 'controlled' ? 1 : 0);
         $dbgroup1->submitpages = (isset($dbgroup1->submitpages) ? $dbgroup1->submitpages : 0);
-//        $dbgroup1->hidemembers = (isset($dbgroup1->hidemembers) ? $dbgroup1->hidemembers : 0);
-//        $dbgroup1->invitefriends = (isset($dbgroup1->invitefriends) ? $dbgroup1->invitefriends : 0);
-//        $dbgroup1->suggestfriends = (isset($dbgroup1->suggestfriends) ? $dbgroup1->suggestfriends : 0);
-//        $dbgroup1->hidden = (isset($dbgroup1->hidden) ? $dbgroup1->hidden : 0);
-//        $dbgroup1->hidemembersfrommembers = (isset($dbgroup1->hidemembersfrommembers) ? $dbgroup1->hidemembersfrommembers : 0);
         $dbgroup2->open = ($dbgroup2->jointype == 'open' ? 1 : 0);
-//        $dbgroup2->request = ($dbgroup2->jointype == 'request' ? 1 : 0);
         $dbgroup2->controlled = ($dbgroup2->jointype == 'controlled' ? 1 : 0);
         $dbgroup2->submitpages = (isset($dbgroup2->submitpages) ? $dbgroup2->submitpages : 0);
-//        $dbgroup2->hidemembers = (isset($dbgroup2->hidemembers) ? $dbgroup2->hidemembers : 0);
-//        $dbgroup2->invitefriends = (isset($dbgroup2->invitefriends) ? $dbgroup2->invitefriends : 0);
-//        $dbgroup2->suggestfriends = (isset($dbgroup2->suggestfriends) ? $dbgroup2->suggestfriends : 0);
-//        $dbgroup2->hidden = (isset($dbgroup2->hidden) ? $dbgroup2->hidden : 0);
-//        $dbgroup2->hidemembersfrommembers = (isset($dbgroup2->hidemembersfrommembers) ? $dbgroup2->hidemembersfrommembers : 0);
 
         //compare DB group with the test data
         //retrieve groups from the DB and check values
-        $this->assertEqual($dbgroup1->name, $group1->name);
-        $this->assertEqual($dbgroup1->description, $group1->description);
-        $this->assertEqual($dbgroup1->grouptype, $group1->grouptype);
-//        $this->assertEqual($dbgroup1->category, $category->id);
-        $this->assertEqual($dbgroup1->open, $group1->open);
-        $this->assertEqual($dbgroup1->request, $group1->request);
-        $this->assertEqual($dbgroup1->controlled, $group1->controlled);
-        $this->assertEqual($dbgroup1->submitpages, $group1->submitpages);
-//        $this->assertEqual($dbgroup1->hidemembers, $group1->hidemembers);
-//        $this->assertEqual($dbgroup1->invitefriends, $group1->invitefriends);
-//        $this->assertEqual($dbgroup1->suggestfriends, $group1->suggestfriends);
-//        $this->assertEqual($dbgroup1->hidden, $group1->hidden);
-//        $this->assertEqual($dbgroup1->hidemembersfrommembers, $group1->hidemembersfrommembers);
-        $this->assertEqual($dbgroup1->public, $group1->public);
-        $this->assertEqual($dbgroup1->usersautoadded, $group1->usersautoadded);
-//        $this->assertEqual($dbgroup1->viewnotify, 1);
-        $this->assertEqual(count($dbgroupmembers1), count($group1->members)+1); // current user added as admin
+        $this->assertEquals($dbgroup1->name, $group1->name);
+        $this->assertEquals($dbgroup1->description, $group1->description);
+        $this->assertEquals($dbgroup1->grouptype, $group1->grouptype);
+        $this->assertEquals($dbgroup1->open, $group1->open);
+        $this->assertEquals($dbgroup1->request, $group1->request);
+        $this->assertEquals($dbgroup1->controlled, $group1->controlled);
+        $this->assertEquals($dbgroup1->submitpages, $group1->submitpages);
+        $this->assertEquals($dbgroup1->public, $group1->public);
+        $this->assertEquals($dbgroup1->usersautoadded, $group1->usersautoadded);
+        $this->assertEquals(count($dbgroupmembers1), count($group1->members)+1); // current user added as admin
 
-        $this->assertEqual($dbgroup2->name, $group2->name);
-        $this->assertEqual($dbgroup2->description, $group2->description);
-        $this->assertEqual($dbgroup2->grouptype, $group2->grouptype);
-//        $this->assertEqual($dbgroup2->category, $category->id);
-        $this->assertEqual($dbgroup2->editroles, $group2->editroles);
-        $this->assertEqual($dbgroup2->open, 1);
-        $this->assertEqual($dbgroup2->request, 0);
-        $this->assertEqual($dbgroup2->controlled, 0);
-        $this->assertEqual($dbgroup2->submitpages, 0);
-//        $this->assertEqual($dbgroup2->hidemembers, $group2->hidemembers);
-//        $this->assertEqual($dbgroup2->invitefriends, $group2->invitefriends);
-//        $this->assertEqual($dbgroup2->suggestfriends, $group2->suggestfriends);
-//        $this->assertEqual($dbgroup2->hidden, $group2->hidden);
-//        $this->assertEqual($dbgroup2->hidemembersfrommembers, $group2->hidemembersfrommembers);
-        $this->assertEqual($dbgroup2->public, $group2->public);
-        $this->assertEqual($dbgroup2->usersautoadded, $group2->usersautoadded);
-//        $this->assertEqual($dbgroup2->viewnotify, 1);
-        $this->assertEqual(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
+        $this->assertEquals($dbgroup2->name, $group2->name);
+        $this->assertEquals($dbgroup2->description, $group2->description);
+        $this->assertEquals($dbgroup2->grouptype, $group2->grouptype);
+        $this->assertEquals($dbgroup2->editroles, $group2->editroles);
+        $this->assertEquals($dbgroup2->open, 1);
+        $this->assertEquals($dbgroup2->request, 0);
+        $this->assertEquals($dbgroup2->controlled, 0);
+        $this->assertEquals($dbgroup2->submitpages, 0);
+        $this->assertEquals($dbgroup2->public, $group2->public);
+        $this->assertEquals($dbgroup2->usersautoadded, $group2->usersautoadded);
+        $this->assertEquals(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
     }
 
 
@@ -694,8 +522,6 @@ class webservice_test extends webservice_test_base {
         $dbuser1 = $this->create_user1_for_update();
         $dbuser2 = $this->create_user2_for_update();
 
-//        $groupcategories = get_records_array('group_category','','','displayorder');
-//        $category = array_shift($groupcategories);
         //Test data
         //a full group: group1
         $group1 = new stdClass();
@@ -704,20 +530,12 @@ class webservice_test extends webservice_test_base {
         $group1->description    = 'a description for test group 1';
         $group1->institution    = 'mahara';
         $group1->grouptype      = 'standard';
-//        $group1->category       = $category->id;
-//        $group1->jointype       = 'invite';
         $group1->open           = 1;
         $group1->request        = 0;
         $group1->controlled     = 0;
         $group1->submitpages    = 0;
-//        $group1->hidemembers    = 0;
-//        $group1->invitefriends  = 0;
-//        $group1->suggestfriends = 0;
-//        $group1->hidden         = 0;
-//        $group1->hidemembersfrommembers = 0;
         $group1->public         = 0;
         $group1->usersautoadded = 0;
-//        $group1->viewnotify     = 0;
         $group1->members        = array($dbuser1->id => 'admin', $dbuser2->id => 'admin');
 
         //a small group: group2
@@ -727,20 +545,12 @@ class webservice_test extends webservice_test_base {
         $group2->description    = 'a description for test group 2';
         $group2->institution    = 'mahara';
         $group2->grouptype      = 'standard';
-//        $group2->category       = $category->id;
-//        $group2->jointype       = 'invite';
         $group2->open           = 1;
         $group2->request        = 0;
         $group2->controlled     = 0;
         $group2->submitpages    = 0;
-//        $group2->hidemembers    = 0;
-//        $group2->invitefriends  = 0;
-//        $group2->suggestfriends = 0;
-//        $group2->hidden         = 0;
-//        $group2->hidemembersfrommembers = 0;
         $group2->public         = 0;
         $group2->usersautoadded = 0;
-//        $group2->viewnotify     = 0;
         $group2->members        = array($dbuser1->id => 'admin');
 
         //do not run the test if group1 or group2 already exists
@@ -769,7 +579,6 @@ class webservice_test extends webservice_test_base {
 
         //a small group: group2
         $group2 = new stdClass();
-//        $group2->id             = $dbgroup2->id;
         $group2->shortname      = 'testgroupshortname2';
         $group2->institution    = 'mahara';
         $group2->members        = array(array('username' => $dbuser2->username, 'role' => 'admin', 'action' => 'add'));
@@ -787,7 +596,7 @@ class webservice_test extends webservice_test_base {
         $dbgroupmembers2 = get_records_array('group_member', 'group', $dbgroup2->id);
 
         //compare DB group with the test data
-        $this->assertEqual(count($dbgroupmembers1), 1); // current user added as admin
-        $this->assertEqual(count($dbgroupmembers2), 2); // current user added as admin
+        $this->assertEquals(count($dbgroupmembers1), 1); // current user added as admin
+        $this->assertEquals(count($dbgroupmembers2), 2); // current user added as admin
     }
 }
