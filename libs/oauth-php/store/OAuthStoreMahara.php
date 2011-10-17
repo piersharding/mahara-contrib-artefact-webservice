@@ -1624,14 +1624,14 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
     public function checkServerNonce($consumer_key, $token, $timestamp, $nonce) {
         $high_water = date("Y-m-d H:i:s", ($timestamp + $this->max_timestamp_skew));
         $r = get_records_sql_assoc('
-                            SELECT MAX(timestamp) AS max_stamp, CAST(MAX(timestamp) > ? AS INTEGER) AS max_highwater
+                            SELECT MAX(timestamp) AS max_stamp, MAX(timestamp) > ? AS max_highwater
                             FROM {oauth_server_nonce}
                             WHERE consumer_key = ?
                               AND token        = ?
                             ', array($high_water, $consumer_key, $token));
 
         $r = (array) array_shift($r);
-        if (!empty($r) && $r['max_highwater']) { // XXX need to make this portable
+        if (!empty($r) && $r['max_highwater'] != 'f' && $r['max_highwater'] == 1) {
             throw new OAuthException2('Timestamp is out of sequence. Request rejected. Got '.$timestamp.' last max is '.$r['max_stamp'].' allowed skew is '.$this->max_timestamp_skew);
         }
 
