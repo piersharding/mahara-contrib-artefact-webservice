@@ -112,7 +112,7 @@
         <FIELD NAME="request_token_uri" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="request token URI" PREVIOUS="server_uri_path" NEXT="authorize_uri"/>
         <FIELD NAME="authorize_uri" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="authrize URI" PREVIOUS="request_token_uri" NEXT="access_token_uri"/>
         <FIELD NAME="access_token_uri" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="access token URI" PREVIOUS="authorize_uri" NEXT="timestamp"/>
-        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" DEFAULT="current_timestamp" COMMENT="creation timestamp" PREVIOUS="access_token_uri"/>
+        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" COMMENT="creation timestamp" PREVIOUS="access_token_uri"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="uk_userid_server_uri"/>
@@ -130,7 +130,7 @@
         <FIELD NAME="token_secret" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="consumer secret" PREVIOUS="token" NEXT="token_type"/>
         <FIELD NAME="token_type" TYPE="char" LENGTH="20" NOTNULL="true" COMMENT="token type" ENUM="true" ENUMVALUES="'request', 'authorized', 'access'"  PREVIOUS="token_secret" NEXT="token_ttl"/>
         <FIELD NAME="token_ttl" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" DEFAULT="'9999-12-31'" COMMENT="ttl for token" PREVIOUS="token_type" NEXT="timestamp"/>
-        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" DEFAULT="current_timestamp" COMMENT="creation timestamp" PREVIOUS="token_ttl"/>
+        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" COMMENT="creation timestamp" PREVIOUS="token_ttl"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="uk_ocr_id_ref_token"/>
@@ -162,7 +162,7 @@
         <FIELD NAME="application_notes" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="application notes" PREVIOUS="application_descr" NEXT="application_type"/>
         <FIELD NAME="application_type"  TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="application type" PREVIOUS="application_notes" NEXT="issue_date"/>
         <FIELD NAME="issue_date" TYPE="datetime" NOTNULL="true"  SEQUENCE="false"  COMMENT="creation timestamp" PREVIOUS="application_type" NEXT="timestamp"/>
-        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" DEFAULT="current_timestamp" COMMENT="creation timestamp" PREVIOUS="issue_date"/>
+        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" COMMENT="creation timestamp" PREVIOUS="issue_date"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="uk_consumer_key"/>
@@ -178,7 +178,7 @@
         <FIELD NAME="consumer_key" TYPE="char" LENGTH="128" NOTNULL="true" DEFAULT="" COMMENT="consumer key" PREVIOUS="id" NEXT="token" />
         <FIELD NAME="token" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="token" PREVIOUS="consumer_key" NEXT="nonce"/>
         <FIELD NAME="nonce" TYPE="char" LENGTH="80" NOTNULL="true" SEQUENCE="false" COMMENT="nonce" PREVIOUS="token" NEXT="timestamp"/>
-        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" DEFAULT="current_timestamp" COMMENT="creation timestamp" PREVIOUS="nonce"/>
+        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" COMMENT="creation timestamp" PREVIOUS="nonce"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="uk_keys"/>
@@ -198,7 +198,7 @@
         <FIELD NAME="callback_uri" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="callback URI" PREVIOUS="referrer_host" NEXT="verifier"/>
         <FIELD NAME="verifier" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="verifier" PREVIOUS="callback_uri" NEXT="token_ttl"/>
         <FIELD NAME="token_ttl" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" DEFAULT="'9999-12-31'" COMMENT="ttl for token" PREVIOUS="verifier" NEXT="timestamp"/>
-        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" DEFAULT="current_timestamp" COMMENT="creation timestamp" PREVIOUS="token_ttl"/>
+        <FIELD NAME="timestamp" TYPE="datetime" NOTNULL="true"  SEQUENCE="false" COMMENT="creation timestamp" PREVIOUS="token_ttl"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="uk_token"/>
@@ -219,7 +219,7 @@
         <FIELD NAME="functionname" TYPE="char" LENGTH="200" NOTNULL="false" SEQUENCE="false" PREVIOUS="auth" NEXT="timetaken"/>
         <FIELD NAME="timetaken" TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" UNSIGNED="false" SEQUENCE="false" PREVIOUS="funcitonname" NEXT="uri"/>
         <FIELD NAME="uri" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" PREVIOUS="funcitonname" NEXT="info"/>
-        <FIELD NAME="info" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" PREVIOUS="uri" NEXT="ip"/>
+        <FIELD NAME="info" TYPE="text" NOTNULL="false" SEQUENCE="false" PREVIOUS="uri" NEXT="ip"/>
         <FIELD NAME="ip" TYPE="char" LENGTH="45" NOTNULL="false" SEQUENCE="false" PREVIOUS="info"/>
       </FIELDS>
       <KEYS>

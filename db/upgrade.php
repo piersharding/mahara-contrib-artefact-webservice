@@ -45,7 +45,7 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         // add public key validation for SOAP/XML-RPC enc/sig
         $table = new XMLDBTable('external_tokens');
         $field = new XMLDBField('publickey');
-        $field->setAttributes(XMLDB_TYPE_TEXT, null, false, true, false, null, null, '');
+        $field->setAttributes(XMLDB_TYPE_TEXT, null, null, true, null, null, null, '');
         add_field($table, $field);
         $field = new XMLDBField('publickeyexpires');
         $field->setAttributes(XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, null, null, null, 0);
@@ -55,7 +55,7 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         $field->setAttributes(XMLDB_TYPE_DATETIME);
         add_field($table, $field);
         $field = new XMLDBField('publickey');
-        $field->setAttributes(XMLDB_TYPE_TEXT, null, false, true, false, null, null, '');
+        $field->setAttributes(XMLDB_TYPE_TEXT, null, null, true, null, null, null, '');
         add_field($table, $field);
         $field = new XMLDBField('publickeyexpires');
         $field->setAttributes(XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, null, null, null, 0);
@@ -87,7 +87,7 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         $table->addFieldInfo('request_token_uri', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
         $table->addFieldInfo('authorize_uri', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
         $table->addFieldInfo('access_token_uri', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
-        $table->addFieldInfo('timestamp', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null, 'current_timestamp');
+        $table->addFieldInfo('timestamp', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null);
         $table->addKeyInfo('primary', XMLDB_KEY_PRIMARY, array('id'));
         $table->addKeyInfo('userid', XMLDB_KEY_FOREIGN, array('userid'), 'usr', array('id'));
         $table->addIndexInfo('uk_userid_server_uri', XMLDB_INDEX_UNIQUE, array('consumer_key', 'userid', 'server_uri'));
@@ -102,7 +102,7 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         $table->addFieldInfo('token_secret', XMLDB_TYPE_CHAR, 64, null, XMLDB_NOTNULL);
         $table->addFieldInfo('token_type', XMLDB_TYPE_CHAR, 20, null, XMLDB_NOTNULL, null, true, array('request', 'authorized', 'access'));
         $table->addFieldInfo('token_ttl', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null, "'9999-12-31'");
-        $table->addFieldInfo('timestamp', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null, 'current_timestamp');
+        $table->addFieldInfo('timestamp', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null);
         $table->addKeyInfo('primary', XMLDB_KEY_PRIMARY, array('id'));
         $table->addKeyInfo('fk_ocr_id_ref', XMLDB_KEY_FOREIGN, array('ocr_id_ref'), 'oauth_consumer_registry', array('id'));
         $table->addKeyInfo('userid', XMLDB_KEY_FOREIGN, array('userid'), 'usr', array('id'));
@@ -129,7 +129,7 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         $table->addFieldInfo('application_notes', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
         $table->addFieldInfo('application_type', XMLDB_TYPE_CHAR, 255, null, XMLDB_NOTNULL);
         $table->addFieldInfo('issue_date', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL);
-        $table->addFieldInfo('timestamp', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null, 'current_timestamp');
+        $table->addFieldInfo('timestamp', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null);
         $table->addKeyInfo('primary', XMLDB_KEY_PRIMARY, array('id'));
         $table->addKeyInfo('userid', XMLDB_KEY_FOREIGN, array('userid'), 'usr', array('id'));
         $table->addKeyInfo('externalserviceid', XMLDB_KEY_FOREIGN, array('externalserviceid'), 'external_services', array('id'));
@@ -159,7 +159,7 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         $table->addFieldInfo('callback_uri', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
         $table->addFieldInfo('verifier', XMLDB_TYPE_CHAR, 10, null, XMLDB_NOTNULL);
         $table->addFieldInfo('token_ttl', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null, "'9999-12-31'");
-        $table->addFieldInfo('timestamp', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null, 'current_timestamp');
+        $table->addFieldInfo('timestamp', XMLDB_TYPE_DATETIME, null, null, XMLDB_NOTNULL, null, null, null);
         $table->addKeyInfo('primary', XMLDB_KEY_PRIMARY, array('id'));
         $table->addKeyInfo('fk_ref_id', XMLDB_KEY_FOREIGN, array('osr_id_ref'), 'oauth_server_registry', array('id'));
         $table->addKeyInfo('userid', XMLDB_KEY_FOREIGN, array('userid'), 'usr', array('id'));
@@ -181,7 +181,7 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
         $table->addFieldInfo('functionname', XMLDB_TYPE_CHAR, 200, null, XMLDB_NOTNULL);
         $table->addFieldInfo('timetaken', XMLDB_TYPE_NUMBER, '10, 5', null, XMLDB_NOTNULL, null, null, null, null);
         $table->addFieldInfo('uri', XMLDB_TYPE_CHAR, 255, null, null);
-        $table->addFieldInfo('info', XMLDB_TYPE_CHAR, 255, null, null);
+        $table->addFieldInfo('info', XMLDB_TYPE_TEXT);
         $table->addFieldInfo('ip', XMLDB_TYPE_CHAR, 45, null, null);
         $table->addKeyInfo('primary', XMLDB_KEY_PRIMARY, array('id'));
         $table->addKeyInfo('userid', XMLDB_KEY_FOREIGN, array('userid'), 'usr', array('id'));
@@ -209,6 +209,19 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
     }
     // sweep for webservice updates everytime
     $status = external_upgrade_webservices();
+
+    // ensure that we have a webservice auth_instance
+    $authinstance = get_record('auth_instance', 'institution', 'mahara', 'authname', 'webservice');
+    if (empty($authinstance)) {
+        $authinstance = (object)array(
+                'instancename' => 'webservice',
+                'priority'     => 2,
+                'institution'  => 'mahara',
+                'authname'     => 'webservice',
+        );
+        insert_record('auth_instance', $authinstance);
+    }
+
     return $status;
 }
 

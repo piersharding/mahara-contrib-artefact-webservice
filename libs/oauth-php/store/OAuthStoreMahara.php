@@ -1245,7 +1245,8 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
             }
         }
 
-        $ttl = date("F j, Y, g:i a", (time() + $ttl));
+        $ttl = date("Y-m-d H:i:s", (time() + $ttl));
+        $ts = date("Y-m-d H:i:s", time());
         execute_sql('
                 INSERT INTO {oauth_server_token}
                    (osr_id_ref,
@@ -1254,6 +1255,7 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
                      token_secret,
                      token_type,
                      token_ttl,
+                     timestamp,
                      referrer_host,
                      verifier,
                      callback_uri)
@@ -1266,8 +1268,9 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
                     ?,
                     ?,
                     ?,
+                    ?,
                     ?)
-                ', array($osr_id, $token, $secret, $ttl, getremoteaddr(), 1, $options['oauth_callback']));
+                ', array($osr_id, $token, $secret, $ttl, $ts, getremoteaddr(), 1, $options['oauth_callback']));
 
         return array('token'=>$token, 'token_secret'=>$secret, 'token_ttl'=>$ttl);
     }
@@ -1378,7 +1381,7 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
 
         // Maximum time to live for this token
         if (isset($options['token_ttl']) && is_numeric($options['token_ttl'])) {
-            $ttl_sql = date("F j, Y, g:i a", (time() + intval($options['token_ttl'])));
+            $ttl_sql = date("Y-m-d H:i:s", (time() + intval($options['token_ttl'])));
         }
         else {
             $ttl_sql = '9999-12-31';
@@ -1412,7 +1415,7 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
         $db_token->token_secret = $new_secret;
         $db_token->token_type = 'access';
         $db_token->token_ttl = $ttl_sql;
-        $db_token->timestamp = date("F j, Y, g:i a", time());
+        $db_token->timestamp = date("Y-m-d H:i:s", time());
         $result = update_record('oauth_server_token', $db_token);
 
         if (!$result) {
@@ -1619,7 +1622,7 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
      * @exception OAuthException2   thrown when the timestamp is not in sequence or nonce is not unique
      */
     public function checkServerNonce($consumer_key, $token, $timestamp, $nonce) {
-        $high_water = date("F j, Y, g:i a", ($timestamp + $this->max_timestamp_skew));
+        $high_water = date("Y-m-d H:i:s", ($timestamp + $this->max_timestamp_skew));
         $r = get_records_sql_assoc('
                             SELECT MAX(timestamp) AS max_stamp, CAST(MAX(timestamp) > ? AS INTEGER) AS max_highwater
                             FROM {oauth_server_nonce}
@@ -1633,7 +1636,7 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
         }
 
         // Insert the new combination
-        $timestamp_fmt = date("F j, Y, g:i a", $timestamp);
+        $timestamp_fmt = date("Y-m-d H:i:s", $timestamp);
         $result = execute_sql('
                 INSERT INTO {oauth_server_nonce} 
                   ( consumer_key,
@@ -1648,7 +1651,7 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
         }
 
         // Clean up all timestamps older than the one we just received
-        $low_water = date("F j, Y, g:i a", ($timestamp - $this->max_timestamp_skew));
+        $low_water = date("Y-m-d H:i:s", ($timestamp - $this->max_timestamp_skew));
         delete_records_sql('
                 DELETE FROM oauth_server_nonce
                 WHERE consumer_key  = ?
