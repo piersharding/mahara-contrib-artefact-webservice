@@ -716,7 +716,7 @@ abstract class webservice_server implements webservice_server_interface {
         if ($tokentype == EXTERNAL_TOKEN_PERMANENT || $tokentype == EXTERNAL_TOKEN_USER) {
             $token = get_record('external_tokens', 'token', $this->token);
             // trap personal tokens with no valid until time set
-            if ($token->tokentype == EXTERNAL_TOKEN_USER && $token->validuntil == 0 && (($token->timecreated - time()) > EXTERNAL_TOKEN_USER_EXPIRES)) {
+            if ($token && $token->tokentype == EXTERNAL_TOKEN_USER && $token->validuntil == 0 && (($token->timecreated - time()) > EXTERNAL_TOKEN_USER_EXPIRES)) {
                 delete_records('external_tokens', 'token', $this->token);
                 throw new webservice_access_exception(get_string('invalidtimedtoken', 'artefact.webservice'));
             }
