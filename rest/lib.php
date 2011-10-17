@@ -52,7 +52,7 @@ class webservice_rest_client {
     public function set_authentication($auth) {
         $values = array();
         foreach ($auth as $k => $v) {
-            $values[]= "$k=".urlencode($v);
+            $values[]= "$k=" . urlencode($v);
         }
         $this->auth = implode('&', $values);
     }
@@ -65,7 +65,7 @@ class webservice_rest_client {
         $this->consumer = $consumer;
         $this->token = $token;
     }
-    
+
     /**
      * Execute client WS request with token authentication
      * @param string $functionname
@@ -77,7 +77,7 @@ class webservice_rest_client {
         global $CFG;
 
         if ($this->type == 'oauth') {
-            $url = $this->serverurl.'?wsfunction='.$functionname;
+            $url = $this->serverurl . '?wsfunction=' . $functionname;
             $body = '';
             $options = array();
             if ($json) {
@@ -101,7 +101,7 @@ class webservice_rest_client {
             $request = new OAuthRequester($url, 'POST', $options, $body);
             $result = $request->doRequest(0);
             if ($result['code'] != 200) {
-                throw new Exception('REST OAuth error: '.var_export($result, true));
+                throw new Exception('REST OAuth error: ' . var_export($result, true));
             }
             $result = $result['body'];
             if ($json) {
@@ -112,29 +112,29 @@ class webservice_rest_client {
         else {
             if ($json) {
                 $data = json_encode($params);
-                $url = $this->serverurl . '?'.$this->auth.'&wsfunction=' . $functionname . '&alt=json';
+                $url = $this->serverurl . '?' . $this->auth . '&wsfunction=' . $functionname . '&alt=json';
                 $result = file_get_contents ($url, false, stream_context_create (array ('http'=>array ('method'=>'POST'
-                        , 'header'=>"Content-Type: application/json\r\nConnection: close\r\nContent-Length: ".strlen($data)."\r\n"
+                        , 'header'=>"Content-Type: application/json\r\nConnection: close\r\nContent-Length: " . strlen($data) . "\r\n"
                         , 'content'=>$data
                         ))));
                 $values = (array)json_decode($result, true);
                 return $values;
             }
-    
+
             $result = download_file_content($this->serverurl
-                            . '?'.$this->auth.'&wsfunction='
+                            . '?'.$this->auth . '&wsfunction='
                             . $functionname, null, $params);
         }
 
-        
+
         //TODO : transform the XML result into PHP values - MDL-22965
         $xml2array = new xml2array($result);
         $raw = $xml2array->getResult();
 
         if (isset($raw['EXCEPTION'])) {
             $debug = isset($raw['EXCEPTION']['DEBUGINFO']) ? $raw['EXCEPTION']['DEBUGINFO']['#text'] : '';
-            throw new Exception('REST error: '.$raw['EXCEPTION']['MESSAGE']['#text'].
-                                ' ('.$raw['EXCEPTION']['@class'].') '.$debug);
+            throw new Exception('REST error: ' . $raw['EXCEPTION']['MESSAGE']['#text'] .
+                                ' (' . $raw['EXCEPTION']['@class'] . ') ' . $debug);
         }
 
         $result = array();

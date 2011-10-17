@@ -41,7 +41,7 @@ class webservice_soap_client extends Zend_Soap_Client {
         $this->serverurl = $serverurl;
         $values = array();
         foreach ($auth as $k => $v) {
-            $values[]= "$k=".urlencode($v);
+            $values[]= "$k=" . urlencode($v);
         }
         $values []= 'wsdl=1';
         $this->auth = implode('&', $values);
@@ -56,7 +56,7 @@ class webservice_soap_client extends Zend_Soap_Client {
     public function set_auth($auth) {
         $values = array();
         foreach ($auth as $k => $v) {
-            $values[]= "$k=".urlencode($v);
+            $values[]= "$k=" . urlencode($v);
         }
         $values []= 'wsdl=1';
         $this->auth = implode('&', $values);
@@ -90,7 +90,6 @@ class webservice_soap_client_wsse extends Zend_Soap_Client_Common {
     private $username;
     private $password;
 
-
     /*Generates de WSSecurity header*/
     private function wssecurity_header() {
 
@@ -110,29 +109,29 @@ class webservice_soap_client_wsse extends Zend_Soap_Client_Common {
         $passdigest = base64_encode(
                 pack('H*',
                         sha1(
-                                pack('H*', $nonce) . pack('a*',$timestamp).
+                                pack('H*', $nonce) . pack('a*',$timestamp) .
                                 pack('a*',$this->password))));
 
         $auth = '
 <wsse:Security env:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.'.
 'org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
 <wsse:UsernameToken>
-    <wsse:Username>'.$this->username.'</wsse:Username>
+    <wsse:Username>' . $this->username . '</wsse:Username>
     <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-'.
-'wss-username-token-profile-1.0#PasswordDigest">'.$passdigest.'</wsse:Password>
-    <wsse:Nonce>'.base64_encode(pack('H*', $nonce)).'</wsse:Nonce>
-    <wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-'.
-'200401-wss-wssecurity-utility-1.0.xsd">'.$timestamp.'</wsu:Created>
+'wss-username-token-profile-1.0#PasswordDigest">' . $passdigest . '</wsse:Password>
+    <wsse:Nonce>' . base64_encode(pack('H*', $nonce)) . '</wsse:Nonce>
+    <wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-' .
+'200401-wss-wssecurity-utility-1.0.xsd">' . $timestamp . '</wsu:Created>
    </wsse:UsernameToken>
 </wsse:Security>
 ';
         $auth = '
-<wsse:Security env:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.'.
+<wsse:Security env:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.' .
 'org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
 <wsse:UsernameToken>
-    <wsse:Username>'.$this->username.'</wsse:Username>
-    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-'.
-'wss-username-token-profile-1.0#PasswordText">'.$this->password.'</wsse:Password>
+    <wsse:Username>' . $this->username . '</wsse:Username>
+    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-' .
+'wss-username-token-profile-1.0#PasswordText">' . $this->password . '</wsse:Password>
    </wsse:UsernameToken>
 </wsse:Security>
 ';
@@ -143,7 +142,7 @@ class webservice_soap_client_wsse extends Zend_Soap_Client_Common {
          * xml.
          */
         $authvalues = new SoapVar($auth,XSD_ANYXML);
-        $header = new SoapHeader("http://docs.oasis-open.org/wss/2004/01/oasis-".
+        $header = new SoapHeader("http://docs.oasis-open.org/wss/2004/01/oasis-" .
             "200401-wss-wssecurity-secext-1.0.xsd", "Security", $authvalues,
                 true);
 
@@ -174,5 +173,4 @@ class webservice_soap_client_wsse extends Zend_Soap_Client_Common {
     public function __doRequest($request,$location,$action,$version,$one_way = 0) {
         return parent::__doRequest($request,$location,$action,$version,$one_way);
     }
-
 }

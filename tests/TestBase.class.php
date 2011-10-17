@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2009 Moodle Pty Ltd (http://moodle.com)
@@ -54,15 +53,14 @@ require_once(get_config('libroot') . 'ddl.php');
 require_once(get_config('libroot') . 'upgrade.php');
 require_once(get_config('libroot') . 'phpunit.php');
 
-$path = get_config('docroot').'artefact/webservice/libs/zend';
+$path = get_config('docroot') . 'artefact/webservice/libs/zend';
 set_include_path($path . PATH_SEPARATOR . get_include_path());
 
-require_once(get_config('docroot').'/artefact/webservice/libs/externallib.php');
-require_once(get_config('docroot').'/artefact/webservice/locallib.php');
-require_once(get_config('docroot').'/artefact/lib.php');
+require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
+require_once(get_config('docroot') . '/artefact/webservice/locallib.php');
+require_once(get_config('docroot') . '/artefact/lib.php');
 require_once('institution.php');
 require_once('group.php');
-
 
 /**
  * How to configure this unit tests:
@@ -142,7 +140,7 @@ class TestBase extends PHPUnit_Framework_TestCase {
             $new_user->firstname    = 'Firstname';
             $new_user->lastname     = 'Lastname';
             $new_user->password     = $this->testuser;
-            $new_user->email        = $this->testuser.'@hogwarts.school.nz';
+            $new_user->email        = $this->testuser . '@hogwarts.school.nz';
             $new_user->passwordchange = 0;
             $new_user->admin        = 1;
             $profilefields = new StdClass;
@@ -170,14 +168,14 @@ class TestBase extends PHPUnit_Framework_TestCase {
         }
 
         // create an OAuth registry object
-        require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthServer.php');
-        require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthStore.php');
-        require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthRequester.php');
+        require_once(dirname(dirname(__FILE__)) . '/libs/oauth-php/OAuthServer.php');
+        require_once(dirname(dirname(__FILE__)) . '/libs/oauth-php/OAuthStore.php');
+        require_once(dirname(dirname(__FILE__)) . '/libs/oauth-php/OAuthRequester.php');
         $store = OAuthStore::instance('Mahara');
         $new_app = array(
                     'application_title' => 'Test Application',
                     'application_uri'   => 'http://example.com',
-                    'requester_name'    => $dbuser->firstname.' '.$dbuser->lastname,
+                    'requester_name'    => $dbuser->firstname . ' ' . $dbuser->lastname,
                     'requester_email'   => $dbuser->email,
                     'callback_uri'      => 'http://example.com',
                     'institution'       => 'mahara',
@@ -239,7 +237,7 @@ class TestBase extends PHPUnit_Framework_TestCase {
             db_begin();
             $newinstitution = new StdClass;
             $institution = $newinstitution->name    = $this->testinstitution;
-            $newinstitution->displayname            = $institution.' - display name';
+            $newinstitution->displayname            = $institution . ' - display name';
             $newinstitution->authplugin             = 'internal';
             $newinstitution->showonlineusers        = 1;
             $newinstitution->registerallowed        = 0;
@@ -288,7 +286,6 @@ class TestBase extends PHPUnit_Framework_TestCase {
         $this->timersoap = 0;
     }
 
-
     public function clean_institution() {
 
         // clean down the institution
@@ -315,7 +312,6 @@ class TestBase extends PHPUnit_Framework_TestCase {
             db_commit();
         }
     }
-
 
     protected function tearDown() {
 
@@ -366,14 +362,12 @@ class TestBase extends PHPUnit_Framework_TestCase {
         }
     }
 
-
     protected static function encrypt_password($password, $salt='') {
         if ($salt == '') {
             $salt = substr(md5(rand(1000000, 9999999)), 2, 8);
         }
         return sha1($salt . $password);
     }
-
 
     /**
      * Create test users from one place to share between update
@@ -457,7 +451,6 @@ class TestBase extends PHPUnit_Framework_TestCase {
         return $dbuser2;
     }
 
-
     /**
      * get rid of a zero id record that I created and cannot easily delete
      *
@@ -478,7 +471,6 @@ class TestBase extends PHPUnit_Framework_TestCase {
         return $favs;
     }
 
-
     /**
      * Find the non-admin userid
      *
@@ -492,5 +484,4 @@ class TestBase extends PHPUnit_Framework_TestCase {
         }
         return false;
     }
-
 }

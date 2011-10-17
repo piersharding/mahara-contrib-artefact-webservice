@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2009 Moodle Pty Ltd (http://moodle.com)
@@ -29,10 +28,8 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     Piers Harding
  */
-$path = get_config('docroot').'artefact/webservice/libs/zend';
+$path = get_config('docroot') . 'artefact/webservice/libs/zend';
 set_include_path($path . PATH_SEPARATOR . get_include_path());
-
-
 
 /**
  *  is debugging switched on for Web Services
@@ -88,17 +85,15 @@ function get_in_or_equal($items, $type=SQL_PARAMS_QM, $start='param0000', $equal
         throw new coding_exception('get_in_or_equal() does not accept empty arrays');
     }
     if (count($items) == 1) {
-        return array('= '.array_shift($items), NULL);
+        return array('= ' . array_shift($items), NULL);
     }
     else {
-        $parms = ' IN ('.implode(',', $items).')';
+        $parms = ' IN (' . implode(',', $items) . ')';
         return array($parms, NULL);
     }
 }
 
-
-
-require_once(get_config('docroot').'/artefact/webservice/libs/externallib.php');
+require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
 
 define('WEBSERVICE_AUTHMETHOD_USERNAME', 0);
 define('WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN', 1);
@@ -115,17 +110,11 @@ define('DEBUG_MINIMAL', 5);
 define('DEBUG_NORMAL', 15);
 /** E_ALL without E_STRICT for now, do show recoverable fatal errors */
 define('DEBUG_ALL', 6143);
-///** DEBUG_ALL with extra Moodle debug messages - (DEBUG_ALL | 32768) */
-//define('DEBUG_DEVELOPER', 38911);
 
 /** Remove any memory limits */
 define('MEMORY_UNLIMITED', -1);
 /** Standard memory limit for given platform */
 define('MEMORY_STANDARD', -2);
-/**
- * Large memory limit for given platform - used in cron, upgrade, and other places that need a lot of memory.
- * Can be overridden with $CFG->extramemorylimit setting.
- */
 define('MEMORY_EXTRA', -3);
 /** Extremely large memory limit - not recommended for standard scripts */
 define('MEMORY_HUGE', -4);
@@ -176,8 +165,6 @@ function get_file_argument() {
     return $relativepath;
 }
 
-
-
 /**
  * General web service library
  */
@@ -223,9 +210,9 @@ class webservice {
                         esu.iprestriction as iprestriction, esu.validuntil as validuntil,
                         esu.timecreated as timecreated
                    FROM {usr} u, {external_services_users} esu
-                  WHERE u.id <> ".$CFG->siteguest." AND u.deleted = 0 AND u.confirmed = 1
+                  WHERE u.id <> " . get_config('siteguest') . " AND u.deleted = 0 AND u.confirmed = 1
                         AND esu.userid = u.id
-                        AND esu.externalserviceid = ".$serviceid;
+                        AND esu.externalserviceid = " . $serviceid;
 
         $users = get_records_sql($sql);
         return $users;
@@ -244,10 +231,10 @@ class webservice {
                         esu.iprestriction as iprestriction, esu.validuntil as validuntil,
                         esu.timecreated as timecreated
                    FROM {usr} u, {external_services_users} esu
-                  WHERE u.id <> ".$CFG->siteguest." AND u.deleted = 0 AND u.confirmed = 1
+                  WHERE u.id <> " . get_config('siteguest') . " AND u.deleted = 0 AND u.confirmed = 1
                         AND esu.userid = u.id
-                        AND esu.externalserviceid = ".$serviceid."
-                        AND u.id = ".$userid;
+                        AND esu.externalserviceid = " . $serviceid . "
+                        AND u.id = " . $userid;
         $user = get_record_sql($sql, $params);
         return $user;
     }
@@ -259,8 +246,8 @@ class webservice {
     public function generate_user_ws_tokens($userid) {
         global $CFG;
 
-//        /// generate a token for non admin if web service are enable and the user has the capability to create a token
-//        /// for every service than the user is authorised on, create a token (if it doesn't already exist)
+       /// generate a token for non admin if web service are enable and the user has the capability to create a token
+       /// for every service than the user is authorised on, create a token (if it doesn't already exist)
 
         ///get all services which are set to all user (no restricted to specific users)
         $norestrictedservices = get_records('external_services', 'restrictedusers', 0);
@@ -313,7 +300,7 @@ class webservice {
                 FROM
                     {external_tokens} t, {usr} u, {external_services} s
                 WHERE
-                    t.userid=".$userid." AND t.tokentype = ".EXTERNAL_TOKEN_PERMANENT." AND s.id = t.externalserviceid AND t.userid = u.id";
+                    t.userid=" . $userid . " AND t.tokentype = " . EXTERNAL_TOKEN_PERMANENT . " AND s.id = t.externalserviceid AND t.userid = u.id";
         $tokens = get_records_sql($sql);
         return $tokens;
     }
@@ -336,7 +323,7 @@ class webservice {
                     FROM
                         {external_tokens} t, {usr} u, {external_services} s
                     WHERE
-                        t.creatorid=".$userid." AND t.id=".$tokenid." AND t.tokentype = "
+                        t.creatorid=" . $userid . " AND t.id=" . $tokenid . " AND t.tokentype = "
                 . EXTERNAL_TOKEN_PERMANENT
                 . " AND s.id = t.externalserviceid AND t.userid = u.id";
         //must be the token creator
@@ -418,7 +405,7 @@ class webservice {
     public function get_not_associated_external_functions($serviceid) {
         $select = "name NOT IN (SELECT s.functionname
                                   FROM {external_services_functions} s
-                                 WHERE s.externalserviceid = ".$serviceid."
+                                 WHERE s.externalserviceid = " . $serviceid . "
                                )";
 
         $functions = get_records_select('external_functions',
@@ -426,7 +413,6 @@ class webservice {
 
         return $functions;
     }
-
 
     /**
      * Get a external service for a given id
@@ -502,8 +488,6 @@ class webservice {
                     'externalserviceid', $serviceid, 'functionname', $functionname);
 
     }
-
-
 }
 
 /**
@@ -535,7 +519,7 @@ function webservice_protocol_is_enabled($protocol) {
         return false;
     }
 
-    return get_config_plugin('artefact', 'webservice', $protocol.'_enabled');
+    return get_config_plugin('artefact', 'webservice', $protocol . '_enabled');
 }
 
 //=== WS classes ===
@@ -637,7 +621,7 @@ abstract class webservice_server implements webservice_server_interface {
             }
 
             // special web service login
-            require_once(get_config('docroot')."/auth/webservice/lib.php");
+            require_once(get_config('docroot') . '/auth/webservice/lib.php');
 
             // get the user
             $user = get_record('usr', 'username', $this->username);
@@ -667,20 +651,20 @@ abstract class webservice_server implements webservice_server_interface {
             $auth = new AuthWebservice($auth_instance->id);
             if (!$auth->authenticate_user_account($user, $this->password, 'webservice')) {
                 // log failed login attempts
-                ws_add_to_log(0, 'webservice', get_string('simpleauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice').": ".$this->username."/".$this->password." - ".getremoteaddr() , 0);
+                ws_add_to_log(0, 'webservice', get_string('simpleauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . $this->username . "/" . $this->password . " - " . getremoteaddr() , 0);
                 throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
             }
 
-        } 
+        }
         else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN){
             $this->auth = 'TOKEN';
             $user = $this->authenticate_by_token(EXTERNAL_TOKEN_PERMANENT);
-        } 
+        }
         else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_OAUTH_TOKEN){
             //OAuth
             $this->auth = 'OAUTH';
             // special web service login
-            require_once(get_config('docroot')."/auth/webservice/lib.php");
+            require_once(get_config('docroot') . '/auth/webservice/lib.php');
 
             // get the user - the user that authorised the token
             $user = get_record('usr', 'id', $this->oauth_token_details['user_id']);
@@ -691,7 +675,6 @@ abstract class webservice_server implements webservice_server_interface {
             $institutions = array_keys(load_user_institutions($this->oauth_token_details['user_id']));
             $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
             $institutions[]= $auth_instance->institution;
-//            error_log('institutions: '.var_export($institutions, true));
             if (!in_array($this->oauth_token_details['institution'], $institutions)) {
                 throw new webservice_access_exception(get_string('institutiondenied', 'artefact.webservice'));
             }
@@ -699,7 +682,6 @@ abstract class webservice_server implements webservice_server_interface {
             // set the global for the web service users defined institution
             $WEBSERVICE_INSTITUTION = $this->oauth_token_details['institution'];
             // set the note of the OAuth service owner
-//            error_log('OAuth running with: '.$this->oauth_token_details['user_id'].' service owner: '.$this->oauth_token_details['service_user']);
             $WEBSERVICE_OAUTH_USER = $this->oauth_token_details['service_user'];
         } else {
             $this->auth = 'OTHER';
@@ -726,7 +708,7 @@ abstract class webservice_server implements webservice_server_interface {
         }
         if (!$token) {
             // log failed login attempts
-            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), ''.$tokentype , get_string('failedtolog', 'artefact.webservice').": ".$this->token. " - ".getremoteaddr() , 0);
+            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' . $tokentype , get_string('failedtolog', 'artefact.webservice') . ": " . $this->token . " - " . getremoteaddr() , 0);
             throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
         }
         // tidy up the uath method - this could be user token or session token
@@ -751,7 +733,7 @@ abstract class webservice_server implements webservice_server_interface {
         }
 
         if ($token->iprestriction and !address_in_subnet(getremoteaddr(), $token->iprestriction)) {
-            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice').": ".getremoteaddr() , 0);
+            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . getremoteaddr() , 0);
             throw new webservice_access_exception(get_string('invalidiptoken', 'artefact.webservice'));
         }
 
@@ -766,7 +748,6 @@ abstract class webservice_server implements webservice_server_interface {
         $WEBSERVICE_INSTITUTION = $token->institution;
 
         return $user;
-
     }
 }
 
@@ -788,7 +769,7 @@ abstract class webservice_zend_server extends webservice_server {
 
     /** @property string $functionname the name of the function that is executed */
     protected $functionname = null;
-        
+
     /**
      * Contructor
      * @param integer $authmethod authentication method - one of WEBSERVICE_AUTHMETHOD_*
@@ -889,13 +870,13 @@ abstract class webservice_zend_server extends webservice_server {
                 $class = 'XML-RPC';
             }
             $log = (object)  array('timelogged' => time(),
-                                   'userid' => $USER->id,
+                                   'userid' => $USER->get('id'),
                                    'externalserviceid' => $this->restricted_serviceid,
                                    'institution' => $WEBSERVICE_INSTITUTION,
                                    'protocol' => $class,
                                    'auth' => $this->auth,
                                    'functionname' => $WEBSERVICE_FUNCTION_RUN,
-                                   'timetaken' => "".$time_taken,
+                                   'timetaken' => "" . $time_taken,
                                    'uri' => $_SERVER['REQUEST_URI'],
                                    'info' => ($this->info ? $this->info : ''),
                                    'ip' => getremoteaddr());
@@ -908,7 +889,7 @@ abstract class webservice_zend_server extends webservice_server {
 
         //finally send the result
         // force the content length as this was going wrong
-        header('Content-Length: '.strlen($response));
+        header('Content-Length: ' . strlen($response));
         echo $response;
         flush();
         die;
@@ -958,8 +939,8 @@ abstract class webservice_zend_server extends webservice_server {
 
         if ($this->restricted_serviceid) {
             $params = array('sid1'=>$this->restricted_serviceid, 'sid2'=>$this->restricted_serviceid); // FIXME
-            $wscond1 = 'AND s.id = '.$this->restricted_serviceid;
-            $wscond2 = 'AND s.id = '.$this->restricted_serviceid;
+            $wscond1 = 'AND s.id = ' . $this->restricted_serviceid;
+            $wscond2 = 'AND s.id = ' . $this->restricted_serviceid;
         } else {
             $params = array();
             $wscond1 = '';
@@ -983,8 +964,8 @@ abstract class webservice_zend_server extends webservice_server {
                 SELECT s.*, su.iprestriction
                   FROM {external_services} s
                   JOIN {external_services_functions} sf ON (sf.externalserviceid = s.id AND s.restrictedusers = 1)
-                  JOIN {external_services_users} su ON (su.externalserviceid = s.id AND su.userid = ".$USER->id.")
-                 WHERE s.enabled = 1 AND su.validuntil IS NULL OR su.validuntil < ".time()." $wscond2";
+                  JOIN {external_services_users} su ON (su.externalserviceid = s.id AND su.userid = " . $USER->get('id') . ")
+                 WHERE s.enabled = 1 AND su.validuntil IS NULL OR su.validuntil < " . time() . " $wscond2";
 
         $params = array_merge($params);
 
@@ -1035,18 +1016,18 @@ abstract class webservice_zend_server extends webservice_server {
 
         $code = '
 /**
- * Virtual class web services for user id '.$USER->id.'
+ * Virtual class web services for user id ' . $USER->get('id') . '
  */
-class '.$classname.' {
-'.$methods.'
+class ' . $classname . ' {
+' . $methods . '
 
     public function Header ($data) {
         return true;
     }
 
     public function Security ($data) {
-        //error_log("username: ".$data->UsernameToken->Username);
-        //error_log("password: ".$data->UsernameToken->Password);
+        //error_log("username: " . $data->UsernameToken->Username);
+        //error_log("password: " . $data->UsernameToken->Password);
         //throw new webservice_access_exception(get_string("accessnotallowed", "artefact.webservice"));
         return true;
     }
@@ -1074,7 +1055,7 @@ class '.$classname.' {
         $params      = array();
         $params_desc = array();
         foreach ($function->parameters_desc->keys as $name=>$keydesc) {
-            $param = '$'.$name;
+            $param = '$' . $name;
             $paramanddefault = $param;
             //need to generate the default if there is any
             if ($keydesc instanceof external_value) {
@@ -1084,13 +1065,13 @@ class '.$classname.' {
                     } else {
                         switch($keydesc->type) {
                             case PARAM_BOOL:
-                                $paramanddefault .= '='.$keydesc->default; break;
+                                $paramanddefault .= '=' . $keydesc->default; break;
                             case PARAM_INT:
-                                $paramanddefault .= '='.$keydesc->default; break;
+                                $paramanddefault .= '=' . $keydesc->default; break;
                             case PARAM_FLOAT;
-                                $paramanddefault .= '='.$keydesc->default; break;
+                                $paramanddefault .= '=' . $keydesc->default; break;
                             default:
-                                $paramanddefault .= '=\''.$keydesc->default.'\'';
+                                $paramanddefault .= '=\'' . $keydesc->default . '\'';
                         }
                     }
                 } else if ($keydesc->required == VALUE_OPTIONAL) {
@@ -1115,7 +1096,7 @@ class '.$classname.' {
             $params[] = $param;
             $paramanddefaults[] = $paramanddefault;
             $type = $this->get_phpdoc_type($keydesc);
-            $params_desc[] = '     * @param '.$type.' $'.$name.' '.$keydesc->desc;
+            $params_desc[] = '     * @param ' . $type . ' $' . $name . ' ' . $keydesc->desc;
         }
         $params                = implode(', ', $params);
         $paramanddefaults      = implode(', ', $paramanddefaults);
@@ -1127,27 +1108,27 @@ class '.$classname.' {
             $return = '     * @return void';
         } else {
             $type = $this->get_phpdoc_type($function->returns_desc);
-            $return = '     * @return '.$type.' '.$function->returns_desc->desc;
+            $return = '     * @return ' . $type . ' ' . $function->returns_desc->desc;
         }
 
         // now crate the virtual method that calls the ext implementation
 
         $code = '
     /**
-     * '.$function->description.'
+     * ' . $function->description . '
      *
-'.$params_desc.'
-'.$return.'
+' . $params_desc . '
+' . $return . '
      */
-    public function '.$function->name.'('.$paramanddefaults.') {
+    public function ' . $function->name . '(' . $paramanddefaults . ') {
         global $WEBSERVICE_FUNCTION_RUN;
-        $WEBSERVICE_FUNCTION_RUN = \''.$function->name.'\';
-'.$serviceclassmethodbody.'
+        $WEBSERVICE_FUNCTION_RUN = \'' . $function->name . '\';
+' . $serviceclassmethodbody . '
     }
 ';
         return $code;
     }
-    
+
     protected function get_phpdoc_type($keydesc) {
         if ($keydesc instanceof external_value) {
             switch($keydesc->type) {
@@ -1192,18 +1173,18 @@ class '.$classname.' {
                 //clean the parameter from any white space
                 $paramtocast = trim($paramtocast);
                 $castingcode .= $paramtocast .
-                '=webservice_zend_server::cast_objects_to_array('.$paramtocast.');';
+                '=webservice_zend_server::cast_objects_to_array(' . $paramtocast . ');';
             }
 
         }
 
-        $descriptionmethod = $function->methodname.'_returns()';
-        $callforreturnvaluedesc = $function->classname.'::'.$descriptionmethod;
-        return $castingcode . '    if ('.$callforreturnvaluedesc.' == null)  {'.
-                        $function->classname.'::'.$function->methodname.'('.$params.');
+        $descriptionmethod = $function->methodname . '_returns()';
+        $callforreturnvaluedesc = $function->classname . '::' . $descriptionmethod;
+        return $castingcode . '    if (' . $callforreturnvaluedesc . ' == null)  {' .
+                        $function->classname . '::' . $function->methodname . '(' . $params . ');
                         return null;
                     }
-                    return external_api::clean_returnvalue('.$callforreturnvaluedesc.', '.$function->classname.'::'.$function->methodname.'('.$params.'));';
+                    return external_api::clean_returnvalue(' . $callforreturnvaluedesc . ', ' . $function->classname . '::' . $function->methodname . '(' . $params . '));';
     }
 
     /**
@@ -1267,7 +1248,7 @@ class '.$classname.' {
      */
     protected function send_headers() {
         header('Cache-Control: private, must-revalidate, pre-check=0, post-check=0, max-age=0');
-        header('Expires: '. gmdate('D, d M Y H:i:s', 0) .' GMT');
+        header('Expires: ' . gmdate('D, d M Y H:i:s', 0) . ' GMT');
         header('Pragma: no-cache');
         header('Accept-Ranges: none');
     }
@@ -1366,7 +1347,6 @@ abstract class webservice_base_server extends webservice_server {
      * @return void
      */
     public function run() {
-//        global $WEBSERVICE_OAUTH_USER;
         global $WEBSERVICE_FUNCTION_RUN, $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_START;
 
         $WEBSERVICE_START = microtime(true);
@@ -1395,9 +1375,6 @@ abstract class webservice_base_server extends webservice_server {
         $this->load_function_info();
 
         // finally, execute the function - any errors are catched by the default exception handler
-//        if ($WEBSERVICE_OAUTH_USER) {
-//            error_log('function info: '.var_export($this->function, true));
-//        }
         $this->execute();
 
         $time_end = microtime(true);
@@ -1405,17 +1382,16 @@ abstract class webservice_base_server extends webservice_server {
 
         //log the web service request
         $log = (object)  array('timelogged' => time(),
-                               'userid' => $USER->id,
+                               'userid' => $USER->get('id'),
                                'externalserviceid' => $this->restricted_serviceid,
                                'institution' => $WEBSERVICE_INSTITUTION,
                                'protocol' => 'REST',
                                'auth' => $this->auth,
                                'functionname' => $this->functionname,
-                               'timetaken' => "".$time_taken,
+                               'timetaken' => "" . $time_taken,
                                'uri' => $_SERVER['REQUEST_URI'],
                                'info' => '',
                                'ip' => getremoteaddr());
-//        ws_add_to_log(0, 'webservice', $this->functionname, '', getremoteaddr() , 0, $this->userid);
         insert_record('external_services_logs', $log, 'id', true);
 
         // send the results back in correct format
@@ -1442,20 +1418,19 @@ abstract class webservice_base_server extends webservice_server {
 
         $time_end = microtime(true);
         $time_taken = $time_end - $WEBSERVICE_START;
-                
+
         //log the error on the web service request
         $log = (object)  array('timelogged' => time(),
-                               'userid' => $USER->id,
+                               'userid' => $USER->get('id'),
                                'externalserviceid' => $this->restricted_serviceid,
                                'institution' => $WEBSERVICE_INSTITUTION,
                                'protocol' => 'REST',
                                'auth' => $this->auth,
                                'functionname' => ($WEBSERVICE_FUNCTION_RUN ? $WEBSERVICE_FUNCTION_RUN : $this->functionname),
-                               'timetaken' => ''.$time_taken,
+                               'timetaken' => '' . $time_taken,
                                'uri' => $_SERVER['REQUEST_URI'],
                                'info' => 'exception: ' . get_class($ex) . ' message: ' . $ex->getMessage() . ' debuginfo: ' . (isset($ex->debuginfo) ? $ex->debuginfo : ''),
                                'ip' => getremoteaddr());
-//        ws_add_to_log(0, 'webservice', $WEBSERVICE_FUNCTION_RUN, '', getremoteaddr() , 0, $this->userid);
         insert_record('external_services_logs', $log, 'id', true);
 
         // some hacks might need a cleanup hook
@@ -1501,8 +1476,8 @@ abstract class webservice_base_server extends webservice_server {
         }
 
         if ($this->restricted_serviceid) {
-            $wscond1 = 'AND s.id = '.$this->restricted_serviceid;
-            $wscond2 = 'AND s.id = '.$this->restricted_serviceid;
+            $wscond1 = 'AND s.id = ' . $this->restricted_serviceid;
+            $wscond2 = 'AND s.id = ' . $this->restricted_serviceid;
         } else {
             $params = array();
             $wscond1 = '';
@@ -1520,16 +1495,16 @@ abstract class webservice_base_server extends webservice_server {
 
         $sql = "SELECT s.*, NULL AS iprestriction
                   FROM {external_services} s
-                  JOIN {external_services_functions} sf ON (sf.externalserviceid = s.id AND (s.restrictedusers = 0 OR s.tokenusers = 1) AND sf.functionname = '".addslashes($function->name)."')
+                  JOIN {external_services_functions} sf ON (sf.externalserviceid = s.id AND (s.restrictedusers = 0 OR s.tokenusers = 1) AND sf.functionname = '" . addslashes($function->name) . "')
                  WHERE s.enabled = 1 $wscond1
 
                  UNION
 
                 SELECT s.*, su.iprestriction
                   FROM {external_services} s
-                  JOIN {external_services_functions} sf ON (sf.externalserviceid = s.id AND s.restrictedusers = 1 AND sf.functionname = '".addslashes($function->name)."')
-                  JOIN {external_services_users} su ON (su.externalserviceid = s.id AND su.userid = ".$USER->id.")
-                 WHERE s.enabled = 1 AND su.validuntil IS NULL OR su.validuntil < ".time()." $wscond2";
+                  JOIN {external_services_functions} sf ON (sf.externalserviceid = s.id AND s.restrictedusers = 1 AND sf.functionname = '" . addslashes($function->name) . "')
+                  JOIN {external_services_users} su ON (su.externalserviceid = s.id AND su.userid = " . $USER->get('id') . ")
+                 WHERE s.enabled = 1 AND su.validuntil IS NULL OR su.validuntil < " . time() . " $wscond2";
 
         $rs = get_recordset_sql($sql);
         // now make sure user may access at least one service
@@ -1548,7 +1523,7 @@ abstract class webservice_base_server extends webservice_server {
         if (!$allowed) {
             throw new webservice_access_exception(get_string('accesstofunctionnotallowed', 'artefact.webservice', $this->functionname));
         }
-        // now get the list of all functions - this triggers the stashing of 
+        // now get the list of all functions - this triggers the stashing of
         // functions in the context
         $wsmanager = new webservice();
         $functions = $wsmanager->get_external_functions($serviceids);
@@ -1569,5 +1544,3 @@ abstract class webservice_base_server extends webservice_server {
         $this->returns = call_user_func_array(array($this->function->classname, $this->function->methodname), array_values($params));
     }
 }
-
-

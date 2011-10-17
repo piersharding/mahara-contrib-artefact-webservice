@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:
@@ -32,5 +31,3 @@ defined('INTERNAL') || die();
 $config = new StdClass;
 $config->version = 2010012710;
 $config->release = '0.0.1';
-
-?>

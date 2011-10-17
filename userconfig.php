@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:
@@ -30,6 +29,10 @@
 define('INTERNAL', 1);
 define('ADMIN', 1);
 define('MENUITEM', 'configextensions/pluginadminwebservices');
+// define('MENUITEM', 'webservice/config');
+// define('SECTION_PLUGINTYPE', 'core');
+// define('SECTION_PLUGINNAME', 'admin');
+// define('SECTION_PAGE', 'webservice');
 require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 define('TITLE', get_string('pluginadmin', 'admin'));
 require_once('pieforms/pieform.php');
@@ -37,13 +40,13 @@ require_once('pieforms/pieform.php');
 $suid  = param_variable('suid', '');
 // lookup user cancelled
 if ($suid == 'add') {
-    redirect('/artefact/webservice/pluginconfig.php');
+    redirect('/artefact/webservice/index.php');
 }
 
 $dbserviceuser = get_record('external_services_users', 'id', $suid);
 if (empty($dbserviceuser)) {
     $SESSION->add_error_msg(get_string('invalidserviceuser', 'artefact.webservice'));
-    redirect('/artefact/webservice/pluginconfig.php');
+    redirect('/artefact/webservice/index.php');
 }
 
 $services = get_records_array('external_services', 'restrictedusers', 1);
@@ -63,7 +66,7 @@ if (isset($dbserviceuser->externalserviceid)) {
     if ($functions) {
         foreach ($functions as $function) {
             $dbfunction = get_record('external_functions', 'name', $function->functionname);
-            $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
+            $function_list[]= '<a href="' . get_config('wwwroot') . 'artefact/webservice/wsdoc.php?id=' . $dbfunction->id . '">' . $function->functionname . '</a>';
         }
     }
 }
@@ -73,20 +76,9 @@ else {
     $restrictedusers = 0;
 }
 
-$plugintype = 'artefact';
-$pluginname = 'webservice';
-
-define('SECTION_PLUGINTYPE', $plugintype);
-define('SECTION_PLUGINNAME', $pluginname);
+define('SECTION_PLUGINTYPE', 'artefact');
+define('SECTION_PLUGINNAME', 'webservice');
 define('SECTION_PAGE', 'pluginconfig');
-
-safe_require($plugintype, $pluginname);
-$classname = generate_artefact_class_name($pluginname);
-
-if (!call_static_method($classname, 'plugin_is_active')) {
-    throw new UserException("Plugin $plugintype $pluginname is disabled");
-}
-
 
 $serviceuser_details =
     array(
@@ -113,15 +105,15 @@ $serviceuser_details['elements']['institution'] = array(
 $searchicon = $THEME->get_url('images/btn-search.gif');
 
 if ($USER->is_admin_for_user($dbuser->id)) {
-    $user_url = get_config('wwwroot').'admin/users/edit.php?id='.$dbuser->id;
+    $user_url = get_config('wwwroot') . 'admin/users/edit.php?id=' . $dbuser->id;
 }
 else {
-    $user_url = get_config('wwwroot').'user/view.php?id='.$dbuser->id;
+    $user_url = get_config('wwwroot') . 'user/view.php?id=' . $dbuser->id;
 }
 $serviceuser_details['elements']['username'] = array(
     'type'        => 'html',
     'title'       => get_string('username'),
-    'value'       =>  '<a href="'.$user_url.'">'.$dbuser->username.'</a>',
+    'value'       =>  '<a href="' . $user_url . '">' . $dbuser->username . '</a>',
 );
 
 $serviceuser_details['elements']['user'] = array(
@@ -140,7 +132,6 @@ $serviceuser_details['elements']['service'] = array(
     'title'        => get_string('servicename', 'artefact.webservice'),
     'options'      => $sopts,
     'defaultvalue' => $defaultserviceid,
-//        'rules'        => array('required' => true),
 );
 
 $serviceuser_details['elements']['enabled'] = array(
@@ -174,9 +165,6 @@ $serviceuser_details['elements']['publickey'] = array(
     'type' => 'textarea',
     'title' => get_string('publickey', 'admin'),
     'defaultvalue' => $dbserviceuser->publickey,
-//    'rules' => array(
-//        'required' => true,
-//    ),
     'rows' => 15,
     'cols' => 90,
 );
@@ -190,14 +178,14 @@ $serviceuser_details['elements']['publickeyexpires']= array(
 $serviceuser_details['elements']['submit'] = array(
     'type'  => 'submitcancel',
     'value' => array(get_string('save'), get_string('back')),
-    'goto'  => get_config('wwwroot') . 'artefact/webservice/pluginconfig.php',
+    'goto'  => get_config('wwwroot') . 'artefact/webservice/index.php',
 );
 
 $elements = array(
         // fieldset for managing service function list
         'serviceusers_details' => array(
                             'type' => 'fieldset',
-                            'legend' => get_string('serviceuser', 'artefact.webservice').': '.$dbuser->username,
+                            'legend' => get_string('serviceuser', 'artefact.webservice') . ': ' . $dbuser->username,
                             'elements' => array(
                                 'sflist' => array(
                                     'type'         => 'html',
@@ -225,26 +213,23 @@ $form = pieform($form);
 $smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('suid', $dbserviceuser->id);
 $smarty->assign('form', $form);
-$smarty->assign('plugintype', $plugintype);
-$smarty->assign('pluginname', $pluginname);
-$heading = get_string('pluginadmin', 'admin') . ': ' . $plugintype . ': ' . $pluginname;
+$heading = get_string('users', 'artefact.webservice');
 $smarty->assign('PAGEHEADING', $heading);
-$smarty->display('artefact:webservice:userconfig.tpl');
-
+$smarty->display('form.tpl');
 
 function allocate_webservice_users_submit(Pieform $form, $values) {
     global $SESSION;
     $dbserviceuser = get_record('external_services_users', 'id', $values['suid']);
     if (empty($dbserviceuser)) {
         $SESSION->add_error_msg(get_string('invalidserviceuser', 'artefact.webservice'));
-        redirect('/artefact/webservice/pluginconfig.php');
+        redirect('/artefact/webservice/index.php');
         return;
     }
 
     if (!empty($values['wssigenc'])) {
         if (empty($values['publickey'])) {
             $SESSION->add_error_msg('Must supply a public key to enable WS-Security');
-            redirect('/artefact/webservice/userconfig.php?suid='.$dbserviceuser->id);
+            redirect('/artefact/webservice/userconfig.php?suid=' . $dbserviceuser->id);
         }
         $dbserviceuser->wssigenc = 1;
     }
@@ -256,7 +241,7 @@ function allocate_webservice_users_submit(Pieform $form, $values) {
         $publickey = openssl_x509_parse($values['publickey']);
         if (empty($publickey)) {
             $SESSION->add_error_msg('Invalid public key');
-            redirect('/artefact/webservice/userconfig.php?suid='.$dbserviceuser->id);
+            redirect('/artefact/webservice/userconfig.php?suid=' . $dbserviceuser->id);
         }
         $dbserviceuser->publickey = $values['publickey'];
         $dbserviceuser->publickeyexpires = $publickey['validTo_time_t'];
@@ -275,7 +260,7 @@ function allocate_webservice_users_submit(Pieform $form, $values) {
     update_record('external_services_users', $dbserviceuser);
 
     $SESSION->add_ok_msg(get_string('configsaved', 'artefact.webservice'));
-    redirect('/artefact/webservice/userconfig.php?suid='.$dbserviceuser->id);
+    redirect('/artefact/webservice/userconfig.php?suid=' . $dbserviceuser->id);
 }
 
 function allocate_webservice_users_validate(PieForm $form, $values) {

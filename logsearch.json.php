@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:
@@ -54,7 +53,6 @@ if ($action == 'search') {
     $params->offset  = $offset;
     $params->limit   = $limit;
 
-    error_log('params: '.var_export($params, true));
     json_headers();
     if (param_boolean('raw', false)) {
         $data = get_log_search_results($params, $offset, $limit, $sortby, $sortdir);

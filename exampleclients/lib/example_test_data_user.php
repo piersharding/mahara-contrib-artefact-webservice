@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
@@ -85,4 +84,3 @@ $functions = array(
         'mahara_user_get_users_by_id' => array('users' => $get_user),
         'mahara_user_get_users' => array(),
 );
-

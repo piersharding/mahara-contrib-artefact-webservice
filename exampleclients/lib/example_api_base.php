@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
@@ -68,7 +67,7 @@ function help_text() {
 $args = Console_Getopt::readPHPArgv();
 //checking errors for argument fetching
 if (PEAR::isError($args)) {
-    error_log('Invalid arguments (1): '.help_text());
+    error_log('Invalid arguments (1): ' . help_text());
     exit(1);
 }
 
@@ -77,13 +76,13 @@ $args = preg_grep('/2>&1/', $args, PREG_GREP_INVERT);
 $console_opt = Console_Getopt::getOpt($args, 'u:p:l:s:', array('username=', 'password=', 'url=', 'servicegroup=', 'bausername=', 'bapassword='));
 
 if (PEAR::isError($console_opt)) {
-    error_log('Invalid arguments (2): '.help_text());
+    error_log('Invalid arguments (2): ' . help_text());
     exit(1);
 }
 
 // must supply at least one arg for the action to perform
 if (count($args) <= 2) {
-    error_log('Invalid arguments: you must atleast specify --username and --password'.help_text());
+    error_log('Invalid arguments: you must atleast specify --username and --password' . help_text());
     exit(1);
 }
 
@@ -168,7 +167,7 @@ print "web services url: $url\n";
 print "service group: $servicegroup\n";
 print "username; $username\n";
 print "password: $password\n";
-$wsdl = $url. '?wsservice=' . $servicegroup.'&wsdl=1';
+$wsdl = $url . '?wsservice=' . $servicegroup . '&wsdl=1';
 print "WSDL URL: $wsdl \n";
 print "basic auth username; $bausername\n";
 print "basic auth password: $bapassword\n";
@@ -183,7 +182,7 @@ while (1==1) {
         print "$cnt. $rfunction\n";
         $cnt++;
     }
-    $function_choice = trim(readline("Enter your choice (0..".(count($function_list) - 1)." or x for exit):"));
+    $function_choice = trim(readline("Enter your choice (0.." . (count($function_list) - 1) . " or x for exit):"));
     if (in_array($function_choice, array('x', 'X', 'q', 'Q'))) {
         break;
     }
@@ -193,7 +192,7 @@ while (1==1) {
     }
     $function = $function_list[$function_choice];
     print "Chosen function: $function\n";
-    print "Parameters used for execution are: ".var_export($functions[$function], true)."\n";
+    print "Parameters used for execution are: " . var_export($functions[$function], true) . "\n";
 
     // build the client for execution
     $options = null;
@@ -206,9 +205,9 @@ while (1==1) {
     //make the web service call
     try {
         $result = $client->call($function, $functions[$function]);
-        print "Results are: ".var_export($result, true)."\n";
+        print "Results are: " . var_export($result, true) . "\n";
     } catch (Exception $e) {
-         print "exception: ".var_export($e, true)."\n";
+         print "exception: " . var_export($e, true) . "\n";
     }
 }
 

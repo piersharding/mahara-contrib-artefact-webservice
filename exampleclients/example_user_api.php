@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
@@ -43,4 +42,3 @@ $servicegroup = 'Simple User Provisioning';
 
 // run it
 include_once('lib/example_api_base.php');
-

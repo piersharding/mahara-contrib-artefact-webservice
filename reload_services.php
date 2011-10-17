@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2009 Moodle Pty Ltd (http://moodle.com)
@@ -34,7 +33,6 @@ define('INTERNAL', 1);
 // disable the WSDL cache
 ini_set("soap.wsdl_cache_enabled", "0");
 
-//define('NO_DEBUG_DISPLAY', true);
 define('PUBLIC', 1);
 
 // must be run from the command line
@@ -47,11 +45,11 @@ ini_set("soap.wsdl_cache_enabled", "0");
 
 // Catch anything that goes wrong in init.php
 ob_start();
-    require(dirname(dirname(dirname(__FILE__))).'/init.php');
+    require(dirname(dirname(dirname(__FILE__))) . '/init.php');
     $errors = trim(ob_get_contents());
 ob_end_clean();
 
-require_once(get_config('docroot').'/artefact/webservice/lib.php');
+require_once(get_config('docroot') . '/artefact/webservice/lib.php');
 
 // reload/upgrade the web services configuration
 external_upgrade_webservices();

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:
@@ -29,10 +28,8 @@
 
 defined('INTERNAL') || die();
 
-
 require_once('searchlib.php');
 require_once('user.php');
-
 
 function build_webservice_user_search_results($search, $offset, $limit, $sortby, $sortdir) {
     global $USER, $token, $suid, $ouid;
@@ -46,12 +43,12 @@ function build_webservice_user_search_results($search, $offset, $limit, $sortby,
         }
     }
     if ($suid) {
-        $params[] = 'suid='.$suid;
+        $params[] = 'suid=' . $suid;
     }
     if ($ouid) {
-        $params[] = 'ouid='.$ouid;
+        $params[] = 'ouid=' . $ouid;
     }
-    
+
     $searchurl = get_config('wwwroot') . 'artefact/webservice/search.php?' . join('&', $params) . '&limit=' . $limit;
 
     $results['pagination'] = build_pagination(array(
@@ -67,32 +64,32 @@ function build_webservice_user_search_results($search, $offset, $limit, $sortby,
 
     if ($ouid) {
         if ($ouid == 'add') {
-            $url = get_config('wwwroot').'artefact/webservice/oauthv1sregister.php?';
+            $url = get_config('wwwroot') . 'artefact/webservice/oauthv1sregister.php?';
         }
         else {
-            $url = get_config('wwwroot').'artefact/webservice/oauthv1sregister.php?searchreturn=1&ouid='.$ouid;
+            $url = get_config('wwwroot') . 'artefact/webservice/oauthv1sregister.php?searchreturn=1&ouid=' . $ouid;
         }
     }
     else if ($suid) {
         if ($suid == 'add') {
-            $url = get_config('wwwroot').'artefact/webservice/pluginconfig.php?';
+            $url = get_config('wwwroot') . 'artefact/webservice/pluginconfig.php?';
         }
         else {
-            $url = get_config('wwwroot').'artefact/webservice/userconfig.php?searchreturn=1&suid='.$suid;
+            $url = get_config('wwwroot') . 'artefact/webservice/userconfig.php?searchreturn=1&suid=' . $suid;
         }
     }
     else {
         if ($token == 'add') {
-            $url = get_config('wwwroot').'artefact/webservice/pluginconfig.php?';
+            $url = get_config('wwwroot') . 'artefact/webservice/pluginconfig.php?';
         }
         else {
-            $url = get_config('wwwroot').'artefact/webservice/tokenconfig.php?searchreturn=1&token='.$token;
+            $url = get_config('wwwroot') . 'artefact/webservice/tokenconfig.php?searchreturn=1&token=' . $token;
         }
     }
 
     $cols = array(
         'icon'        => array('name'     => '',
-                               'template' => get_config('docroot').'artefact/webservice/theme/raw/searchiconcolumn.tpl',
+                               'template' => get_config('docroot') . 'artefact/webservice/theme/raw/searchiconcolumn.tpl',
                                'class'    => 'center'),
         'firstname'   => array('name'     => get_string('firstname')),
         'lastname'    => array('name'     => get_string('lastname')),
@@ -117,15 +114,13 @@ function build_webservice_user_search_results($search, $offset, $limit, $sortby,
     $smarty->assign('sortdir', $sortdir);
     $smarty->assign('token', $token);
     $smarty->assign('suid', $suid);
-    $smarty->assign('ouid', $ouid);    
+    $smarty->assign('ouid', $ouid);
     $smarty->assign('limitoptions', array(10, 50, 100, 200, 500));
     $smarty->assign('pagebaseurl', $searchurl . '&ouid=' . $ouid . '&suid=' . $suid  . '&token=' . $token . '&sortby=' . $sortby . '&sortdir=' . $sortdir);
     $smarty->assign('cols', $cols);
     $smarty->assign('ncols', count($cols));
     return $smarty->fetch('artefact:webservice:searchresulttable.tpl');
 }
-
-
 
 function build_webservice_log_search_results($search, $offset, $limit, $sortby, $sortdir) {
     global $USER;
@@ -153,7 +148,7 @@ function build_webservice_log_search_results($search, $offset, $limit, $sortby, 
     ));
     $cols = array(
             'username'        => array('name'     => get_string('userauth', 'artefact.webservice'),
-                               'template' => get_config('docroot').'artefact/webservice/theme/raw/username.tpl',
+                               'template' => get_config('docroot') . 'artefact/webservice/theme/raw/username.tpl',
                                'class'    => 'center'),
             'institution'   => array('name'     => get_string('institution'),),
             'protocol'      => array('name'     => get_string('protocol', 'artefact.webservice')),
@@ -238,43 +233,43 @@ function get_log_search_results($search, $offset, $limit) {
     $ilike = db_ilike();
     $wheres = array();
     if ($search->protocol != 'all') {
-        $wheres[]= ' el.protocol = \''.$search->protocol.'\' ';
+        $wheres[]= ' el.protocol = \'' . $search->protocol . '\' ';
     }
     if ($search->authtype != 'all') {
-        $wheres[]= ' el.auth = \''.$search->authtype.'\' ';
+        $wheres[]= ' el.auth = \'' . $search->authtype . '\' ';
     }
     if ($search->institution != 'all') {
-        $wheres[]= ' el.institution = \''.$search->institution.'\' ';
+        $wheres[]= ' el.institution = \'' . $search->institution . '\' ';
     }
     if ($search->onlyerrors == 1) {
         $wheres[]= ' TRIM(el.info) > \' \' ';
-    }    
+    }
     if ($search->userquery) {
         $userwheres = array();
         $terms = split_query_string(strtolower(trim($search->userquery)));
         foreach ($terms as $term) {
             foreach (array('u.username', 'u.firstname', 'u.lastname') as $tests) {
-                $userwheres[]= ' '.$tests.' ' . $ilike . ' \'%'.addslashes($term).'%\'';
+                $userwheres[]= ' ' . $tests . ' ' . $ilike . ' \'%' . addslashes($term) . '%\'';
             }
         }
         if (!empty($userwheres)) {
-            $wheres[]= ' ( '.implode(' OR ', $userwheres) .' ) ';
+            $wheres[]= ' ( ' . implode(' OR ', $userwheres) . ' ) ';
         }
     }
     if ($search->functionquery) {
         $functionwheres = array();
         $terms = split_query_string(strtolower(trim($search->functionquery)));
         foreach ($terms as $term) {
-                $functionwheres[]= ' el.functionname ' . $ilike . ' \'%'.addslashes($term).'%\'';
+                $functionwheres[]= ' el.functionname ' . $ilike . ' \'%' . addslashes($term) . '%\'';
         }
         if (!empty($functionwheres)) {
-            $wheres[]= ' ( '.implode(' OR ', $functionwheres) .' ) ';
+            $wheres[]= ' ( ' . implode(' OR ', $functionwheres) . ' ) ';
         }
     }
     if (empty($wheres)) {
         $wheres[]= ' TRUE ';
     }
-    $where = ' WHERE '.implode(' AND ', $wheres);
+    $where = ' WHERE ' . implode(' AND ', $wheres);
 
     $options = array();
     $count = count_records_sql('
@@ -282,7 +277,7 @@ function get_log_search_results($search, $offset, $limit) {
             FROM {external_services_logs} el
             JOIN {usr} u
             ON el.userid = u.id
-            '.$where, $options);
+            ' . $where, $options);
     $data = get_records_sql_array('
             SELECT  u.username,
                     u.firstname,
@@ -292,7 +287,7 @@ function get_log_search_results($search, $offset, $limit) {
             FROM {external_services_logs} el
             JOIN {usr} u
             ON el.userid = u.id
-            '.$where.' ORDER BY '.$sort.' OFFSET '.$offset, $options);
+            ' . $where . ' ORDER BY ' . $sort . ' OFFSET ' . $offset, $options);
 
     $results = array(
             'count'   => $count,

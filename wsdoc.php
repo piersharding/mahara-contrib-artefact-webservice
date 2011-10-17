@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2009 Moodle Pty Ltd (http://moodle.com)
@@ -24,13 +23,21 @@
  */
 
 define('INTERNAL', 1);
-define('MENUITEM', 'configextensions/pluginadminwebservices');
+// define('MENUITEM', 'configextensions/pluginadminwebservices');
+// have to do this as I don't want to set ADMIN = 1
+define('MENUITEM', 'settings/apps');
+define('SECTION_PLUGINTYPE', 'artefact');
+define('SECTION_PLUGINNAME', 'webservice');
+define('SECTION_PAGE', 'pluginconfig');
+// define('MENUITEM', 'webservice/config');
+// define('SECTION_PLUGINTYPE', 'core');
+// define('SECTION_PLUGINNAME', 'admin');
+// define('SECTION_PAGE', 'webservice');
 require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 define('TITLE', get_string('pluginadmin', 'admin'));
 require_once('pieforms/pieform.php');
-
 require_once(get_config('docroot') . '/artefact/webservice/lib.php');
-require_once(get_config('docroot').'/artefact/webservice/libs/externallib.php');
+require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
 
 $function  = param_integer('id', 0);
 $dbfunction = get_record('external_functions', 'id', $function);
@@ -40,13 +47,6 @@ if (empty($dbfunction)) {
 }
 $fdesc = external_function_info($dbfunction->name);
 
-$plugintype = 'artefact';
-$pluginname = 'webservice';
-
-define('SECTION_PLUGINTYPE', $plugintype);
-define('SECTION_PLUGINNAME', $pluginname);
-define('SECTION_PAGE', 'pluginconfig');
-
 $smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('function', $dbfunction);
 $smarty->assign('functiondescription', $fdesc->description);
@@ -54,16 +54,11 @@ $smarty->assign('fdesc', $fdesc);
 $smarty->assign('xmlrpcactive', webservice_protocol_is_enabled('xmlrpc'));
 $smarty->assign('restactive', webservice_protocol_is_enabled('rest'));
 $smarty->assign('soapactive', webservice_protocol_is_enabled('soap'));
-$smarty->assign('plugintype', $plugintype);
-$smarty->assign('pluginname', $pluginname);
-$heading = get_string('pluginadmin', 'admin') . ': ' . $plugintype . ': ' . $pluginname;
+$heading = get_string('wsdoc', 'artefact.webservice');
 $smarty->assign('PAGEHEADING', $heading);
 $smarty->display('artefact:webservice:wsdoc.tpl');
 
 die;
-
-
-
 
 /**
  * Return documentation for a ws description object
@@ -116,7 +111,7 @@ function wsdoc_detailed_description_html($params) {
     /// description object is a list
     if ($params instanceof external_multiple_structure) {
         return $paramdesc . "list of ( " . '<br/>'
-        . '    '.wsdoc_detailed_description_html($params->content) . ")";
+        . '    ' . wsdoc_detailed_description_html($params->content) . ")";
     } else if ($params instanceof external_single_structure) {
         /// description object is an object
         $singlestructuredesc = $paramdesc . "object {" . '<br/>';
@@ -133,7 +128,7 @@ function wsdoc_detailed_description_html($params) {
     } else {
         /// description object is a primary type (string, integer)
         switch ($params->type) {
-            case PARAM_BOOL: // 0 or 1 only for now
+            case PARAM_BOOL:
             case PARAM_INT:
                 $type = 'int';
                 break;
@@ -195,7 +190,7 @@ EOF;
     } else {
         /// description object is a primary type (string, integer)
         switch ($paramdescription->type) {
-            case PARAM_BOOL: // 0 or 1 only for now
+            case PARAM_BOOL:
             case PARAM_INT:
                 $type = 'int';
                 break;
@@ -209,7 +204,6 @@ EOF;
     }
 }
 
-
 /**
  * function that starts it all off
  *
@@ -219,8 +213,6 @@ EOF;
 function wsdoc_rest($paramname, $paramdescription) {
     return htmlentities(wsdoc_rest_param_description_html($paramdescription, $paramname));
 }
-
-
 
 /**
  * function that starts it all off
@@ -241,8 +233,6 @@ EOF;
     return htmlentities($restresponse);
 }
 
-
-
 /**
  * function that starts it all off
  *
@@ -261,7 +251,6 @@ EOF;
 
     return htmlentities($restexceptiontext);
 }
-
 
 /**
  * Return indented REST param description
@@ -293,7 +282,7 @@ EOF;
         /// description object is a primary type (string, integer)
         $paramstring = $paramstring . '=';
         switch ($paramdescription->type) {
-            case PARAM_BOOL: // 0 or 1 only for now
+            case PARAM_BOOL:
             case PARAM_INT:
                 $type = 'int';
                 break;
@@ -306,7 +295,6 @@ EOF;
         return $paramstring . " " . $type . $brakeline;
     }
 }
-
 
 /**
  * Return a description object in indented xml format (for REST response)
@@ -344,7 +332,7 @@ EOF;
     } else {
         /// description object is a primary type (string, integer)
         switch ($returndescription->type) {
-            case PARAM_BOOL: // 0 or 1 only for now
+            case PARAM_BOOL:
             case PARAM_INT:
                 $type = 'int';
                 break;
@@ -357,4 +345,3 @@ EOF;
         return $indentation . "<VALUE>" . $type . "</VALUE>" . $brakeline;
     }
 }
-

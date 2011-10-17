@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2009 Moodle Pty Ltd (http://moodle.com)
@@ -31,15 +30,13 @@
  * @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
  */
 
-require_once './TestBase.class.php';
+require_once 'TestBase.class.php';
 
 class WebServiceGroupTest extends TestBase {
-
 
     function setUp() {
         // default current user to admin
         parent::setUp();
-
 
         //protocols to test
         $this->testrest = true;
@@ -64,10 +61,7 @@ class WebServiceGroupTest extends TestBase {
         $this->iteration = 1;
     }
 
-
     function testRun() {
-        global $CFG;
-
         if (!$this->testrest and !$this->testxmlrpc and !$this->testsoap) {
             print_r("Web service unit tests are not run as not setup.
                 (see /artefact/webservice/simpletest/testwebservice.php)");
@@ -83,7 +77,7 @@ class WebServiceGroupTest extends TestBase {
                 // iterate the token and user auth types
                 foreach (array('server', 'simpleserver') as $type) {
                     $restclient = new webservice_rest_client(get_config('wwwroot')
-                                    . 'artefact/webservice/rest/'.$type.'.php',
+                                    . 'artefact/webservice/rest/' . $type . '.php',
                                      ($type == 'server' ? array('wstoken' => $this->testtoken) :
                                                           array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)), $type);
                     for ($i = 1; $i <= $this->iteration; $i = $i + 1) {
@@ -110,7 +104,7 @@ class WebServiceGroupTest extends TestBase {
                 // iterate the token and user auth types
                 foreach (array('server', 'simpleserver') as $type) {
                     $xmlrpcclient = new webservice_xmlrpc_client(get_config('wwwroot')
-                                    . 'artefact/webservice/xmlrpc/'.$type.'.php',
+                                    . 'artefact/webservice/xmlrpc/' . $type . '.php',
                                      ($type == 'server' ? array('wstoken' => $this->testtoken) :
                                                           array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)));
 
@@ -144,7 +138,7 @@ class WebServiceGroupTest extends TestBase {
                     unset($parms['type']);
                     if (isset($parms['wsse'])) {
                         $soapclient = new webservice_soap_client(get_config('wwwroot')
-                                        . 'artefact/webservice/soap/'.$type.'.php', array('wsservice' => $this->servicename),
+                                        . 'artefact/webservice/soap/' . $type . '.php', array('wsservice' => $this->servicename),
                                             array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
                                                                                            //when function return null
                         $wsseSoapClient = new webservice_soap_client_wsse(array($soapclient, '_doRequest'), $soapclient->wsdl, $soapclient->getOptions());
@@ -153,7 +147,7 @@ class WebServiceGroupTest extends TestBase {
                     }
                     else {
                         $soapclient = new webservice_soap_client(get_config('wwwroot')
-                                        . 'artefact/webservice/soap/'.$type.'.php', $parms,
+                                        . 'artefact/webservice/soap/' . $type . '.php', $parms,
                                             array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
                                                                                            //when function return null
                     }
@@ -179,7 +173,6 @@ class WebServiceGroupTest extends TestBase {
 
     ///// WEB SERVICE TEST FUNCTIONS
 
-
     // simple get groups by ID
     function mahara_group_get_groups_by_id($client) {
 
@@ -198,7 +191,6 @@ class WebServiceGroupTest extends TestBase {
         $this->assertEquals(count($groups), count($groupids));
     }
 
-
     // simple get all groups
     function mahara_group_get_groups($client) {
 
@@ -211,7 +203,6 @@ class WebServiceGroupTest extends TestBase {
 
         $this->assertEquals(count($groups), count($groups));
     }
-
 
     // create user test
     function mahara_group_create_groups($client) {
@@ -307,11 +298,8 @@ class WebServiceGroupTest extends TestBase {
         $this->assertEquals(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
     }
 
-
     // delete user test
     function mahara_group_delete_groups($client) {
-        global $CFG;
-
         error_log('deleting groups');
 
         //Set test data
@@ -361,7 +349,6 @@ class WebServiceGroupTest extends TestBase {
         $groupid1 = group_create((array) $group1);
         $groupid2 = group_create((array) $group2);
 
-
         $dbgroup1 = get_record('group', 'shortname', $group1->shortname, 'institution', 'mahara');
         $dbgroup2 = get_record('group', 'shortname', $group2->shortname, 'institution', 'mahara');
 
@@ -377,11 +364,8 @@ class WebServiceGroupTest extends TestBase {
         }
     }
 
-
     // update user test
     function mahara_group_update_groups($client) {
-        global $CFG;
-
         error_log('updating groups');
 
         //Set test data
@@ -510,12 +494,8 @@ class WebServiceGroupTest extends TestBase {
         $this->assertEquals(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
     }
 
-
-
     // update user test
     function mahara_group_update_group_members($client) {
-        global $CFG;
-
         error_log('updating group members');
 
         //Set test data

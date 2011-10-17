@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2009 Moodle Pty Ltd (http://moodle.com)
@@ -31,8 +30,7 @@
  * @author     Piers Harding
  */
 
-require_once("$CFG->docroot/artefact/webservice/serviceplugins/lib.php");
-
+require_once(get_config('docroot') . '/artefact/webservice/serviceplugins/lib.php');
 
 class mahara_user_external extends external_api {
 
@@ -127,18 +125,18 @@ class mahara_user_external extends external_api {
         foreach ($params['users'] as $user) {
             // Make sure that the username doesn't already exist
             if (get_record('usr', 'username', $user['username'])) {
-                throw new invalid_parameter_exception('Username already exists: '.$user['username']);
+                throw new invalid_parameter_exception('Username already exists: ' . $user['username']);
             }
 
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($user['institution'])) {
-                throw new invalid_parameter_exception('create_users: access denied for institution: '.$user['institution']);
+                throw new invalid_parameter_exception('create_users: access denied for institution: ' . $user['institution']);
             }
 
             // Make sure auth is valid
             if (!$authinstance = get_record('auth_instance', 'institution', $user['institution'], 'authname', $user['auth'])) {
-                throw new invalid_parameter_exception('Invalid authentication type: '.$user['institution'].'/'.$user['auth']);
+                throw new invalid_parameter_exception('Invalid authentication type: ' . $user['institution'] . '/' . $user['auth']);
             }
 
             $institution = new Institution($authinstance->institution);
@@ -149,7 +147,7 @@ class mahara_user_external extends external_api {
                     SELECT COUNT(*) FROM {usr} u INNER JOIN {usr_institution} i ON u.id = i.usr
                     WHERE i.institution = ? AND u.deleted = 0', array($institution->name));
                 if ($members + 1 > $maxusers) {
-                    throw new invalid_parameter_exception('Institution exceeded max allowed: '.$institution->name);
+                    throw new invalid_parameter_exception('Institution exceeded max allowed: ' . $institution->name);
                 }
             }
 
@@ -209,7 +207,6 @@ class mahara_user_external extends external_api {
         );
     }
 
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -229,7 +226,6 @@ class mahara_user_external extends external_api {
             );
     }
 
-
     /**
      * Delete one or more users
      *
@@ -238,7 +234,7 @@ class mahara_user_external extends external_api {
     public static function delete_users($users) {
         global $USER, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
-        require_once(get_config('docroot').'/artefact/lib.php');
+        require_once(get_config('docroot') . '/artefact/lib.php');
 
         $params = self::validate_parameters(self::delete_users_parameters(), array('users'=>$users));
 
@@ -251,24 +247,24 @@ class mahara_user_external extends external_api {
         foreach ($users as $user) {
             // Make sure auth is valid
             if (!$authinstance = get_record('auth_instance', 'id', $user->authinstance)) {
-                throw new invalid_parameter_exception('Invalid authentication type: '.$user->authinstance);
+                throw new invalid_parameter_exception('Invalid authentication type: ' . $user->authinstance);
             }
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
-                throw new invalid_parameter_exception('delete_users: access denied for institution: '.$authinstance->institution.' on user: '.$user->id);
+                throw new invalid_parameter_exception('delete_users: access denied for institution: ' . $authinstance->institution . ' on user: ' . $user->id);
             }
-            
+
             // only allow deletion of users that have not signed in
             if (!empty($user->lastlogin) && !$user->suspendedcusr) {
-                throw new invalid_parameter_exception('delete_users: cannot delete account that has been used and is not suspended: '.$user->id);
+                throw new invalid_parameter_exception('delete_users: cannot delete account that has been used and is not suspended: ' . $user->id);
             }
 
             // must not allow deleting of admins or self!!!
             if ($user->admin) {
                 throw new MaharaException('useradminodelete', 'error');
             }
-            if ($USER->id == $user->id) {
+            if ($USER->get('id') == $user->id) {
                 throw new MaharaException('usernotdeletederror', 'error');
             }
             delete_user($user->id);
@@ -285,7 +281,6 @@ class mahara_user_external extends external_api {
     public static function delete_users_returns() {
         return null;
     }
-
 
     /**
      * Returns description of method parameters
@@ -338,7 +333,6 @@ class mahara_user_external extends external_api {
         );
     }
 
-
     /**
      * update one or more users
      *
@@ -361,29 +355,29 @@ class mahara_user_external extends external_api {
                 throw new invalid_parameter_exception('update_users: no username or id ');
             }
             if (empty($dbuser)) {
-                throw new invalid_parameter_exception('update_users: invalid user: '.$user['id'].'/'.$user['username']);
+                throw new invalid_parameter_exception('update_users: invalid user: ' . $user['id'] . '/' . $user['username']);
             }
 
             // Make sure auth is valid
             if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
-                throw new invalid_parameter_exception('Invalid authentication type: '.$dbuser->authinstance);
+                throw new invalid_parameter_exception('Invalid authentication type: ' . $dbuser->authinstance);
             }
             // check for changed authinstance
             if (isset($user['auth']) && isset($user['institution'])) {
                 $ai = get_record('auth_instance', 'institution', $user['institution'], 'authname', $user['auth']);
                 if (empty($ai)) {
-                    throw new invalid_parameter_exception('update_users: invalid auth type: '.$user['auth'].' on user: '.$dbuser->id);
+                    throw new invalid_parameter_exception('update_users: invalid auth type: ' . $user['auth'] . ' on user: ' . $dbuser->id);
                 }
                 $authinstance = $ai;
             }
             else if (isset($user['auth'])) {
-                throw new invalid_parameter_exception('update_users: must set auth and institution to update auth on user: '.$dbuser->id);
+                throw new invalid_parameter_exception('update_users: must set auth and institution to update auth on user: ' . $dbuser->id);
             }
 
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
-                throw new invalid_parameter_exception('update_users: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->id);
+                throw new invalid_parameter_exception('update_users: access denied for institution: ' . $authinstance->institution . ' on user: ' . $dbuser->id);
             }
 
             $updated_user = $dbuser;
@@ -443,7 +437,6 @@ class mahara_user_external extends external_api {
             );
     }
 
-
     /**
      * Check that a user exists
      *
@@ -460,7 +453,7 @@ class mahara_user_external extends external_api {
         else if (isset($user['username'])) {
             $dbuser = get_record('usr', 'username', $user['username']);
             if (empty($dbuser)) {
-                throw new invalid_parameter_exception('Invalid username: '.$user['username']);
+                throw new invalid_parameter_exception('Invalid username: ' . $user['username']);
             }
             $id = $dbuser->id;
         }
@@ -483,10 +476,9 @@ class mahara_user_external extends external_api {
             return $user;
         }
         else {
-            throw new invalid_parameter_exception('Invalid user id: '.$id);
+            throw new invalid_parameter_exception('Invalid user id: ' . $id);
         }
     }
-
 
     /**
      * Get user information
@@ -505,9 +497,9 @@ class mahara_user_external extends external_api {
             $params['users'] = array();
             $dbusers = get_records_sql_array('SELECT u.id AS id FROM {usr} u
                                                 INNER JOIN {auth_instance} ai ON u.authinstance = ai.id
-                                                LEFT JOIN {usr_institution} ui ON u.id = ui.usr AND ui.institution = \''.$WEBSERVICE_INSTITUTION.'\'
-                                                WHERE u.deleted = 0 AND (ai.institution = \''.$WEBSERVICE_INSTITUTION.'\'
-                                                                      OR ui.institution = \''.$WEBSERVICE_INSTITUTION.'\')', null);
+                                                LEFT JOIN {usr_institution} ui ON u.id = ui.usr AND ui.institution = \'' . $WEBSERVICE_INSTITUTION . '\'
+                                                WHERE u.deleted = 0 AND (ai.institution = \'' . $WEBSERVICE_INSTITUTION . '\'
+                                                                      OR ui.institution = \'' . $WEBSERVICE_INSTITUTION . '\')', null);
             if ($dbusers) {
                 foreach ($dbusers as $dbuser) {
                     // eliminate bad uid
@@ -531,7 +523,7 @@ class mahara_user_external extends external_api {
             if (empty($user->deleted)) {
                 // check the institution
                 if (!mahara_external_in_institution($user, $WEBSERVICE_INSTITUTION)) {
-                    throw new invalid_parameter_exception('Not authorised for access to user id: '.$user->id.' institution: '.$auth_instance->institution);
+                    throw new invalid_parameter_exception('Not authorised for access to user id: ' . $user->id . ' institution: ' . $auth_instance->institution);
                 }
 
                 $auth_instance = get_record('auth_instance', 'id', $user->authinstance);
@@ -617,7 +609,6 @@ class mahara_user_external extends external_api {
         );
     }
 
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -644,7 +635,6 @@ class mahara_user_external extends external_api {
         return self::get_users_by_id_returns();
     }
 
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -661,7 +651,7 @@ class mahara_user_external extends external_api {
      */
     public static function get_my_user() {
         global $USER;
-        return array_shift(self::get_users_by_id(array(array('id' => $USER->id))));
+        return array_shift(self::get_users_by_id(array(array('id' => $USER->get('id')))));
     }
 
     /**
@@ -711,7 +701,6 @@ class mahara_user_external extends external_api {
                 );
     }
 
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -739,7 +728,6 @@ class mahara_user_external extends external_api {
         return new external_value(PARAM_TEXT, 'The INSTITUTION context of the authenticated user');
     }
 
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -758,16 +746,16 @@ class mahara_user_external extends external_api {
         global $USER, $WEBSERVICE_INSTITUTION, $WS_FUNCTIONS;
         $functions = array();
         foreach ((empty($WS_FUNCTIONS) ? array() : $WS_FUNCTIONS) as $name => $function) {
-            $functions[]= array('function' => $name, 'wsdoc' => get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$function['id']);
+            $functions[]= array('function' => $name, 'wsdoc' => get_config('wwwroot') . 'artefact/webservice/wsdoc.php?id=' . $function['id']);
         }
         return array('institution' => $WEBSERVICE_INSTITUTION,
                      'institutionname' => get_field('institution', 'displayname', 'name', $WEBSERVICE_INSTITUTION),
                      'sitename' => get_config('sitename'),
                      'siteurl' => get_config('wwwroot'),
-                     'userid' => $USER->id,
-                     'username' => $USER->username,
-                     'firstname' => $USER->firstname,
-                     'lastname' => $USER->lastname,
+                     'userid' => $USER->get('id'),
+                     'username' => $USER->get('username'),
+                     'firstname' => $USER->get('firstname'),
+                     'lastname' => $USER->get('lastname'),
                      'fullname' => display_name($USER, null, true),
                      'functions' => $functions,
                 );
@@ -798,9 +786,8 @@ class mahara_user_external extends external_api {
                                                 ),
                     )
             );
-        
+
     }
-    
 
     /**
      * Returns description of method parameters
@@ -831,7 +818,6 @@ class mahara_user_external extends external_api {
         );
     }
 
-
     /**
      * update one or more user favourites
      *
@@ -850,33 +836,32 @@ class mahara_user_external extends external_api {
 
             // Make sure auth is valid
             if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
-                throw new invalid_parameter_exception('update_favourites: Invalid authentication type: '.$dbuser->authinstance);
+                throw new invalid_parameter_exception('update_favourites: Invalid authentication type: ' . $dbuser->authinstance);
             }
             // check the institution is allowed
             // basic check authorisation to edit for the current institution
             if (!$USER->can_edit_institution($authinstance->institution)) {
-                throw new invalid_parameter_exception('update_favourites: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->id);
+                throw new invalid_parameter_exception('update_favourites: access denied for institution: ' . $authinstance->institution . ' on user: ' . $dbuser->id);
             }
 
             // are we allowed to delete for this institution
             if ($WEBSERVICE_INSTITUTION != $user['institution'] || !$USER->can_edit_institution($user['institution'])) {
-                throw new invalid_parameter_exception('update_favourites: access denied for institution: '.$user['institution']);
+                throw new invalid_parameter_exception('update_favourites: access denied for institution: ' . $user['institution']);
             }
 
             // check that the favourites exist and we are allowed to administer them
-//            $favourites = array($USER->get('id'));
             $favourites = array();
             foreach ($user['favourites'] as $favourite) {
                 $dbuser = self::checkuser($favourite);
                 // Make sure auth is valid
                 if (!$authinstance = get_record('auth_instance', 'id', $dbuser->authinstance)) {
-                    throw new invalid_parameter_exception('update_favourites: Invalid authentication type: '.$dbuser->authinstance);
+                    throw new invalid_parameter_exception('update_favourites: Invalid authentication type: ' . $dbuser->authinstance);
                 }
 
                 // check the institution is allowed
                 // basic check authorisation to edit for the current institution of the user
                 if (!$USER->can_edit_institution($authinstance->institution)) {
-                    throw new invalid_parameter_exception('update_favourites: access denied for institution: '.$authinstance->institution.' on user: '.$dbuser->username);
+                    throw new invalid_parameter_exception('update_favourites: access denied for institution: ' . $authinstance->institution . ' on user: ' . $dbuser->username);
                 }
                 $favourites[]= $dbuser->id;
             }
@@ -896,7 +881,6 @@ class mahara_user_external extends external_api {
     public static function update_favourites_returns() {
         return null;
     }
-
 
     /**
      * Returns description of method parameters
@@ -935,7 +919,7 @@ class mahara_user_external extends external_api {
             $dbuser = self::checkuser($user);
             // check the institution
             if (!mahara_external_in_institution($dbuser, $WEBSERVICE_INSTITUTION)) {
-                throw new invalid_parameter_exception('get_favourites: Not authorised for access to user id: '.$user['userid'].' institution: '.$auth_instance->institution);
+                throw new invalid_parameter_exception('get_favourites: Not authorised for access to user id: ' . $user['userid'] . ' institution: ' . $auth_instance->institution);
             }
 
             // get the favourite for the shortname for this user
@@ -989,9 +973,6 @@ class mahara_user_external extends external_api {
         );
     }
 
-
-
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -1016,7 +997,7 @@ class mahara_user_external extends external_api {
 
         $dbfavourites = get_records_sql_array('SELECT * from {favorite} WHERE shortname = ? AND institution = ?',array($shortname, $WEBSERVICE_INSTITUTION));
         if (empty($dbfavourites)) {
-            throw new invalid_parameter_exception('get_favourites: Invalid favourite: '.$shortname.'/'.$WEBSERVICE_INSTITUTION);
+            throw new invalid_parameter_exception('get_favourites: Invalid favourite: ' . $shortname . '/' . $WEBSERVICE_INSTITUTION);
         }
 
         $result = array();
@@ -1046,7 +1027,6 @@ class mahara_user_external extends external_api {
         return $result;
     }
 
-
     /**
      * Returns description of method result value
      * @return external_description
@@ -1054,5 +1034,4 @@ class mahara_user_external extends external_api {
     public static function get_all_favourites_returns() {
         return self::get_favourites_returns();
     }
-
 }

@@ -21,7 +21,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL
  */
 
-
 require_once 'Zend/XmlRpc/Client.php';
 
 /**
@@ -49,7 +48,7 @@ class webservice_xmlrpc_client extends Zend_XmlRpc_Client {
     public function set_auth($auth) {
         $values = array();
         foreach ($auth as $k => $v) {
-            $values[]= "$k=".urlencode($v);
+            $values[]= "$k=" . urlencode($v);
         }
         $this->auth = implode('&', $values);
         $this->_serverAddress = $this->serverurl . '?' . $this->auth;
@@ -68,10 +67,8 @@ class webservice_xmlrpc_client extends Zend_XmlRpc_Client {
         $params = array_values($params);
 
         //traditional Zend soap client call (integrating the token into the URL)
-//        error_log('client calling: '.$functionname.'  '. var_export($params, true));
         $result = parent::call($functionname, $params);
 
         return $result;
     }
-
 }

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * oauth-php: Example OAuth server
  *
@@ -34,7 +33,7 @@
 
 // Catch anything that goes wrong in init.php
 ob_start();
-    require(dirname(dirname(__FILE__)).'/init.php');
+    require(dirname(dirname(__FILE__)) . '/init.php');
     $errors = trim(ob_get_contents());
 ob_end_clean();
 

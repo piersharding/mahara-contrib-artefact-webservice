@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:
@@ -38,12 +37,16 @@ require_once('pieforms/pieform.php');
 
 $dbservices = get_records_array('external_services', 'tokenusers', 1);
 foreach ($dbservices as $dbservice) {
-    $dbtoken = get_record('external_tokens', 'externalserviceid', $dbservice->id, 'userid', $USER->id, 'tokentype', EXTERNAL_TOKEN_USER);
+    $dbtoken = get_record('external_tokens', 'externalserviceid', $dbservice->id, 'userid', $USER->get('id'), 'tokentype', EXTERNAL_TOKEN_USER);
     if ($dbtoken) {
         $dbservice->token = $dbtoken->token;
         $dbservice->timecreated = $dbtoken->timecreated;
         $dbservice->lastaccess = $dbtoken->lastaccess;
         $dbservice->institution = $dbtoken->institution;
+        $dbservice->validuntil = $dbtoken->validuntil;
+    }
+    else {
+        $dbservice->validuntil = 0;
     }
 }
 
@@ -94,18 +97,18 @@ if (!empty($dbservices)) {
                     ),
         );
         foreach ($dbservices as $service) {
-        $userform['elements']['id'. $service->id . '_service_name'] = array(
+        $userform['elements']['id' . $service->id . '_service_name'] = array(
             'value'        =>  $service->name,
             'type'         => 'html',
             'key'        => $service->id,
         );
-        $userform['elements']['id'. $service->id . '_enabled'] = array(
+        $userform['elements']['id' . $service->id . '_enabled'] = array(
             'defaultvalue' => (($service->enabled == 1) ? 'checked' : ''),
             'type'         => 'checkbox',
             'disabled'     => true,
             'key'          => $service->id,
         );
-        $userform['elements']['id'. $service->id . '_token'] = array(
+        $userform['elements']['id' . $service->id . '_token'] = array(
             'value'        =>  (empty($service->token) ? get_string('no_token', 'artefact.webservice') : $service->token),
             'type'         => 'html',
             'key'        => $service->id,
@@ -115,10 +118,10 @@ if (!empty($dbservices)) {
         if ($functions) {
             foreach ($functions as $function) {
                 $dbfunction = get_record('external_functions', 'name', $function->functionname);
-                $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
+                $function_list[]= '<a href="' . get_config('wwwroot') . 'artefact/webservice/wsdoc.php?id=' . $dbfunction->id . '">' . $function->functionname . '</a>';
             }
         }
-        $userform['elements']['id'. $service->id . '_functions'] = array(
+        $userform['elements']['id' . $service->id . '_functions'] = array(
             'value'        =>  implode(', ', $function_list),
             'type'         => 'html',
             'key'        => $service->id,
@@ -128,59 +131,57 @@ if (!empty($dbservices)) {
             'type'         => 'html',
             'key'        => $service->id,
         );
-        $userform['elements']['id'. $service->id . '_expires'] = array(
-            'value'        => date("F j, Y H:i", (empty($service->validuntil) ? $service->lastaccess + EXTERNAL_TOKEN_USER_EXPIRES : $service->validuntil)),
+        $userform['elements']['id' . $service->id . '_expires'] = array(
+            'value'        => (empty($service->validuntil) && empty($service->lastaccess) ? '' : date("F j, Y H:i", (empty($service->validuntil) ? $service->lastaccess + EXTERNAL_TOKEN_USER_EXPIRES : $service->validuntil))),
             'type'         => 'html',
             'key'        => $service->id,
         );
         // generate button
         // delete button
-//        if (!empty($service->token)) {
-            $userform['elements']['id'. $service->id . '_actions'] = array(
-                'value'        => '<span class="actions inline">'.
-                                pieform(array(
-                                    'name'            => 'webservices_user_token_generate_'.$service->id,
-                                    'renderer'        => 'div',
-                                    'elementclasses'  => false,
-                                    'successcallback' => 'webservices_user_token_submit',
-                                    'class'           => 'oneline inline',
-                                    'jsform'          => false,
-                                    'action'          => get_config('wwwroot') . 'artefact/webservice/pluginconfig.php',
-                                    'elements' => array(
-                                        'service'    => array('type' => 'hidden', 'value' => $service->id),
-                                        'action'     => array('type' => 'hidden', 'value' => 'generate'),
-                                        'submit'     => array(
-                                                'type'  => 'submit',
-                                                'class' => 'linkbtn inline',
-                                                'value' => get_string('gen', 'artefact.webservice')
-                                            ),
-                                    ),
-                                ))
-                                .
-                                (empty($service->token) ? ' ' :
-                                pieform(array(
-                                    'name'            => 'webservices_user_token_delete_'.$service->id,
-                                    'renderer'        => 'div',
-                                    'elementclasses'  => false,
-                                    'successcallback' => 'webservices_user_token_submit',
-                                    'class'           => 'oneline inline',
-                                    'jsform'          => true,
-                                    'elements' => array(
-                                        'service'    => array('type' => 'hidden', 'value' => $service->id),
-                                        'action'     => array('type' => 'hidden', 'value' => 'delete'),
-                                        'submit'     => array(
-                                                'type'  => 'submit',
-                                                'class' => 'linkbtn inline',
-                                                'value' => get_string('delete')
-                                            ),
-                                    ),
-                                ))) . '</span>'
-                                ,
-                'type'         => 'html',
-                'key'        => $service->id,
-                'class'        => 'actions',
-            );
-//        }
+        $userform['elements']['id' . $service->id . '_actions'] = array(
+            'value'        => '<span class="actions inline">' .
+                            pieform(array(
+                                'name'            => 'webservices_user_token_generate_' . $service->id,
+                                'renderer'        => 'div',
+                                'elementclasses'  => false,
+                                'successcallback' => 'webservices_user_token_submit',
+                                'class'           => 'oneline inline',
+                                'jsform'          => false,
+                                'action'          => get_config('wwwroot') . 'artefact/webservice/pluginconfig.php',
+                                'elements' => array(
+                                    'service'    => array('type' => 'hidden', 'value' => $service->id),
+                                    'action'     => array('type' => 'hidden', 'value' => 'generate'),
+                                    'submit'     => array(
+                                            'type'  => 'submit',
+                                            'class' => 'linkbtn inline',
+                                            'value' => get_string('gen', 'artefact.webservice')
+                                        ),
+                                ),
+                            ))
+                            .
+                            (empty($service->token) ? ' ' :
+                            pieform(array(
+                                'name'            => 'webservices_user_token_delete_' . $service->id,
+                                'renderer'        => 'div',
+                                'elementclasses'  => false,
+                                'successcallback' => 'webservices_user_token_submit',
+                                'class'           => 'oneline inline',
+                                'jsform'          => true,
+                                'elements' => array(
+                                    'service'    => array('type' => 'hidden', 'value' => $service->id),
+                                    'action'     => array('type' => 'hidden', 'value' => 'delete'),
+                                    'submit'     => array(
+                                            'type'  => 'submit',
+                                            'class' => 'linkbtn inline',
+                                            'value' => get_string('delete')
+                                        ),
+                                ),
+                            ))) . '</span>'
+                            ,
+            'type'         => 'html',
+            'key'        => $service->id,
+            'class'        => 'actions',
+        );
     }
     $userform = pieform($userform);
 }
@@ -206,13 +207,13 @@ $dbtokens = get_records_sql_assoc('
                 osr.callback_uri        as callback_uri
         FROM {oauth_server_token} ost
         JOIN {oauth_server_registry} osr
-        ON ost.osr_id_ref = osr.id 
+        ON ost.osr_id_ref = osr.id
         JOIN {external_services} es
         ON es.id = osr.externalserviceid
         WHERE ost.userid = ? AND
               ost.token_type = \'access\'
         ORDER BY application_title, timestamp desc
-        ', array($USER->id));    
+        ', array($USER->get('id')));
 $oauthform = get_string('notokens', 'artefact.webservice');
 if (!empty($dbtokens)) {
     $oauthform = array(
@@ -254,17 +255,17 @@ if (!empty($dbtokens)) {
                     ),
         );
     foreach ($dbtokens as $token) {
-        $oauthform['elements']['id'. $token->id . '_application'] = array(
+        $oauthform['elements']['id' . $token->id . '_application'] = array(
             'value'        =>  $token->application_title,
             'type'         => 'html',
             'key'        => $token->id,
         );
-        $oauthform['elements']['id'. $token->id . '_service_name'] = array(
+        $oauthform['elements']['id' . $token->id . '_service_name'] = array(
             'value'        =>  $token->service_name,
             'type'         => 'html',
             'key'        => $token->id,
         );
-        $oauthform['elements']['id'. $token->id . '_token'] = array(
+        $oauthform['elements']['id' . $token->id . '_token'] = array(
             'value'        =>  $token->token,
             'type'         => 'html',
             'key'        => $token->id,
@@ -274,22 +275,22 @@ if (!empty($dbtokens)) {
         if ($functions) {
             foreach ($functions as $function) {
                 $dbfunction = get_record('external_functions', 'name', $function->functionname);
-                $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
+                $function_list[]= '<a href="' . get_config('wwwroot') . 'artefact/webservice/wsdoc.php?id=' . $dbfunction->id . '">' . $function->functionname . '</a>';
             }
         }
-        $oauthform['elements']['id'. $token->id . '_functions'] = array(
+        $oauthform['elements']['id' . $token->id . '_functions'] = array(
             'value'        =>  implode(', ', $function_list),
             'type'         => 'html',
             'key'        => $token->id,
         );
-        $oauthform['elements']['id'. $token->id . '_last_access'] = array(
+        $oauthform['elements']['id' . $token->id . '_last_access'] = array(
             'value'        =>  date("F j, Y H:i", strtotime($token->timestamp)),
             'type'         => 'html',
             'key'        => $token->id,
         );
 
         // edit and delete buttons
-        $oauthform['elements']['id'. $token->id . '_actions'] = array(
+        $oauthform['elements']['id' . $token->id . '_actions'] = array(
             'value'        => '<span class="actions inline">'.
                             pieform(array(
                                 'name'            => 'webservices_server_delete_'.$token->id,
@@ -357,30 +358,30 @@ $form = array(
 function webservices_user_token_submit(Pieform $form, $values) {
     global $USER, $SESSION;
     if ($values['action'] == 'generate') {
-        delete_records('external_tokens', 'userid', $USER->id, 'externalserviceid', $values['service']);
+        delete_records('external_tokens', 'userid', $USER->get('id'), 'externalserviceid', $values['service']);
         $services = get_records_select_array('external_services', 'id = ? AND tokenusers = 1', array($values['service']));
         if (empty($services)) {
             $SESSION->add_error_msg(get_string('noservices', 'artefact.webservice'));
         }
         else {
             $service = array_shift($services); // just pass the first one for the moment
-            $authinstance = get_record('auth_instance', 'id', $USER->authinstance);
-            $token = external_generate_token(EXTERNAL_TOKEN_USER, $service, $USER->id, $authinstance->institution, (time() + EXTERNAL_TOKEN_USER_EXPIRES));
+            $authinstance = get_record('auth_instance', 'id', $USER->get('authinstance'));
+            $token = external_generate_token(EXTERNAL_TOKEN_USER, $service, $USER->get('id'), $authinstance->institution, (time() + EXTERNAL_TOKEN_USER_EXPIRES));
             $SESSION->add_ok_msg(get_string('token_generated', 'artefact.webservice'));
         }
     }
     else if ($values['action'] == 'delete') {
-        delete_records('external_tokens', 'userid', $USER->id, 'externalserviceid', $values['service']);
+        delete_records('external_tokens', 'userid', $USER->get('id'), 'externalserviceid', $values['service']);
         $SESSION->add_ok_msg(get_string('oauthtokendeleted', 'artefact.webservice'));
     }
     redirect('/artefact/webservice/apptokens.php');
 }
 
-                                
+
 function webservices_server_submit(Pieform $form, $values) {
     global $USER, $SESSION;
     if ($values['action'] == 'delete') {
-        delete_records('oauth_server_token', 'id', $values['token'], 'userid', $USER->id);
+        delete_records('oauth_server_token', 'id', $values['token'], 'userid', $USER->get('id'));
         $SESSION->add_ok_msg(get_string('oauthtokendeleted', 'artefact.webservice'));
     }
     redirect('/artefact/webservice/apptokens.php');
@@ -392,10 +393,8 @@ $form = pieform($form);
 $smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('form', $form);
 $smarty->assign('PAGEHEADING', TITLE);
-$smarty->display('artefact:webservice:tokenconfig.tpl');
+$smarty->display('form.tpl');
 
-                                
+
 function webservice_main_submit(Pieform $form, $values) {
-    error_log('main: '.var_export($values, true));
-    
 }

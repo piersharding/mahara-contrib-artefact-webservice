@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:
@@ -48,16 +47,15 @@ $ouid   = param_variable('ouid', '');
 // did the user cancel
 if (param_alpha('cancel_submit', 'empty') != 'empty') {
     if ($ouid) {
-        redirect('/artefact/webservice/oauthv1sregister.php?ouid='.$ouid);
+        redirect('/artefact/webservice/oauthv1sregister.php?ouid=' . $ouid);
     }
     else if ($suid) {
-        redirect('/artefact/webservice/userconfig.php?suid='.$suid);
+        redirect('/artefact/webservice/userconfig.php?suid=' . $suid);
     }
     else {
-        redirect('/artefact/webservice/tokenconfig.php?token='.$token);
+        redirect('/artefact/webservice/tokenconfig.php?token=' . $token);
     }
 }
-
 
 $sortby  = param_alpha('sortby', 'firstname');
 $sortdir = param_alpha('sortdir', 'asc');
@@ -66,8 +64,8 @@ $limit   = param_integer('limit', 10);
 
 $search = (object) array(
     'query'       => trim(param_variable('query', '')),
-    'f'           => param_alpha('f', null), // first initial
-    'l'           => param_alpha('l', null), // last initial
+    'f'           => param_alpha('f', null),
+    'l'           => param_alpha('l', null),
     'sortby'      => $sortby,
     'sortdir'     => $sortdir,
     'offset'      => $offset,
@@ -100,5 +98,3 @@ else {
 }
 $smarty->assign('PAGEHEADING', $heading);
 $smarty->display('artefact:webservice:search.tpl');
-
-

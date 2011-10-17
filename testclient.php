@@ -1,6 +1,4 @@
 <?php
-
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:
@@ -56,14 +54,13 @@ global $SESSION;
 if ($result = $SESSION->get('ws_call_results')) {
     $SESSION->set('ws_call_results', false);
     $result = unserialize($result);
-//    error_log("ws call results are: ".var_export($result, true));
-    $elements['wsresults'] = array('type' => 'html', 'value' => '<h3>Results:</h3><pre>'.var_export($result, true).'</pre><br/>');
+    $elements['wsresults'] = array('type' => 'html', 'value' => '<h3>Results:</h3><pre>' . var_export($result, true) . '</pre><br/>');
 }
 
 // add protocol choice
 $popts = array();
 foreach (array('soap', 'xmlrpc', 'rest') as $proto) {
-    $enabled = (get_config_plugin('artefact', 'webservice', $proto.'_enabled') || 0);
+    $enabled = (get_config_plugin('artefact', 'webservice', $proto . '_enabled') || 0);
     if ($enabled) {
         $popts[$proto] = get_string($proto, 'artefact.webservice');
     }
@@ -80,7 +77,7 @@ $elements['protocol'] = array(
 // add auth method
 $aopts = array();
 foreach (array('token', 'user') as $auth) {
-    $aopts[$auth] = get_string($auth.'auth', 'artefact.webservice');
+    $aopts[$auth] = get_string($auth . 'auth', 'artefact.webservice');
 }
 $default_authtype = (empty($authtype) ? 'token' : $authtype);
 $elements['authtype'] = array(
@@ -94,12 +91,12 @@ $elements['authtype'] = array(
 $nextaction = get_string('next');
 $iterations = 0;
 
-$params = array('protocol='.$protocol, 'authtype='.$authtype);
+$params = array('protocol=' . $protocol, 'authtype=' . $authtype);
 if (!empty($service)) {
-    $params[]= 'service='.$service;
+    $params[]= 'service=' . $service;
 }
 if (!empty($function)) {
-    $params[]= 'function='.$function;
+    $params[]= 'function=' . $function;
 }
 
 if (!empty($authtype)) {
@@ -108,7 +105,7 @@ if (!empty($authtype)) {
     $sopts = array();
     if (!empty($dbservices)) {
         foreach ($dbservices as $dbservice) {
-            $sopts[$dbservice->id] = $dbservice->name.' ('.($dbservice->restrictedusers ? get_string('userauth', 'artefact.webservice') : get_string('tokenauth', 'artefact.webservice')).')';
+            $sopts[$dbservice->id] = $dbservice->name . ' (' . ($dbservice->restrictedusers ? get_string('userauth', 'artefact.webservice') : get_string('tokenauth', 'artefact.webservice')) . ')';
         }
     }
     $default_service = ($service == 0 ? array_shift(array_keys($sopts)) : $service);
@@ -143,7 +140,7 @@ if (!empty($authtype)) {
     // we are go - build the form for function parameters
     if ($function != 0 && !empty($dbsf)) {
         $vars = testclient_get_interface($dbsf->functionname);
-        $elements['spacer'] = array('type' => 'html', 'value' => '<br/><h3>'.get_string('enterparameters', 'artefact.webservice').'</h3>');
+        $elements['spacer'] = array('type' => 'html', 'value' => '<br/><h3>' . get_string('enterparameters', 'artefact.webservice').'</h3>');
         for ($i=0;$i<=$iterations; $i++) {
             foreach ($vars as $var) {
                 $name = preg_replace('/NUM/', $i, $var['name']);
@@ -156,21 +153,19 @@ if (!empty($authtype)) {
             $elements['wsusername'] = array('title' => 'wsusername', 'type' => 'text', 'value' => $username);
             $elements['wspassword'] = array('title' => 'wspassword', 'type' => 'text', 'value' => $password);
             if ($username) {
-                $params[]= 'wsusername='.$username;
+                $params[]= 'wsusername=' . $username;
             }
             if ($password) {
-                $params[]= 'wspassword='.$password;
+                $params[]= 'wspassword=' . $password;
             }
         }
         else {
             $wstoken = param_alphanum('wstoken', '');
             $elements['wstoken'] = array('title' => 'wstoken', 'type' => 'text', 'value' => $wstoken);
             if ($wstoken) {
-                $params[]= 'wstoken='.$wstoken;
+                $params[]= 'wstoken=' . $wstoken;
             }
         }
-//        $html = var_export($vars, true);
-//        $elements['parameters'] = array('type' => 'html', 'value' => $html);
         $nextaction = get_string('execute', 'artefact.webservice');
     }
 }
@@ -196,8 +191,6 @@ $smarty->assign('PAGEHEADING', $heading);
 $smarty->display('artefact:webservice:testclient.tpl');
 
 die;
-
-
 
 /**
  * get the interface definition for the function
@@ -245,7 +238,7 @@ function testclient_parameters($paramdescription, $paramstring) {
         /// description object is a primary type (string, integer)
         $paramstring = $paramstring . '=';
         switch ($paramdescription->type) {
-            case PARAM_BOOL: // 0 or 1 only for now
+            case PARAM_BOOL:
             case PARAM_INT:
                 $type = 'int';
                 break;
@@ -294,7 +287,6 @@ function testclient_build_inputs(&$inputs, $parts, $value) {
 function testclient_submit(Pieform $form, $values) {
     global $SESSION, $params, $iterations, $function, $dbsf;
 
-//    error_log('submit: '.var_export($values, true));
     if (($values['authtype'] == 'token' && !empty($values['wstoken'])) ||
         ($values['authtype'] == 'user' && !empty($values['wsusername']) && !empty($values['wspassword']))) {
         $vars = testclient_get_interface($dbsf->functionname);
@@ -306,14 +298,13 @@ function testclient_submit(Pieform $form, $values) {
                 testclient_build_inputs($inputs, $parts, $values[$name]);
             }
         }
-//        error_log('inputs built: '.var_export($inputs, true));
 
         if ($values['authtype'] == 'token') {
            // check token
            $dbtoken = get_record('external_tokens', 'token', $values['wstoken']);
            if (empty($dbtoken)) {
                $SESSION->add_error_msg(get_string('invalidtoken', 'artefact.webservice'));
-               redirect('/artefact/webservice/testclient.php?'.implode('&', $params));
+               redirect('/artefact/webservice/testclient.php?' . implode('&', $params));
            }
         }
         else {
@@ -321,29 +312,29 @@ function testclient_submit(Pieform $form, $values) {
            $dbuser = get_record('usr', 'username', $values['wsusername']);
            if (empty($dbuser)) {
                $SESSION->add_error_msg(get_string('invaliduser', 'artefact.webservice'));
-               redirect('/artefact/webservice/testclient.php?'.implode('&', $params));
+               redirect('/artefact/webservice/testclient.php?' . implode('&', $params));
            }
             // special web service login
-            require_once(get_config('docroot')."/auth/webservice/lib.php");
+            require_once(get_config('docroot') . '/auth/webservice/lib.php');
 
            // do password auth
             $ext_user = get_record('external_services_users', 'userid', $dbuser->id);
             if (empty($ext_user)) {
                $SESSION->add_error_msg(get_string('invaliduser', 'artefact.webservice'));
-               redirect('/artefact/webservice/testclient.php?'.implode('&', $params));
+               redirect('/artefact/webservice/testclient.php?' . implode('&', $params));
             }
             // determine the internal auth instance
             $auth_instance = get_record('auth_instance', 'institution', $ext_user->institution, 'authname', 'webservice');
             if (empty($auth_instance)) {
                $SESSION->add_error_msg(get_string('invaliduser', 'artefact.webservice'));
-               redirect('/artefact/webservice/testclient.php?'.implode('&', $params));
+               redirect('/artefact/webservice/testclient.php?' . implode('&', $params));
             }
             // authenticate the user
             $auth = new AuthWebservice($auth_instance->id);
             if (!$auth->authenticate_user_account($dbuser, $values['wspassword'], 'webservice')) {
                 // log failed login attempts
                $SESSION->add_error_msg(get_string('invaliduser', 'artefact.webservice'));
-               redirect('/artefact/webservice/testclient.php?'.implode('&', $params));
+               redirect('/artefact/webservice/testclient.php?' . implode('&', $params));
             }
         }
         // now build the test call
@@ -351,9 +342,9 @@ function testclient_submit(Pieform $form, $values) {
         switch ($values['protocol']){
             case 'rest':
                 error_log('creating REST client');
-                require_once(get_config('docroot') . "/artefact/webservice/rest/lib.php");
+                require_once(get_config('docroot') . '/artefact/webservice/rest/lib.php');
                 $client = new webservice_rest_client(get_config('wwwroot')
-                                . '/artefact/webservice/rest/'.$type.'.php',
+                                . '/artefact/webservice/rest/' . $type . '.php',
                                  ($type == 'server' ? array('wstoken' => $values['wstoken']) :
                                                       array('wsusername' => $values['wsusername'], 'wspassword' => $values['wspassword'])), $type);
 
@@ -361,17 +352,17 @@ function testclient_submit(Pieform $form, $values) {
 
             case 'xmlrpc':
                 error_log('creating XML-RPC client');
-                require_once(get_config('docroot') . "/artefact/webservice/xmlrpc/lib.php");
+                require_once(get_config('docroot') . '/artefact/webservice/xmlrpc/lib.php');
                 $client = new webservice_xmlrpc_client(get_config('wwwroot')
-                        . '/artefact/webservice/xmlrpc/'.$type.'.php',
+                        . '/artefact/webservice/xmlrpc/' . $type . '.php',
                          ($type == 'server' ? array('wstoken' => $values['wstoken']) :
                                               array('wsusername' => $values['wsusername'], 'wspassword' => $values['wspassword'])));
                 break;
 
             case 'soap':
                 error_log('creating SOAP client');
-                require_once(get_config('docroot') . "/artefact/webservice/soap/lib.php");
-                $client = new webservice_soap_client(get_config('wwwroot') . 'artefact/webservice/soap/'.$type.'.php',
+                require_once(get_config('docroot') . '/artefact/webservice/soap/lib.php');
+                $client = new webservice_soap_client(get_config('wwwroot') . 'artefact/webservice/soap/' . $type . '.php',
                                 ($type == 'server' ? array('wstoken' => $values['wstoken']) :
                                                      array('wsusername' => $values['wsusername'], 'wspassword' => $values['wspassword'])),
                                 array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
@@ -382,13 +373,12 @@ function testclient_submit(Pieform $form, $values) {
         try {
             $results = $client->call($dbsf->functionname, $inputs, true);
         } catch (Exception $e) {
-             $results = "exception: ".$e->getMessage();
+             $results = "exception: " . $e->getMessage();
         }
 
         $SESSION->set('ws_call_results', serialize($results));
         $SESSION->add_ok_msg(get_string('executed', 'artefact.webservice'));
     }
 
-    redirect('/artefact/webservice/testclient.php?'.implode('&', $params));
+    redirect('/artefact/webservice/testclient.php?' . implode('&', $params));
 }
-

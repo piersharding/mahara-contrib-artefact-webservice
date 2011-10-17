@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:
@@ -30,6 +29,10 @@
 define('INTERNAL', 1);
 define('ADMIN', 1);
 define('MENUITEM', 'configextensions/pluginadminwebservices');
+// define('MENUITEM', 'webservice/config');
+// define('SECTION_PLUGINTYPE', 'core');
+// define('SECTION_PLUGINNAME', 'admin');
+// define('SECTION_PAGE', 'webservice');
 require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 define('TITLE', get_string('pluginadmin', 'admin'));
 require_once('pieforms/pieform.php');
@@ -38,24 +41,15 @@ $service  = param_integer('service', 0);
 $dbservice = get_record('external_services', 'id', $service);
 if (empty($dbservice)) {
     $SESSION->add_error_msg(get_string('invalidservice', 'artefact.webservice'));
-    redirect('/artefact/webservice/pluginconfig.php');
+    redirect('/artefact/webservice/index.php');
 }
 $enabled = $dbservice->enabled;
 $restrictedusers = ($dbservice->restrictedusers <= 0 ? 0 : 1);
 $tokenusers = ($dbservice->tokenusers <= 0 ? 0 : 1);
 
-$plugintype = 'artefact';
-$pluginname = 'webservice';
-
-define('SECTION_PLUGINTYPE', $plugintype);
-define('SECTION_PLUGINNAME', $pluginname);
+define('SECTION_PLUGINTYPE', 'artefact');
+define('SECTION_PLUGINNAME', 'webservice');
 define('SECTION_PAGE', 'pluginconfig');
-
-safe_require($plugintype, $pluginname);
-$classname = generate_artefact_class_name($pluginname);
-if (!call_static_method($classname, 'plugin_is_active')) {
-    throw new UserException("Plugin $plugintype $pluginname is disabled");
-}
 
 $functions =
     array(
@@ -90,21 +84,21 @@ $functions =
 $dbfunctions = get_records_array('external_functions', null, null, 'name');
 foreach ($dbfunctions as $function) {
     $sfexists = record_exists('external_services_functions', 'externalserviceid', $dbservice->id, 'functionname', $function->name);
-    $functions['elements']['id'. $function->id . '_enabled'] = array(
+    $functions['elements']['id' . $function->id . '_enabled'] = array(
         'defaultvalue' => ($sfexists ? 'checked' : ''),
         'type'         => 'checkbox',
         'disabled'     => false,
         'title'        => $function->name,
     );
 
-    $functions['elements']['id'. $function->id . '_class'] = array(
+    $functions['elements']['id' . $function->id . '_class'] = array(
         'value'        =>  $function->classname,
         'type'         => 'html',
         'title'        => $function->name,
     );
 
-    $functions['elements']['id'. $function->id . '_method'] = array(
-        'value'        =>  '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$function->id.'">'.$function->methodname.'</a>',
+    $functions['elements']['id' . $function->id . '_method'] = array(
+        'value'        =>  '<a href="' . get_config('wwwroot') . 'artefact/webservice/wsdoc.php?id=' . $function->id . '">' . $function->methodname . '</a>',
         'type'         => 'html',
         'title'        => $function->name,
     );
@@ -113,7 +107,7 @@ foreach ($dbfunctions as $function) {
 $functions['elements']['submit'] = array(
             'type'  => 'submitcancel',
             'value' => array(get_string('save'), get_string('back')),
-            'goto'  => get_config('wwwroot') . 'artefact/webservice/pluginconfig.php',
+            'goto'  => get_config('wwwroot') . 'artefact/webservice/index.php',
         );
 
 $elements = array(
@@ -144,7 +138,7 @@ $elements = array(
                                                                                      'class' => 'linkbtn',
                                                                                      'value' => $enabled ? get_string('disable') : get_string('enable')
                                                                                  ),
-                                                                                 'state'     => array('type' => 'html', 'value' => '['.($enabled ? get_string('enabled', 'artefact.webservice') : get_string('disabled', 'artefact.webservice')).']',),
+                                                                                 'state'     => array('type' => 'html', 'value' => '[' . ($enabled ? get_string('enabled', 'artefact.webservice') : get_string('disabled', 'artefact.webservice')) . ']',),
                                                     ),
                                                 )
                                             ),
@@ -170,7 +164,7 @@ $elements = array(
                                                                                      'class' => 'linkbtn',
                                                                                      'value' => $restrictedusers ? get_string('switchtotokens', 'artefact.webservice') : get_string('switchtousers', 'artefact.webservice')
                                                                                  ),
-                                                                                 'state'     => array('type' => 'html', 'value' => '['.($restrictedusers ? get_string('usersonly', 'artefact.webservice') : get_string('tokensonly', 'artefact.webservice')).']',),
+                                                                                 'state'     => array('type' => 'html', 'value' => '[' . ($restrictedusers ? get_string('usersonly', 'artefact.webservice') : get_string('tokensonly', 'artefact.webservice')) . ']',),
                                                     ),
                                                 )
                                             ),
@@ -196,7 +190,7 @@ $elements = array(
                                                                                      'class' => 'linkbtn',
                                                                                      'value' => $tokenusers ? get_string('disable') : get_string('enable')
                                                                                  ),
-                                                                                 'state'     => array('type' => 'html', 'value' => '['.($tokenusers ? get_string('enabled', 'artefact.webservice') : get_string('disabled', 'artefact.webservice')).']',),
+                                                                                 'state'     => array('type' => 'html', 'value' => '[' . ($tokenusers ? get_string('enabled', 'artefact.webservice') : get_string('disabled', 'artefact.webservice')) . ']',),
                                                     ),
                                                 )
                                             ),
@@ -230,18 +224,15 @@ $form = array(
     'elements' => $elements,
 );
 
+$heading = get_string('servicegroups', 'artefact.webservice');
 $form['name'] = 'serviceconfig';
 $form['successcallback'] = 'serviceconfig_submit';
 $form = pieform($form);
 $smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('servicename', $dbservice->name);
 $smarty->assign('form', $form);
-$smarty->assign('plugintype', $plugintype);
-$smarty->assign('pluginname', $pluginname);
-$heading = get_string('pluginadmin', 'admin') . ': ' . $plugintype . ': ' . $pluginname;
 $smarty->assign('PAGEHEADING', $heading);
-$smarty->display('artefact:webservice:serviceconfig.tpl');
-
+$smarty->display('form.tpl');
 
 function allocate_webservice_functions_submit(Pieform $form, $values) {
     $success = false;
@@ -252,7 +243,7 @@ function allocate_webservice_functions_submit(Pieform $form, $values) {
             $dbfunction = get_record('external_functions', 'id', $function);
             if (empty($dbfunction)) {
                 $SESSION->add_error_msg(get_string('invalidinput', 'artefact.webservice'));
-                redirect('/artefact/webservice/serviceconfig.php?service='.$service);
+                redirect('/artefact/webservice/serviceconfig.php?service=' . $service);
             }
             $service_function = record_exists('external_services_functions', 'externalserviceid', $service, 'functionname',$dbfunction->name);
             // record should exist - so create if necessary
@@ -275,14 +266,12 @@ function allocate_webservice_functions_submit(Pieform $form, $values) {
         }
     }
     $SESSION->add_ok_msg(get_string('configsaved', 'artefact.webservice'));
-    redirect('/artefact/webservice/serviceconfig.php?service='.$service);
+    redirect('/artefact/webservice/serviceconfig.php?service=' . $service);
 }
 
 function allocate_webservice_functions_validate(PieForm $form, $values) {
     global $SESSION, $service;
 }
-
-
 
 function serviceconfig_submit(Pieform $form, $values) {
     global $SESSION, $service, $dbservice;
@@ -306,7 +295,7 @@ function serviceconfig_submit(Pieform $form, $values) {
             $cnt = count_records('external_tokens', 'externalserviceid', $service);
             if ($cnt > 0) {
                 $SESSION->add_error_msg(get_string('existingtokens', 'artefact.webservice'));
-                redirect('/artefact/webservice/serviceconfig.php?service='.$service);;
+                redirect('/artefact/webservice/serviceconfig.php?service=' . $service);;
             }
         }
         else {
@@ -314,14 +303,14 @@ function serviceconfig_submit(Pieform $form, $values) {
             $cnt = count_records('external_services_users', 'externalserviceid', $service);
             if ($cnt > 0) {
                 $SESSION->add_error_msg(get_string('existingserviceusers', 'artefact.webservice'));
-                redirect('/artefact/webservice/serviceconfig.php?service='.$service);;
+                redirect('/artefact/webservice/serviceconfig.php?service=' . $service);;
             }
         }
         $dbservice->restrictedusers = $restrict;
         update_record('external_services', $dbservice);
         $SESSION->add_ok_msg(get_string('configsaved', 'artefact.webservice'));
     }
-    redirect('/artefact/webservice/serviceconfig.php?service='.$service);
+    redirect('/artefact/webservice/serviceconfig.php?service=' . $service);
 }
 
 function serviceconfig_validate(PieForm $form, $values) {

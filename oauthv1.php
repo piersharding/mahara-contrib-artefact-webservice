@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (c) 2007-2008 Mediamatic Lab
@@ -65,11 +64,11 @@ global $SESSION, $USER;
 
 // Catch anything that goes wrong in init.php
 ob_start();
-    require(dirname(dirname(dirname(__FILE__))).'/init.php');
+    require(dirname(dirname(dirname(__FILE__))) . '/init.php');
     $errors = trim(ob_get_contents());
 ob_end_clean();
 
-require(dirname(__FILE__).'/locallib.php');
+require(dirname(__FILE__) . '/locallib.php');
 
 if (!webservice_protocol_is_enabled('oauth')) {
     header("HTTP/1.0 404 Not Found");
@@ -84,8 +83,8 @@ header('X-XRDS-Location: ' . get_config('wwwroot') . 'artefact/webservice/oauthv
 /*
  * Initialize OAuth store
  */
-require_once(dirname(__FILE__).'/libs/oauth-php/OAuthServer.php');
-require_once(dirname(__FILE__).'/libs/oauth-php/OAuthStore.php');
+require_once(dirname(__FILE__) . '/libs/oauth-php/OAuthServer.php');
+require_once(dirname(__FILE__) . '/libs/oauth-php/OAuthStore.php');
 OAuthStore::instance('Mahara');
 global $server;
 $server = new OAuthServer();
@@ -133,7 +132,7 @@ else if ($_SERVER['PATH_INFO'] == '/authorize') {
             'elements' => array(
                                 'application_uri' => array(
                                     'title'        => get_string('application_title', 'artefact.webservice'),
-                                    'value'        =>  '<a href="'.$rs['application_uri'].'" target="_blank">'.$rs['application_title'].'</a>',
+                                    'value'        =>  '<a href="' . $rs['application_uri'] . '" target="_blank">' . $rs['application_title'] . '</a>',
                                     'type'         => 'html',
                                 ),
                                 'application_access' => array(
@@ -141,9 +140,9 @@ else if ($_SERVER['PATH_INFO'] == '/authorize') {
                                     'type'         => 'html',
                                 ),
                                 'instructions' => array(
-                                    'value'        =>  get_string('oauth_instructions', 'artefact.webservice')."<br/><br/>",
+                                    'value'        =>  get_string('oauth_instructions', 'artefact.webservice') . "<br/><br/>",
                                     'type'         => 'html',
-                                ),                                
+                                ),
                                 'submit' => array(
                                     'type'  => 'submitcancel',
                                     'value' => array(get_string('authorise', 'artefact.webservice'), get_string('cancel')),
@@ -151,12 +150,12 @@ else if ($_SERVER['PATH_INFO'] == '/authorize') {
                                 ),
             ),
         );
-        
+
         $form = pieform($form);
         $smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
         $smarty->assign('form', $form);
         $smarty->assign('PAGEHEADING', get_string('authorise', 'artefact.webservice'));
-        $smarty->display('artefact:webservice:tokenconfig.tpl');    
+        $smarty->display('form.tpl');
         exit;
 }
 else if ($_SERVER['PATH_INFO'] == '/oob') {
@@ -178,7 +177,7 @@ else if ($_SERVER['PATH_INFO'] == '/oob') {
                                 ),
                                 'verifier' => array(
                                     'title'        => get_string('verifier', 'artefact.webservice'),
-                                    'value'        =>  '<div id="verifier">'.$verifier.'</div>',
+                                    'value'        =>  '<div id="verifier">' . $verifier . '</div>',
                                     'type'         => 'html',
                                 ),
             ),
@@ -187,7 +186,7 @@ else if ($_SERVER['PATH_INFO'] == '/oob') {
         $smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
         $smarty->assign('form', $form);
         $smarty->assign('PAGEHEADING', get_string('oob', 'artefact.webservice'));
-        $smarty->display('artefact:webservice:tokenconfig.tpl');
+        $smarty->display('form.tpl');
         exit;
 }
 else {
@@ -201,7 +200,7 @@ function oauth_authorise_submit(Pieform $form, $values) {
     global $server, $USER, $SESSION;
     try {
         $server->authorizeVerify();
-        $verifier = $server->authorizeFinish(true, $USER->id);
+        $verifier = $server->authorizeFinish(true, $USER->get('id'));
         $SESSION->set('oauh_verifier', $verifier);
         redirect('/artefact/webservice/oauthv1.php/oob');
     }
@@ -211,6 +210,5 @@ function oauth_authorise_submit(Pieform $form, $values) {
 
         echo "Failed OAuth Request: " . $e->getMessage();
     }
-    exit;    
+    exit;
 }
-?>

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
@@ -77,4 +76,3 @@ $functions = array(
         'mahara_group_get_groups_by_id' => array('groups' => $get_group),
         'mahara_group_delete_groups' => array('groups' => $delete_group),
 );
-

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2009 Moodle Pty Ltd (http://moodle.com)
@@ -31,10 +30,9 @@
  * @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
  */
 
-require_once './TestBase.class.php';
+require_once 'TestBase.class.php';
 
 class WebServiceInstitutionTest extends TestBase {
-
 
     function setUp() {
         // default current user to admin
@@ -64,10 +62,7 @@ class WebServiceInstitutionTest extends TestBase {
 
     }
 
-
     function testRun() {
-        global $CFG;
-
         if (!$this->testrest and !$this->testxmlrpc and !$this->testsoap) {
             print_r("Web service unit tests are not run as not setup.
                 (see /artefact/webservice/simpletest/testwebservice.php)");
@@ -83,7 +78,7 @@ class WebServiceInstitutionTest extends TestBase {
                 // iterate the token and user auth types
                 foreach (array('server', 'simpleserver') as $type) {
                     $restclient = new webservice_rest_client(get_config('wwwroot')
-                                    . 'artefact/webservice/rest/'.$type.'.php',
+                                    . 'artefact/webservice/rest/' . $type . '.php',
                                      ($type == 'server' ? array('wstoken' => $this->testtoken) :
                                                           array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)), $type);
                     for ($i = 1; $i <= $this->iteration; $i = $i + 1) {
@@ -110,7 +105,7 @@ class WebServiceInstitutionTest extends TestBase {
                 // iterate the token and user auth types
                 foreach (array('server', 'simpleserver') as $type) {
                     $xmlrpcclient = new webservice_xmlrpc_client(get_config('wwwroot')
-                                    . 'artefact/webservice/xmlrpc/'.$type.'.php',
+                                    . 'artefact/webservice/xmlrpc/' . $type . '.php',
                                      ($type == 'server' ? array('wstoken' => $this->testtoken) :
                                                           array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)));
 
@@ -144,7 +139,7 @@ class WebServiceInstitutionTest extends TestBase {
                     unset($parms['type']);
                     if (isset($parms['wsse'])) {
                         $soapclient = new webservice_soap_client(get_config('wwwroot')
-                                        . 'artefact/webservice/soap/'.$type.'.php', array('wsservice' => $this->servicename),
+                                        . 'artefact/webservice/soap/' . $type . '.php', array('wsservice' => $this->servicename),
                                             array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
                                                                                            //when function return null
                         $wsseSoapClient = new webservice_soap_client_wsse(array($soapclient, '_doRequest'), $soapclient->wsdl, $soapclient->getOptions());
@@ -153,7 +148,7 @@ class WebServiceInstitutionTest extends TestBase {
                     }
                     else {
                         $soapclient = new webservice_soap_client(get_config('wwwroot')
-                                        . 'artefact/webservice/soap/'.$type.'.php', $parms,
+                                        . 'artefact/webservice/soap/' . $type . '.php', $parms,
                                             array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
                                                                                            //when function return null
                     }
@@ -181,10 +176,8 @@ class WebServiceInstitutionTest extends TestBase {
 
     // simple get users by ID
     function mahara_institution_get_members($client) {
-        global $CFG;
-
         error_log('getting members');
-        require_once($CFG->docroot.'/lib/searchlib.php');
+        require_once(get_config('docroot') . '/lib/searchlib.php');
 
         $institution = new Institution('mahara');
         $data = institutional_admin_user_search('', $institution, 0);
@@ -196,12 +189,10 @@ class WebServiceInstitutionTest extends TestBase {
         $this->assertEquals(count($users), $data['count']);
     }
 
-
     // simple get users by ID
     function mahara_institution_get_requests($client) {
-        global $CFG;
         error_log('getting requests');
-        require_once($CFG->docroot.'/lib/searchlib.php');
+        require_once(get_config('docroot') . '/lib/searchlib.php');
 
         //Set test data
         $dbuser1 = $this->create_user1_for_update();
@@ -217,7 +208,6 @@ class WebServiceInstitutionTest extends TestBase {
 
         $this->assertEquals(count($users), count($dbinvites));
     }
-
 
     // update user test
     function mahara_institution_invite_members($client) {
@@ -239,7 +229,6 @@ class WebServiceInstitutionTest extends TestBase {
         //compare DB user with the test data
         $this->assertEquals(count($params['users']), count($dbinvites));
     }
-
 
     // update user test
     function mahara_institution_add_members($client) {
@@ -289,7 +278,6 @@ class WebServiceInstitutionTest extends TestBase {
         $dbmembers = get_records_array('usr_institution', 'institution', $this->testinstitution);
         $this->assertTrue(empty($dbmembers));
     }
-
 
     // update user test
     function mahara_institution_decline_members($client) {

@@ -29,7 +29,7 @@
  * @author     Piers Harding
  */
 
-require_once(get_config('docroot')."/artefact/webservice/locallib.php");
+require_once(get_config('docroot') . '/artefact/webservice/locallib.php');
 
  // must not cache wsdl - the list of functions is created on the fly
 ini_set('soap.wsdl_cache_enabled', '0');
@@ -94,13 +94,13 @@ class Zend_Soap_Server_Local extends Zend_Soap_Server {
                 $time_taken = $time_end - $WEBSERVICE_START;
 
                 $log = (object)  array('timelogged' => time(),
-                                       'userid' => $USER->id,
+                                       'userid' => $USER->get('id'),
                                        'externalserviceid' => 0,
                                        'institution' => $WEBSERVICE_INSTITUTION,
                                        'protocol' => 'SOAP',
                                        'auth' => 'unknown',
                                        'functionname' => ($WEBSERVICE_FUNCTION_RUN ? $WEBSERVICE_FUNCTION_RUN : 'unknown'),
-                                       'timetaken' => ''.$time_taken,
+                                       'timetaken' => '' . $time_taken,
                                        'uri' => $_SERVER['REQUEST_URI'],
                                        'info' => 'exception: ' . get_class($e) . ' message: ' . $e->getMessage() . ' debuginfo: ' . (isset($e->debuginfo) ? $e->debuginfo : ''),
                                        'ip' => getremoteaddr());
@@ -108,7 +108,7 @@ class Zend_Soap_Server_Local extends Zend_Soap_Server {
                 // carry on with SOAP faulting
                 $fault = $this->fault($e);
                 if (isset($e->debuginfo)) {
-                    $fault->faultstring .= ' '.$e->debuginfo;
+                    $fault->faultstring .= ' ' . $e->debuginfo;
                 }
                 $soap->fault($fault->faultcode, $fault->faultstring);
             }
@@ -170,12 +170,12 @@ class webservice_soap_server extends webservice_zend_server {
             $password = optional_param('wspassword', '', PARAM_RAW);
             // aparently some clients and zend soap server does not work well with "&" in urls :-(
             //TODO: the zend error has been fixed in the last Zend SOAP version, check that is fixed and remove obsolete code
-            $url = $CFG->wwwroot.'artefact/webservice/soap/simpleserver.php/'.urlencode($username).'/'.urlencode($password);
+            $url = get_config('wwwroot') . 'artefact/webservice/soap/simpleserver.php/' . urlencode($username) . '/' . urlencode($password);
             // the Zend server is using this uri directly in xml - weird :-(
             $this->zend_server->setUri(htmlentities($url));
         } else {
             $wstoken = optional_param('wstoken', '', PARAM_RAW);
-            $url = $CFG->wwwroot.'artefact/webservice/soap/server.php?wstoken='.urlencode($wstoken);
+            $url = get_config('wwwroot') . 'artefact/webservice/soap/server.php?wstoken=' . urlencode($wstoken);
             // the Zend server is using this uri directly in xml - weird :-(
             $this->zend_server->setUri(htmlentities($url));
         }
@@ -218,7 +218,7 @@ class webservice_soap_server extends webservice_zend_server {
             // we need the token so that we can find the key
             if (!$dbtoken = get_record('external_tokens', 'token', $this->token, 'tokentype', EXTERNAL_TOKEN_PERMANENT)) {
                 // log failed login attempts
-                ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice').": ".$this->token. " - ".getremoteaddr() , 0);
+                ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . $this->token . " - " . getremoteaddr() , 0);
                 throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
             }
             // is WS-Security active ?
@@ -246,7 +246,7 @@ class webservice_soap_server extends webservice_zend_server {
         // only both if we can find a public key
         if (!empty($this->publickey)) {
             // A singleton provides our site's SSL info
-            require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+            require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
             $HTTP_RAW_POST_DATA = file_get_contents('php://input');
             $openssl = OpenSslRepo::singleton();
             $payload                 = $HTTP_RAW_POST_DATA;
@@ -327,7 +327,6 @@ class webservice_soap_server extends webservice_zend_server {
                     if ($q->item(0)) {
                         $this->username = (string) $q->item(0)->data;
                         $this->password = (string) $xpath->query("//wsse:Security/wsse:UsernameToken/wsse:Password/text()", $dom)->item(0)->data;
-//                        error_log('username/password is wsse: '.$this->username.'/'.$this->password);
                         $this->authmethod = WEBSERVICE_AUTHMETHOD_USERNAME;
                     }
                 }
@@ -370,7 +369,7 @@ class webservice_soap_server extends webservice_zend_server {
         if ($ex) {
             $info = $ex->getMessage();
             if (isset($ex->debuginfo)) {
-                $info .= ' - '.$ex->debuginfo;
+                $info .= ' - ' . $ex->debuginfo;
             }
         } else {
             $info = 'Unknown error';
@@ -380,7 +379,7 @@ class webservice_soap_server extends webservice_zend_server {
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
 <SOAP-ENV:Body><SOAP-ENV:Fault>
 <faultcode>MAHARA:error</faultcode>
-<faultstring>'.$info.'</faultstring>
+<faultstring>' . $info . '</faultstring>
 </SOAP-ENV:Fault></SOAP-ENV:Body></SOAP-ENV:Envelope>';
 
         $this->send_headers();
@@ -389,7 +388,6 @@ class webservice_soap_server extends webservice_zend_server {
 
         echo $xml;
     }
-
 
     /**
      * Chance for each protocol to modify the out going
@@ -402,7 +400,7 @@ class webservice_soap_server extends webservice_zend_server {
     protected function modify_result($response) {
         if (!empty($this->publickey)) {
             // do sigs + encrypt
-            require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+            require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
             $openssl = OpenSslRepo::singleton();
             if ($this->payload_signed) {
                 // Sign and encrypt our response, even though we don't know if the
@@ -427,16 +425,16 @@ class webservice_soap_server extends webservice_zend_server {
         $fields = array();
         foreach ($structdesc->keys as $name => $fieldsdesc) {
             $type = $this->get_phpdoc_type($fieldsdesc);
-            $fields[] = '    /** @var '.$type." */\n" .
-                        '    public $'.$name.';';
+            $fields[] = '    /** @var ' . $type . " */\n" .
+                        '    public $' . $name . ';';
         }
 
         $code = '
 /**
- * Virtual struct class for web services for user id '.$USER->id.'.
+ * Virtual struct class for web services for user id ' . $USER->get('id') . '.
  */
-class '.$classname.' {
-'.implode("\n", $fields).'
+class ' . $classname . ' {
+' . implode("\n", $fields) . '
 }
 ';
         eval($code);
@@ -459,7 +457,7 @@ class webservice_soap_test_client implements webservice_test_client_interface {
         //zend expects 0 based array with numeric indexes
         $params = array_values($params);
         require_once 'Zend/Soap/Client.php';
-        $client = new Zend_Soap_Client($serverurl.'&wsdl=1');
+        $client = new Zend_Soap_Client($serverurl . '&wsdl=1');
         return $client->__call($function, $params);
     }
 }

@@ -29,10 +29,10 @@
  * @author     Piers Harding
  */
 
-require_once(get_config('docroot')."/artefact/webservice/locallib.php");
+require_once(get_config('docroot') . "/artefact/webservice/locallib.php");
 
-require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthServer.php');
-require_once(dirname(dirname(__FILE__)).'/libs/oauth-php/OAuthStore.php');
+require_once(dirname(dirname(__FILE__)) . '/libs/oauth-php/OAuthServer.php');
+require_once(dirname(dirname(__FILE__)) . '/libs/oauth-php/OAuthStore.php');
 
 /**
  * REST service server implementation.
@@ -86,7 +86,6 @@ class webservice_rest_server extends webservice_base_server {
             }
             catch (OAuthException2 $e) {
                 // let all others fail
-//                error_log('could not get oauth: '.var_export($e, true));
                 if (isset($_REQUEST['oauth_token']) || preg_grep('/oauth/', array_values($headers))) {
                     $this->auth = 'OAUTH';
                     throw $e;
@@ -96,12 +95,12 @@ class webservice_rest_server extends webservice_base_server {
                 $this->authmethod = WEBSERVICE_AUTHMETHOD_OAUTH_TOKEN;
                 $token = $OAUTH_SERVER->getParam('oauth_token');
                 $store = OAuthStore::instance();
-                $secrets = $store->getSecretsForVerify($oauth_token['consumer_key'], 
-                                                       $OAUTH_SERVER->urldecode($token), 
+                $secrets = $store->getSecretsForVerify($oauth_token['consumer_key'],
+                                                       $OAUTH_SERVER->urldecode($token),
                                                        'access');
                $this->oauth_token_details = $secrets;
 
-               // the content type might be different for the OAuth client 
+               // the content type might be different for the OAuth client
                 if (isset($headers['Content-Type']) && $headers['Content-Type'] == 'application/octet-stream' && $this->format != 'json') {
                     $body = file_get_contents('php://input');
                     parse_str($body, $parameters);
@@ -124,7 +123,6 @@ class webservice_rest_server extends webservice_base_server {
                 $this->parameters = array_merge($this->parameters, $values);
             }
         }
-//        error_log('VALUES AFTER: '.var_export($this->parameters, true));
 
         if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
             $this->username = isset($this->parameters['wsusername']) ? trim($this->parameters['wsusername']) : null;
@@ -151,13 +149,13 @@ class webservice_rest_server extends webservice_base_server {
     protected function send_response() {
         $this->send_headers($this->format);
         if ($this->format == 'json') {
-            echo json_encode($this->returns)."\n";
+            echo json_encode($this->returns) . "\n";
         }
         else {
-            $xml = '<?xml version="1.0" encoding="UTF-8" ?>'."\n";
-            $xml .= '<RESPONSE>'."\n";
+            $xml = '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
+            $xml .= '<RESPONSE>' . "\n";
             $xml .= self::xmlize_result($this->returns, $this->function->returns_desc);
-            $xml .= '</RESPONSE>'."\n";
+            $xml .= '</RESPONSE>' . "\n";
             echo $xml;
         }
     }
@@ -170,18 +168,17 @@ class webservice_rest_server extends webservice_base_server {
      */
     protected function send_error($ex=null) {
         $this->send_headers($this->format);
-//        error_log('exception: '.var_export($ex, true));
         if ($this->format == 'json') {
-            echo json_encode(array('exception' => get_class($ex), 'message' => $ex->getMessage(), 'debuginfo' => (isset($ex->debuginfo) ? $ex->debuginfo : '')))."\n";
+            echo json_encode(array('exception' => get_class($ex), 'message' => $ex->getMessage(), 'debuginfo' => (isset($ex->debuginfo) ? $ex->debuginfo : ''))) . "\n";
         }
         else {
-            $xml = '<?xml version="1.0" encoding="UTF-8" ?>'."\n";
-            $xml .= '<EXCEPTION class="'.get_class($ex).'">'."\n";
-            $xml .= '<MESSAGE>'.htmlentities($ex->getMessage(), ENT_COMPAT, 'UTF-8').'</MESSAGE>'."\n";
+            $xml = '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
+            $xml .= '<EXCEPTION class="' . get_class($ex) . '">' . "\n";
+            $xml .= '<MESSAGE>' . htmlentities($ex->getMessage(), ENT_COMPAT, 'UTF-8') . '</MESSAGE>' . "\n";
             if (isset($ex->debuginfo)) {
-                $xml .= '<DEBUGINFO>'.htmlentities($ex->debuginfo, ENT_COMPAT, 'UTF-8').'</DEBUGINFO>'."\n";
+                $xml .= '<DEBUGINFO>' . htmlentities($ex->debuginfo, ENT_COMPAT, 'UTF-8') . '</DEBUGINFO>' . "\n";
             }
-            $xml .= '</EXCEPTION>'."\n";
+            $xml .= '</EXCEPTION>' . "\n";
             echo $xml;
         }
     }
@@ -199,7 +196,7 @@ class webservice_rest_server extends webservice_base_server {
             header('Content-Type: application/jsonrequest; charset=utf-8');
         }
         header('Cache-Control: private, must-revalidate, pre-check=0, post-check=0, max-age=0');
-        header('Expires: '. gmdate('D, d M Y H:i:s', 0) .' GMT');
+        header('Expires: '. gmdate('D, d M Y H:i:s', 0) . ' GMT');
         header('Pragma: no-cache');
         header('Accept-Ranges: none');
     }
@@ -220,13 +217,13 @@ class webservice_rest_server extends webservice_base_server {
                 $returns = (int)$returns;
             }
             if (is_null($returns)) {
-                return '<VALUE null="null"/>'."\n";
+                return '<VALUE null="null"/>' . "\n";
             } else {
-                return '<VALUE>'.htmlentities($returns, ENT_COMPAT, 'UTF-8').'</VALUE>'."\n";
+                return '<VALUE>' . htmlentities($returns, ENT_COMPAT, 'UTF-8') . '</VALUE>' . "\n";
             }
 
         } else if ($desc instanceof external_multiple_structure) {
-            $mult = '<MULTIPLE>'."\n";
+            $mult = '<MULTIPLE>' . "\n";
             if (!empty($returns)) {
                 foreach ($returns as $val) {
                     $mult .= self::xmlize_result($val, $desc->content);
@@ -236,20 +233,20 @@ class webservice_rest_server extends webservice_base_server {
             return $mult;
 
         } else if ($desc instanceof external_single_structure) {
-            $single = '<SINGLE>'."\n";
+            $single = '<SINGLE>' . "\n";
             foreach ($desc->keys as $key=>$subdesc) {
                 if (!array_key_exists($key, $returns)) {
                     if ($subdesc->required == VALUE_REQUIRED) {
-                        $single .= '<ERROR>Missing required key "'.$key.'"</ERROR>';
+                        $single .= '<ERROR>Missing required key "' . $key . '"</ERROR>';
                         continue;
                     } else {
                         //optional field
                         continue;
                     }
                 }
-                $single .= '<KEY name="'.$key.'">'.self::xmlize_result($returns[$key], $subdesc).'</KEY>'."\n";
+                $single .= '<KEY name="' . $key . '">' . self::xmlize_result($returns[$key], $subdesc) . '</KEY>' . "\n";
             }
-            $single .= '</SINGLE>'."\n";
+            $single .= '</SINGLE>' . "\n";
             return $single;
         }
     }
@@ -268,6 +265,6 @@ class webservice_rest_test_client implements webservice_test_client_interface {
      * @return mixed
      */
     public function simpletest($serverurl, $function, $params) {
-        return download_file_content($serverurl.'&wsfunction='.$function, null, $params);
+        return download_file_content($serverurl . '&wsfunction=' . $function, null, $params);
     }
 }

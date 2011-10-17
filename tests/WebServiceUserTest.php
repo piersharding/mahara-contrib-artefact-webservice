@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2009 Moodle Pty Ltd (http://moodle.com)
@@ -31,10 +30,9 @@
  * @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
  */
 
-require_once './TestBase.class.php';
+require_once 'TestBase.class.php';
 
 class WebServiceUserTest extends TestBase {
-
 
     function setUp() {
         // default current user to admin
@@ -64,11 +62,7 @@ class WebServiceUserTest extends TestBase {
 
     }
 
-
-
     function testRun() {
-        global $CFG;
-
         if (!$this->testrest and !$this->testxmlrpc and !$this->testsoap) {
             print_r("Web service unit tests are not run as not setup.
                 (see /artefact/webservice/simpletest/testwebservice.php)");
@@ -85,12 +79,12 @@ class WebServiceUserTest extends TestBase {
                 foreach (array('server', 'simpleserver', 'oauth') as $type) {
                     switch ($type) {
                         case 'server':
-                             $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/'.$type.'.php',
+                             $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/' . $type . '.php',
                                                                      array('wstoken' => $this->testtoken),
                                                                      $type);
                              break;
                         case 'simpleserver':
-                            $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/'.$type.'.php',
+                            $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/' . $type . '.php',
                                                                      array('wsusername' => $this->testuser, 'wspassword' => $this->testuser),
                                                                      $type);
                              break;
@@ -125,7 +119,7 @@ class WebServiceUserTest extends TestBase {
                 // iterate the token and user auth types
                 foreach (array('server', 'simpleserver') as $type) {
                     $xmlrpcclient = new webservice_xmlrpc_client(get_config('wwwroot')
-                                    . 'artefact/webservice/xmlrpc/'.$type.'.php',
+                                    . 'artefact/webservice/xmlrpc/' . $type . '.php',
                                      ($type == 'server' ? array('wstoken' => $this->testtoken) :
                                                           array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)));
 
@@ -159,7 +153,7 @@ class WebServiceUserTest extends TestBase {
                     unset($parms['type']);
                     if (isset($parms['wsse'])) {
                         $soapclient = new webservice_soap_client(get_config('wwwroot')
-                                        . 'artefact/webservice/soap/'.$type.'.php', array('wsservice' => $this->servicename),
+                                        . 'artefact/webservice/soap/' . $type . '.php', array('wsservice' => $this->servicename),
                                             array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
                                                                                            //when function return null
                         $wsseSoapClient = new webservice_soap_client_wsse(array($soapclient, '_doRequest'), $soapclient->wsdl, $soapclient->getOptions());
@@ -168,7 +162,7 @@ class WebServiceUserTest extends TestBase {
                     }
                     else {
                         $soapclient = new webservice_soap_client(get_config('wwwroot')
-                                        . 'artefact/webservice/soap/'.$type.'.php', $parms,
+                                        . 'artefact/webservice/soap/' . $type . '.php', $parms,
                                             array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
                                                                                            //when function return null
                     }
@@ -217,7 +211,6 @@ class WebServiceUserTest extends TestBase {
         $users = $client->call($function, $params, true);
         $this->assertEquals(count($users), count($users_in));
     }
-
 
     // simple get all users
     function mahara_user_get_users($client) {
@@ -310,8 +303,6 @@ class WebServiceUserTest extends TestBase {
 
     // delete user test
     function mahara_user_delete_users($client) {
-        global $CFG;
-
         error_log('deleting users');
 
         //Set test data
@@ -335,7 +326,7 @@ class WebServiceUserTest extends TestBase {
         $new_user->firstname    = $new_user->username;
         $new_user->lastname     = $new_user->username;
         $new_user->password     = $new_user->username;
-        $new_user->email        = $new_user->username.'@hogwarts.school.nz';
+        $new_user->email        = $new_user->username . '@hogwarts.school.nz';
         $new_user->passwordchange = 0;
         $new_user->admin        = 0;
         $profilefields = new StdClass;
@@ -352,7 +343,7 @@ class WebServiceUserTest extends TestBase {
         $new_user->firstname    = $new_user->username;
         $new_user->lastname     = $new_user->username;
         $new_user->password     = $new_user->username;
-        $new_user->email        = $new_user->username.'@hogwarts.school.nz';
+        $new_user->email        = $new_user->username . '@hogwarts.school.nz';
         $new_user->passwordchange = 0;
         $new_user->admin        = 0;
         $profilefields = new StdClass;
@@ -374,11 +365,8 @@ class WebServiceUserTest extends TestBase {
         }
     }
 
-
     // update user test
     function mahara_user_update_users($client) {
-        global $CFG;
-
         error_log('updating users');
 
         //Set test data
@@ -433,11 +421,8 @@ class WebServiceUserTest extends TestBase {
         $this->assertEquals($dbuser2->email, $user2->email);
     }
 
-
     // update user test
     function mahara_user_update_favourites($client) {
-        global $CFG;
-
         error_log('updating & reading favourites');
         //Set test data
         $dbuser1 = $this->create_user1_for_update();

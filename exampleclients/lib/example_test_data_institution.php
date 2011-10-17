@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
@@ -43,4 +42,3 @@ $functions = array(
         'mahara_institution_get_members' => array('institution' => 'mahara'),
         'mahara_institution_get_requests' => array('institution' => 'mahara'),
 );
-

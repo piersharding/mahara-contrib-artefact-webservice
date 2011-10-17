@@ -102,19 +102,18 @@ function external_function_info($function, $strictness=MUST_EXIST) {
     }
 
     //first find and include the ext implementation class
-//    error_log('component class: '.var_export($function, true));
-    $function->classpath = empty($function->classpath) ? get_component_directory($function->component) : $CFG->docroot.'/'.$function->classpath;
-    if (!file_exists($function->classpath.'/externallib.php')) {
+    $function->classpath = empty($function->classpath) ? get_component_directory($function->component) : get_config('docroot')  .'/' . $function->classpath;
+    if (!file_exists($function->classpath . '/externallib.php')) {
         throw new coding_exception('Can not find file with external function implementation');
     }
-    require_once($function->classpath.'/externallib.php');
+    require_once($function->classpath . '/externallib.php');
 
-    $function->parameters_method = $function->methodname.'_parameters';
-    $function->returns_method    = $function->methodname.'_returns';
+    $function->parameters_method = $function->methodname . '_parameters';
+    $function->returns_method    = $function->methodname . '_returns';
 
     // make sure the implementaion class is ok
     if (!method_exists($function->classname, $function->methodname)) {
-        throw new coding_exception('Missing implementation method of '.$function->classname.'::'.$function->methodname);
+        throw new coding_exception('Missing implementation method of ' . $function->classname . '::' . $function->methodname);
     }
     if (!method_exists($function->classname, $function->parameters_method)) {
         throw new coding_exception('Missing parameters description');
@@ -143,16 +142,13 @@ function external_function_info($function, $strictness=MUST_EXIST) {
     //      conventions for these descriptions in lang packs
     $function->description = null;
 
-    //$servicesfile = get_component_directory($function->component).'/db/services.php'; // FIXME
-    //$servicesfile = $CFG->docroot.'/'.$function->classpath.'/services.php';
-    $servicesfile = $function->classpath.'/services.php';
+    $servicesfile = $function->classpath . '/services.php';
 
     if (file_exists($servicesfile)) {
         $functions = null;
         include($servicesfile);
         if (isset($functions[$function->name]['description'])) {
             $function->description = $functions[$function->name]['description'];
-//            error_log('function: '.$function->description);
         }
     }
 
@@ -197,13 +193,7 @@ class mahara_ws_exception extends Exception {
         $this->link      = $link;
         $this->a         = $a;
         $this->debuginfo = $debuginfo;
-
-//        if (get_string_manager()->string_exists($errorcode, $module)) {
-            $message = get_string($errorcode, $module, $a).$debuginfo;
-//        } else {
-//            $message = $module . '/' . $errorcode;
-//        }
-
+        $message = get_string($errorcode, $module, $a) . $debuginfo;
         parent::__construct($message, 0);
     }
 }
@@ -245,7 +235,6 @@ class external_api {
      * @return mixed params with added defaults for optional items, invalid_parameters_exception thrown if any problem found
      */
     public static function validate_parameters(external_description $description, $params) {
-//        error_log("params: " . var_export($params, TRUE));
         if ($description instanceof external_value) {
             if (is_array($params) or is_object($params)) {
                 throw new invalid_parameter_exception(get_string('errorscalartype', 'artefact.webservice'));
@@ -281,7 +270,7 @@ class external_api {
                         $result[$key] = self::validate_parameters($subdesc, $params[$key]);
                     } catch (invalid_parameter_exception $e) {
                         //it's ok to display debug info as here the information is useful for ws client/dev
-                        throw new webservice_parameter_exception('invalidextparam',"key: $key (debuginfo: ".$e->debuginfo.") ");
+                        throw new webservice_parameter_exception('invalidextparam',"key: $key (debuginfo: " . $e->debuginfo.") ");
                     }
                 }
                 unset($params[$key]);
@@ -342,7 +331,6 @@ class external_api {
             $result = array();
             foreach ($description->keys as $key=>$subdesc) {
                 if (!array_key_exists($key, $response)) {
-//                error_log('description keys: '.var_export($key, true));
                     if ($subdesc->required == VALUE_REQUIRED) {
                         throw new webservice_parameter_exception('errorresponsemissingkey', $key);
                     }
@@ -351,7 +339,7 @@ class external_api {
                             try {
                                     $result[$key] = self::clean_returnvalue($subdesc, $subdesc->default);
                             } catch (Exception $e) {
-                                    throw new webservice_parameter_exception('invalidextresponse',$key." (".$e->debuginfo.")");
+                                    throw new webservice_parameter_exception('invalidextresponse',$key . " (" . $e->debuginfo . ")");
                             }
                         }
                     }
@@ -360,8 +348,7 @@ class external_api {
                         $result[$key] = self::clean_returnvalue($subdesc, $response[$key]);
                     } catch (Exception $e) {
                         //it's ok to display debug info as here the information is useful for ws client/dev
-//                        error_log('ohoh: '.var_export(array('key' => $key, 'subdesc' => $subdesc, 'response' => $response[$key]), true));
-                        throw new webservice_parameter_exception('invalidextresponse',$key." (".$e->debuginfo.")");
+                        throw new webservice_parameter_exception('invalidextresponse', $key . " (" . $e->debuginfo . ")");
                     }
                 }
                 unset($response[$key]);
@@ -505,12 +492,12 @@ function external_generate_token($tokentype, $serviceorid, $userid, $institution
     $newtoken->externalserviceid = $service->id;
     $newtoken->tokentype = $tokentype;
     $newtoken->userid = $userid;
-//    if ($tokentype == EXTERNAL_TOKEN_EMBEDDED){
-//        $newtoken->sid = session_id();
-//    }
+   if ($tokentype == EXTERNAL_TOKEN_EMBEDDED){
+       $newtoken->sid = session_id();
+   }
 
     $newtoken->institution = $institution;
-    $newtoken->creatorid = $USER->id;
+    $newtoken->creatorid = $USER->get('id');
     $newtoken->timecreated = time();
     $newtoken->publickeyexpires = time();
     $newtoken->wssigenc = 0;
@@ -738,7 +725,7 @@ class xml2array {
 
                 if(!is_null($attributes)) {
                     foreach ($attributes as $key => $attr) {
-                        $result["@".$attr->name] = $attr->value;
+                        $result["@" . $attr->name] = $attr->value;
                     }
                 }
             }
@@ -767,10 +754,10 @@ function format_array_postdata_for_curlcall($arraydata, $currentdata, &$data) {
                 $v = (array)$v;
             }
             if (is_array($v)) { //the value is an array, call the function recursively
-                $newcurrentdata = $newcurrentdata.'['.urlencode($k).']';
+                $newcurrentdata = $newcurrentdata . '[' . urlencode($k) . ']';
                 format_array_postdata_for_curlcall($v, $newcurrentdata, $data);
             }  else { //add the POST parameter to the $data array
-                $data[] = $newcurrentdata.'['.urlencode($k).']='.urlencode($v);
+                $data[] = $newcurrentdata . '[' . urlencode($k) . ']=' . urlencode($v);
             }
         }
 }
@@ -788,7 +775,7 @@ function format_postdata_for_curlcall($postdata) {
                 $currentdata = urlencode($k);
                 format_array_postdata_for_curlcall($v, $currentdata, $data);
             }  else {
-                $data[] = urlencode($k).'='.urlencode($v);
+                $data[] = urlencode($k) . '=' . urlencode($v);
             }
         }
         $convertedpostdata = implode('&', $data);
@@ -908,11 +895,11 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
         if (empty($CFG->proxyport)) {
             curl_setopt($ch, CURLOPT_PROXY, $CFG->proxyhost);
         } else {
-            curl_setopt($ch, CURLOPT_PROXY, $CFG->proxyhost.':'.$CFG->proxyport);
+            curl_setopt($ch, CURLOPT_PROXY, $CFG->proxyhost . ':' . $CFG->proxyport);
         }
 
         if (!empty($CFG->proxyuser) and !empty($CFG->proxypassword)) {
-            curl_setopt($ch, CURLOPT_PROXYUSERPWD, $CFG->proxyuser.':'.$CFG->proxypassword);
+            curl_setopt($ch, CURLOPT_PROXYUSERPWD, $CFG->proxyuser . ':' . $CFG->proxypassword);
             if (defined('CURLOPT_PROXYAUTH')) {
                 // any proxy authentication if PHP 5.1
                 curl_setopt($ch, CURLOPT_PROXYAUTH, CURLAUTH_BASIC | CURLAUTH_NTLM);
@@ -1020,7 +1007,7 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
         if ($fullresponse) {
             return $response;
         } else if ($info['http_code'] != 200) {
-            debugging("cURL request for \"$url\" failed, HTTP response code: ".$response->response_code, DEBUG_ALL);
+            debugging("cURL request for \"$url\" failed, HTTP response code: " . $response->response_code, DEBUG_ALL);
             return false;
         } else {
             return $response->results;
@@ -1178,10 +1165,10 @@ $ALLOWED_PROTOCOLS = array('http', 'https', 'ftp', 'news', 'mailto', 'rtsp', 'te
  */
 function validate_email($address) {
 
-    return (preg_match('#^[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+'.
-                 '(\.[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+)*'.
-                  '@'.
-                  '[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+\.'.
+    return (preg_match('#^[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+' .
+                 '(\.[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+)*' .
+                  '@' .
+                  '[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+\.' .
                   '[-!\#$%&\'*+\\./0-9=?A-Z^_`a-z{|}~]+$#',
                   $address));
 }
@@ -1260,7 +1247,7 @@ function purify_html($text) {
     global $CFG;
 
     // this can not be done only once because we sometimes need to reset the cache
-    $cachedir = $CFG->dataroot.'/cache/htmlpurifier';
+    $cachedir = $CFG->dataroot . '/cache/htmlpurifier';
     check_dir_exists($cachedir);
 
     static $purifier = false;
@@ -1271,7 +1258,6 @@ function purify_html($text) {
         $config->set('HTML.DefinitionID', 'moodlehtml');
         $config->set('HTML.DefinitionRev', 1);
         $config->set('Cache.SerializerPath', $cachedir);
-        //$config->set('Cache.SerializerPermission', $CFG->directorypermissions); // it would be nice to get this upstream
         $config->set('Core.NormalizeNewlines', false);
         $config->set('Core.ConvertDocumentToFragment', true);
         $config->set('Core.Encoding', 'UTF-8');
@@ -1341,7 +1327,7 @@ function cleanAttributes($str){
 function cleanAttributes2($htmlArray){
 
     global $CFG, $ALLOWED_PROTOCOLS;
-    require_once($CFG->libdir .'/kses.php');
+    require_once($CFG->libdir . '/kses.php');
 
     $htmlTag = $htmlArray[1];
     if (substr($htmlTag, 0, 1) != '<') {
@@ -1381,14 +1367,14 @@ function cleanAttributes2($htmlArray){
             //Adobe Acrobat Reader XSS protection
             $arreach['value'] = preg_replace('/(\.(pdf|fdf|xfdf|xdp|xfd)[^#]*)#.*$/i', '$1', $arreach['value']);
         }
-        $attStr .=  ' '.$arreach['name'].'="'.$arreach['value'].'"';
+        $attStr .=  ' ' . $arreach['name'] . '="' . $arreach['value'] . '"';
     }
 
     $xhtml_slash = '';
     if (preg_match('%/\s*$%', $attrlist)) {
         $xhtml_slash = ' /';
     }
-    return '<'. $slash . $elem . $attStr . $xhtml_slash .'>';
+    return '<' . $slash . $elem . $attStr . $xhtml_slash . '>';
 }
 
 
@@ -1397,7 +1383,7 @@ function cleanAttributes2($htmlArray){
 
 /**
  * originally from moodlelib.php - from Moodle 2.x
- * 
+ *
  */
 
 
@@ -1920,7 +1906,7 @@ function clean_param($param, $type) {
             if (!empty($param)) {
                 if (preg_match(':^/:', $param)) {
                     // root-relative, ok!
-                } elseif (preg_match('/^'.preg_quote($CFG->wwwroot, '/').'/i',$param)) {
+                } elseif (preg_match('/^' . preg_quote($CFG->wwwroot, '/') . '/i',$param)) {
                     // absolute, and matches our wwwroot
                 } else {
                     // relative - let's make sure there are no tricks
@@ -2038,7 +2024,7 @@ function get_plugin_directory($plugintype, $name) {
     }
     $name = clean_param($name, PARAM_SAFEDIR); // just in case ;-)
 
-    return $types[$plugintype].'/'.$name;
+    return $types[$plugintype] . '/' . $name;
 }
 
 /**
@@ -2066,7 +2052,7 @@ function get_component_directory($component) {
         } else {
             $subsystems = get_core_subsystems();
             if (isset($subsystems[$plugin])) {
-                $path = $CFG->docroot.'/'.$subsystems[$plugin];
+                $path = $CFG->docroot . '/' . $subsystems[$plugin];
             } else {
                 $path = NULL;
             }
@@ -2176,7 +2162,7 @@ function get_plugin_types($fullpaths=true) {
 
         $fullinfo = array();
         foreach ($info as $type => $dir) {
-            $fullinfo[$type] = $CFG->docroot.'/'.$dir;
+            $fullinfo[$type] = $CFG->docroot . '/' . $dir;
         }
     }
 
@@ -2200,34 +2186,17 @@ function get_plugin_list($plugintype) {
         }
     }
 
-    if ($plugintype === '') {
-        $plugintype = 'mod';
-    }
-
     $fulldirs = array();
 
-    if ($plugintype === 'mod') {
-        // mod is an exception because we have to call this function from get_plugin_types()
-        $fulldirs[] = $CFG->docroot.'/mod';
-
-    } else if ($plugintype === 'theme') {
-        $fulldirs[] = $CFG->docroot.'/theme';
-        // themes are special because they may be stored also in separate directory
-        if (!empty($CFG->themedir) and file_exists($CFG->themedir) and is_dir($CFG->themedir) ) {
-            $fulldirs[] = $CFG->themedir;
-        }
-
-    } else {
-        $types = get_plugin_types(true);
-        if (!array_key_exists($plugintype, $types)) {
-            return array();
-        }
-        $fulldir = $types[$plugintype];
-        if (!file_exists($fulldir)) {
-            return array();
-        }
-        $fulldirs[] = $fulldir;
+    $types = get_plugin_types(true);
+    if (!array_key_exists($plugintype, $types)) {
+        return array();
     }
+    $fulldir = $types[$plugintype];
+    if (!file_exists($fulldir)) {
+        return array();
+    }
+    $fulldirs[] = $fulldir;
 
     $result = array();
 
@@ -2449,7 +2418,7 @@ function address_in_subnet($addr, $subnetstr) {
                     continue;
                 }
                 $zeros = array_fill(0, 8-$count, '0');
-                $subnet = $subnet.':'.implode(':', $zeros).'/'.($count*16);
+                $subnet = $subnet . ':' . implode(':', $zeros) . '/' . ($count*16);
                 if (address_in_subnet($addr, $subnet)) {
                     return true;
                 }
@@ -2476,7 +2445,7 @@ function address_in_subnet($addr, $subnetstr) {
                     continue;
                 }
                 $zeros = array_fill(0, 4-$count, '0');
-                $subnet = $subnet.'.'.implode('.', $zeros).'/'.($count*8);
+                $subnet = $subnet . '.' . implode('.', $zeros) . '/' . ($count*8);
                 if (address_in_subnet($addr, $subnet)) {
                     return true;
                 }
@@ -2752,4 +2721,3 @@ function partial() {
     $p = new partial($func, $args);
     return array($p, 'method');
 }
-

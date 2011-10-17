@@ -36,10 +36,10 @@ define('TITLE', '');
 
 // Catch anything that goes wrong in init.php
 ob_start();
-    require(dirname(dirname(dirname(dirname(__FILE__)))).'/init.php');
+    require(dirname(dirname(dirname(dirname(__FILE__)))) . '/init.php');
     $errors = trim(ob_get_contents());
 ob_end_clean();
-require_once(get_config('docroot')."/artefact/webservice/xmlrpc/locallib.php");
+require_once(get_config('docroot') . '/artefact/webservice/xmlrpc/locallib.php');
 
 if (!webservice_protocol_is_enabled('xmlrpc')) {
     header("HTTP/1.0 404 Not Found");
@@ -49,4 +49,3 @@ if (!webservice_protocol_is_enabled('xmlrpc')) {
 $server = new webservice_xmlrpc_server(WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN);
 $server->run();
 die;
-

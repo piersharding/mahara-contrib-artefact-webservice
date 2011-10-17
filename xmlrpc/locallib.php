@@ -29,7 +29,7 @@
  * @author     Piers Harding
  */
 
-require_once(get_config('docroot')."/artefact/webservice/locallib.php");
+require_once(get_config('docroot') . "/artefact/webservice/locallib.php");
 
 require_once 'Zend/XmlRpc/Server.php';
 
@@ -63,7 +63,6 @@ class Zend_XmlRpc_Server_Local extends Zend_XmlRpc_Server {
                         'name'     => $parameter->getName(),
                         'optional' => $parameter->isOptional(),
                     ));
-//                    error_log('function: '.$function.' parameter: '.$this->_fixType($parameter->getType()));
                     if ($parameter->isDefaultValueAvailable()) {
                         $param->setDefaultValue($parameter->getDefaultValue());
                     }
@@ -87,14 +86,10 @@ class Zend_XmlRpc_Server_Local extends Zend_XmlRpc_Server {
  * @return array userdata
  */
 function webservice_mnet_user_authorise($token, $useragent) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
-
-    error_log('executing: webservice_mnet_user_authorise');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     $userdata = user_authorise($token, $useragent);
-    error_log('userdata: '.var_export($userdata, true));
     return $userdata;
 }
-
 
 /**
  *  wrapper function for MNet function update_enrolments
@@ -105,11 +100,8 @@ function webservice_mnet_user_authorise($token, $useragent) {
  * @return boolean true
  */
 function webservice_mnet_update_enrolments($username, $enrolments) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
-
-    error_log('executing: webservice_mnet_update_enrolments');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     $result = xmlrpc_not_implemented();
-    error_log('after: webservice_mnet_update_enrolments');
     return $result;
 }
 
@@ -121,7 +113,7 @@ function webservice_mnet_update_enrolments($username, $enrolments) {
  * @return blob
  */
 function webservice_mnet_fetch_user_image($username) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return fetch_user_image($username);
 }
 
@@ -131,7 +123,7 @@ function webservice_mnet_fetch_user_image($username) {
  * @param unknown_type $array
  */
 function webservice_mnet_keepalive_server($array) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     $result = xmlrpc_not_implemented();
     return $result;
 }
@@ -145,7 +137,7 @@ function webservice_mnet_keepalive_server($array) {
  * @return bool
  */
 function webservice_mnet_kill_children($username, $useragent) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return kill_children($username, $useragent);
 }
 
@@ -158,7 +150,7 @@ function webservice_mnet_kill_children($username, $useragent) {
  * @return bool
  */
 function webservice_mnet_kill_child($username, $useragent) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     $result = xmlrpc_not_implemented();
     return $result;
 }
@@ -172,7 +164,7 @@ function webservice_mnet_kill_child($username, $useragent) {
  * @return array
  */
 function webservice_mnet_get_views_for_user($username, $query=null) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return get_views_for_user($username, $query);
 }
 
@@ -185,7 +177,7 @@ function webservice_mnet_get_views_for_user($username, $query=null) {
  * @return bool
  */
 function webservice_mnet_submit_view_for_assessment($username, $viewid) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return submit_view_for_assessment($username, $viewid);
 }
 
@@ -197,7 +189,7 @@ function webservice_mnet_submit_view_for_assessment($username, $viewid) {
  * @param unknown_type $teacherusername
  */
 function webservice_mnet_release_submitted_view($viewid, $assessmentdata, $teacherusername) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return release_submitted_view($viewid, $assessmentdata, $teacherusername);
 }
 
@@ -207,7 +199,7 @@ function webservice_mnet_release_submitted_view($viewid, $assessmentdata, $teach
  * @param unknown_type $username
  */
 function webservice_mnet_send_content_intent($username) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return send_content_intent($username);
 }
 
@@ -221,7 +213,7 @@ function webservice_mnet_send_content_intent($username) {
  * @param $fetchnow
  */
 function webservice_mnet_send_content_ready($token, $username, $format, $importdata, $fetchnow) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return send_content_ready($token, $username, $format, $importdata, $fetchnow);
 }
 
@@ -234,7 +226,7 @@ function webservice_mnet_send_content_ready($token, $username, $format, $importd
  * @return array
  */
 function webservice_mnet_get_folder_files($username, $folderid) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return get_folder_files($username, $folderid);
 }
 
@@ -247,7 +239,7 @@ function webservice_mnet_get_folder_files($username, $folderid) {
  * @return array
  */
 function webservice_mnet_get_file($username, $id) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return get_file($username, $id);
 }
 
@@ -260,7 +252,7 @@ function webservice_mnet_get_file($username, $id) {
  * @return array
  */
 function webservice_mnet_search_folders_and_files($username, $search) {
-    require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
     return search_folders_and_files($username, $search);
 }
 
@@ -272,7 +264,7 @@ function webservice_mnet_search_folders_and_files($username, $search) {
  * @return array
  */
 function webservice_list_methods($xmlrpc_method_name, $args) {
-    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/dispatcher.php');
     $Dispatcher = new Dispatcher(null, false, false);
     return $Dispatcher->list_methods($xmlrpc_method_name, $args);
 }
@@ -285,7 +277,7 @@ function webservice_list_methods($xmlrpc_method_name, $args) {
  * @return array
  */
 function webservice_method_signature($xmlrpc_method_name, $methodname) {
-    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/dispatcher.php');
     $Dispatcher = new Dispatcher(null, false, false);
     return $Dispatcher->method_signature($xmlrpc_method_name, $methodname);
 }
@@ -298,7 +290,7 @@ function webservice_method_signature($xmlrpc_method_name, $methodname) {
  * @return array
  */
 function webservice_method_help($xmlrpc_method_name, $methodname) {
-    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/dispatcher.php');
     $Dispatcher = new Dispatcher(null, false, false);
     return $Dispatcher->method_help($xmlrpc_method_name, $methodname);
 }
@@ -313,7 +305,7 @@ function webservice_method_help($xmlrpc_method_name, $methodname) {
  * @return array
  */
 function webservice_keyswap($wwwroot = '', $pubkey = '', $application = '') {
-    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/dispatcher.php');
     return Dispatcher::keyswap(null, array($wwwroot, $pubkey, $application));
 }
 
@@ -321,11 +313,10 @@ function webservice_keyswap($wwwroot = '', $pubkey = '', $application = '') {
  * @return array
  */
 function webservice_list_services() {
-    require_once(get_config('docroot').'/api/xmlrpc/dispatcher.php');
+    require_once(get_config('docroot') . '/api/xmlrpc/dispatcher.php');
     $Dispatcher = new Dispatcher(null, false, false);
     return $Dispatcher->list_services();
 }
-
 
 /**
  * XML-RPC service server implementation.
@@ -346,7 +337,6 @@ class webservice_xmlrpc_server extends webservice_zend_server {
         parent::__construct($authmethod, 'Zend_XmlRpc_Server_Local');
         $this->wsname = 'xmlrpc';
     }
-
 
     /**
      * Chance for each protocol to modify the function processing list
@@ -369,11 +359,8 @@ class webservice_xmlrpc_server extends webservice_zend_server {
                     'repository/mahara/repository.class.php/get_folder_files' => 'webservice_mnet_get_folder_files',
                     'repository/mahara/repository.class.php/get_file' => 'webservice_mnet_get_file',
                     'repository/mahara/repository.class.php/search_folders_and_files' => 'webservice_mnet_search_folders_and_files',
-//                    'system.listMethods'       => 'webservice_list_methods',
                     'system/listMethods'       => 'webservice_list_methods',
-//                    'system.methodSignature'   => 'webservice_method_signature',
                     'system/methodSignature'   => 'webservice_method_signature',
-//                    'system.methodHelp'        => 'webservice_method_help',
                     'system/methodHelp'        => 'webservice_method_help',
                     'system.listServices'      => 'webservice_list_services',
                     'system/listServices'      => 'webservice_list_services',
@@ -403,7 +390,6 @@ class webservice_xmlrpc_server extends webservice_zend_server {
         Zend_XmlRpc_Server_Fault::attachFaultException('invalid_response_exception');
     }
 
-
     /**
      * For XML-RPC - we want to check for enc / sigs
      *
@@ -419,7 +405,7 @@ class webservice_xmlrpc_server extends webservice_zend_server {
             // we need the token so that we can find the key
             if (!$dbtoken = get_record('external_tokens', 'token', $this->token, 'tokentype', EXTERNAL_TOKEN_PERMANENT)) {
                 // log failed login attempts
-                ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice').": ".$this->token. " - ".getremoteaddr() , 0);
+                ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . $this->token . " - " . getremoteaddr() , 0);
                 throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
             }
             // is WS-Security active ?
@@ -447,7 +433,7 @@ class webservice_xmlrpc_server extends webservice_zend_server {
         // only both if we can find a public key
         if (!empty($this->publickey)) {
             // A singleton provides our site's SSL info
-            require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+            require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
             $HTTP_RAW_POST_DATA = file_get_contents('php://input');
             $openssl = OpenSslRepo::singleton();
             $payload                 = $HTTP_RAW_POST_DATA;
@@ -493,15 +479,13 @@ class webservice_xmlrpc_server extends webservice_zend_server {
 
         // if XML has been grabbed already then it must be turned into a request object
         if ($xml) {
-//            error_log('xml: '.$xml);
             $request = new Zend_XmlRpc_Request();
             $request->loadXML($xml);
             $xml = $request;
-            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , 'XML-RPC method to call: '.$xml->getMethod()." From: ".$this->token. " - ".getremoteaddr() , 0);
+            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , 'XML-RPC method to call: ' . $xml->getMethod() . " From: " . $this->token . " - " . getremoteaddr() , 0);
         }
         return $xml;
     }
-
 
     /**
      * Chance for each protocol to modify the out going
@@ -512,10 +496,9 @@ class webservice_xmlrpc_server extends webservice_zend_server {
      * @return content
      */
     protected function modify_result($response) {
-//        error_log('response: '.$response);
         if (!empty($this->publickey)) {
             // do sigs + encrypt
-            require_once(get_config('docroot').'/api/xmlrpc/lib.php');
+            require_once(get_config('docroot') . '/api/xmlrpc/lib.php');
             $openssl = OpenSslRepo::singleton();
             if ($this->payload_signed) {
                 // Sign and encrypt our response, even though we don't know if the
@@ -529,7 +512,6 @@ class webservice_xmlrpc_server extends webservice_zend_server {
         return $response;
     }
 }
-
 
 /**
  * XML-RPC test client class

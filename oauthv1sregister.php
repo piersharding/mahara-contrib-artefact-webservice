@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2006-2011 Catalyst IT Ltd and others; see:
@@ -30,17 +29,19 @@
 define('INTERNAL', 1);
 define('ADMIN', 1);
 define('MENUITEM', 'configextensions/oauthv1sregister');
-
+// define('MENUITEM', 'webservice/oauthconfig');
+// define('SECTION_PLUGINTYPE', 'core');
+// define('SECTION_PLUGINNAME', 'admin');
+// define('SECTION_PAGE', 'oauth');
 require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 define('TITLE', get_string('oauthv1sregister', 'artefact.webservice'));
 require_once('pieforms/pieform.php');
-require_once(dirname(__FILE__).'/libs/oauth-php/OAuthServer.php');
-require_once(dirname(__FILE__).'/libs/oauth-php/OAuthStore.php');
+require_once(dirname(__FILE__) . '/libs/oauth-php/OAuthServer.php');
+require_once(dirname(__FILE__) . '/libs/oauth-php/OAuthStore.php');
 OAuthStore::instance('Mahara');
 
 $server_id  = param_variable('edit', 0);
 $dbserver = get_record('oauth_server_registry', 'id', $server_id);
-//error_log('server: '.var_export($dbserver, true));
 
 $institutions = get_records_array('institution');
 $iopts = array();
@@ -63,52 +64,41 @@ else {
     $form = webservice_server_list_form($sopts, $iopts);
 }
 
-
-
-                                
 function webservices_add_application_validate(Pieform $form, $values) {
     global $SESSION;
-//    error_log('validate application: '.var_export($values, true));
-//    $form->set_error('application', 'bad person');
-//    $SESSION->add_error_msg(get_string('existingtokens', 'artefact.webservice'));
 }
 
-
-                                
 function webservices_add_application_submit(Pieform $form, $values) {
     global $SESSION, $USER;
-    
-    $dbuser = get_record('usr', 'id', $USER->id);
+
+    $dbuser = get_record('usr', 'id', $USER->get('id'));
     if (empty($dbuser)) {
         $SESSION->add_error_msg(get_string('erroruser', 'artefact.webservice'));
-        redirect('/artefact/webservice/oauthv1sregister.php');       
+        redirect('/artefact/webservice/oauthv1sregister.php');
     }
     $store = OAuthStore::instance();
-    
+
     $new_app = array(
                 'application_title' => $values['application'],
                 'application_uri'   => 'http://example.com',
-                'requester_name'    => $dbuser->firstname.' '.$dbuser->lastname,
+                'requester_name'    => $dbuser->firstname . ' ' . $dbuser->lastname,
                 'requester_email'   => $dbuser->email,
                 'callback_uri'      => 'http://example.com',
                 'institution'       => $values['institution'],
                 'externalserviceid' => $values['service'],
       );
     $key = $store->updateConsumer($new_app, $dbuser->id, true);
-    $c = (object) $store->getConsumer($key, $dbuser->id);
+    $c = (object) $store->getConsumer($key, $dbuser->id, true);
     if (empty($c)) {
         $SESSION->add_error_msg(get_string('errorregister', 'artefact.webservice'));
         redirect('/artefact/webservice/oauthv1sregister.php');
     }
     else {
-        redirect('/artefact/webservice/oauthv1sregister.php?edit='.$c->id);
+        redirect('/artefact/webservice/oauthv1sregister.php?edit=' . $c->id);
     }
-    
+
 }
 
-
-                                
-                                
 function webservices_server_submit(Pieform $form, $values) {
     global $USER, $SESSION;
     $store = OAuthStore::instance();
@@ -116,16 +106,19 @@ function webservices_server_submit(Pieform $form, $values) {
     $dbserver = get_record('oauth_server_registry', 'id', $values['token']);
     if ($dbserver) {
         if ($values['action'] == 'delete') {
+            delete_records_sql('
+                                DELETE FROM {oauth_server_token}
+                                WHERE osr_id_ref = ?
+                                ', array($dbserver->id));
             $store->deleteServer($dbserver->consumer_key, $dbserver->userid, $is_admin);
             $SESSION->add_ok_msg(get_string('oauthserverdeleted', 'artefact.webservice'));
         }
         else if ($values['action'] == 'edit') {
-            redirect('/artefact/webservice/oauthv1sregister.php?edit='.$values['token']);
+            redirect('/artefact/webservice/oauthv1sregister.php?edit=' . $values['token']);
         }
     }
     redirect('/artefact/webservice/oauthv1sregister.php');
 }
-
 
 function webservice_oauth_server_submit(Pieform $form, $values) {
     global $USER, $SESSION;
@@ -134,7 +127,7 @@ function webservice_oauth_server_submit(Pieform $form, $values) {
     $is_admin = ($USER->get('admin') ||defined('ADMIN') || defined('INSTITUTIONALADMIN') || $USER->is_institutional_admin() ? true : false);
     $dbserver = get_record('oauth_server_registry', 'id', $values['id']);
     if ($dbserver) {
-        
+
        $app = array(
                     'application_title' => $values['application_title'],
                     'application_uri'   => $values['application_uri'],
@@ -146,42 +139,34 @@ function webservice_oauth_server_submit(Pieform $form, $values) {
                     'consumer_key'      => $dbserver->consumer_key,
                     'consumer_secret'   => $dbserver->consumer_secret,
                     'id'                => $values['id'],
-       );        
-//        $key = $store->updateConsumer($app, $values['userid'], true);
-        $key = $store->updateConsumer($app, $USER->id, true);
-//        $c = (object) $store->getConsumer($key, $values['userid']);
-        $c = (object) $store->getConsumer($key, $USER->id);
+       );
+        $key = $store->updateConsumer($app, $USER->get('id'), true);
+        $c = (object) $store->getConsumer($key, $USER->get('id'), true);
         if (empty($c)) {
             $SESSION->add_error_msg(get_string('errorregister', 'artefact.webservice'));
             redirect('/artefact/webservice/oauthv1sregister.php');
         }
         else {
-            redirect('/artefact/webservice/oauthv1sregister.php?edit='.$c->id);
+            redirect('/artefact/webservice/oauthv1sregister.php?edit=' . $c->id);
         }
     }
-    
+
     $SESSION->add_error_msg(get_string('errorupdate', 'artefact.webservice'));
     redirect('/artefact/webservice/oauthv1sregister.php');
 }
-
-
 
 $form = pieform($form);
 
 $smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('form', $form);
 $smarty->assign('PAGEHEADING', TITLE);
-$smarty->display('artefact:webservice:tokenconfig.tpl');
+$smarty->display('form.tpl');
 
-                                
 function webservice_main_submit(Pieform $form, $values) {
-    error_log('main: '.var_export($values, true));
-    
 }
 
-
 function webservice_server_edit_form($dbserver, $sopts, $iopts) {
-    
+
     $server_details =
         array(
             'name'             => 'webservice_oauth_server',
@@ -196,71 +181,71 @@ function webservice_server_edit_form($dbserver, $sopts, $iopts) {
                             'userid' => array(
                                 'type'  => 'hidden',
                                 'value' => $dbserver->userid,
-                            ),                            
+                            ),
                             'consumer_key' => array(
                                 'type'  => 'hidden',
                                 'value' => $dbserver->consumer_key,
-                            ),                            
+                            ),
                     ),
             );
-            
+
     $server_details['elements']['consumer_secret'] = array(
         'title'        => get_string('consumer_secret', 'artefact.webservice'),
         'value'        =>  $dbserver->consumer_secret,
         'type'         => 'html',
     );
-            
+
     $server_details['elements']['application_title'] = array(
         'title'        => get_string('application_title', 'artefact.webservice'),
         'defaultvalue' =>  $dbserver->application_title,
         'type'         => 'text',
     );
-            
+
     $server_details['elements']['user'] = array(
         'title'        => get_string('serviceuser', 'artefact.webservice'),
         'value'        =>  get_field('usr', 'username', 'id', $dbserver->userid),
         'type'         => 'html',
     );
-                           
+
     $server_details['elements']['application_uri'] = array(
         'title'        => get_string('application_uri', 'artefact.webservice'),
         'defaultvalue' =>  $dbserver->application_uri,
         'type'         => 'text',
     );
-                            
+
     $server_details['elements']['callback_uri'] = array(
         'title'        => get_string('callback', 'artefact.webservice'),
         'defaultvalue' =>  $dbserver->callback_uri,
         'type'         => 'text',
     );
-    
+
     $server_details['elements']['institution'] = array(
         'type'         => 'select',
         'title'        => get_string('institution'),
         'options'      => $iopts,
         'defaultvalue' => trim($dbserver->institution),
     );
-    
+
     $server_details['elements']['service'] = array(
         'type'         => 'select',
         'title'        => get_string('servicename', 'artefact.webservice'),
         'options'      => $sopts,
         'defaultvalue' => $dbserver->externalserviceid,
     );
-    
+
     $server_details['elements']['enabled'] = array(
         'title'        => get_string('enabled', 'artefact.webservice'),
         'defaultvalue' => (($dbserver->enabled == 1) ? 'checked' : ''),
         'type'         => 'checkbox',
         'disabled'     => true,
     );
-    
+
     $functions = get_records_array('external_services_functions', 'externalserviceid', $dbserver->externalserviceid);
     $function_list = array();
     if ($functions) {
         foreach ($functions as $function) {
             $dbfunction = get_record('external_functions', 'name', $function->functionname);
-            $function_list[]= '<a href="'.get_config('wwwroot').'artefact/webservice/wsdoc.php?id='.$dbfunction->id.'">'.$function->functionname.'</a>';
+            $function_list[]= '<a href="' . get_config('wwwroot') . 'artefact/webservice/wsdoc.php?id=' . $dbfunction->id . '">' . $function->functionname . '</a>';
         }
     }
     $server_details['elements']['functions'] = array(
@@ -268,13 +253,13 @@ function webservice_server_edit_form($dbserver, $sopts, $iopts) {
         'value'        =>  implode(', ', $function_list),
         'type'         => 'html',
     );
-    
+
     $server_details['elements']['submit'] = array(
         'type'  => 'submitcancel',
         'value' => array(get_string('save'), get_string('back')),
         'goto'  => get_config('wwwroot') . 'artefact/webservice/oauthv1sregister.php',
     );
-    
+
     $elements = array(
             // fieldset for managing service function list
             'token_details' => array(
@@ -289,7 +274,7 @@ function webservice_server_edit_form($dbserver, $sopts, $iopts) {
                                 'collapsible' => false,
                             ),
         );
-    
+
     $form = array(
         'renderer' => 'table',
         'type' => 'div',
@@ -305,7 +290,7 @@ function webservice_server_edit_form($dbserver, $sopts, $iopts) {
 
 function webservice_server_list_form($sopts, $iopts) {
     global $USER, $THEME;
-    
+
     $dbconsumers = get_records_sql_assoc('
             SELECT  osr.id              as id,
                     userid              as userid,
@@ -328,7 +313,7 @@ function webservice_server_list_form($sopts, $iopts) {
             JOIN {usr} u
             ON osr.userid = u.id
             ORDER BY application_title, username
-            ', array());    
+            ', array());
     $form = '';
     if (!empty($dbconsumers)) {
         $form = array(
@@ -348,7 +333,7 @@ function webservice_server_list_form($sopts, $iopts) {
                                 'class' => 'header',
                                 'type'  => 'html',
                                 'value' => get_string('owner', 'artefact.webservice'),
-                            ),                            
+                            ),
                             'consumer_key' => array(
                                 'title' => ' ',
                                 'class' => 'header',
@@ -382,50 +367,50 @@ function webservice_server_list_form($sopts, $iopts) {
                         ),
             );
         foreach ($dbconsumers as $consumer) {
-            $form['elements']['id'. $consumer->id . '_application'] = array(
+            $form['elements']['id' . $consumer->id . '_application'] = array(
                 'value'        =>  $consumer->application_title,
                 'type'         => 'html',
                 'key'        => $consumer->consumer_key,
             );
 
             if ($USER->is_admin_for_user($consumer->userid)) {
-                $user_url = get_config('wwwroot').'admin/users/edit.php?id='.$consumer->userid;
+                $user_url = get_config('wwwroot') . 'admin/users/edit.php?id=' . $consumer->userid;
             }
             else {
-                $user_url = get_config('wwwroot').'user/view.php?id='.$consumer->userid;
+                $user_url = get_config('wwwroot') . 'user/view.php?id=' . $consumer->userid;
             }
-            $form['elements']['id'. $consumer->id . '_username'] = array(
-                'value'        =>  '<a href="'.$user_url.'">'.$consumer->username.'</a>',
+            $form['elements']['id' . $consumer->id . '_username'] = array(
+                'value'        =>  '<a href="' . $user_url . '">' . $consumer->username . '</a>',
                 'type'         => 'html',
                 'key'        => $consumer->consumer_key,
-            );            
-            $form['elements']['id'. $consumer->id . '_consumer_key'] = array(
+            );
+            $form['elements']['id' . $consumer->id . '_consumer_key'] = array(
                 'value'        =>  $consumer->consumer_key,
                 'type'         => 'html',
                 'key'        => $consumer->consumer_key,
             );
-            $form['elements']['id'. $consumer->id . '_consumer_secret'] = array(
+            $form['elements']['id' . $consumer->id . '_consumer_secret'] = array(
                 'value'        =>  $consumer->consumer_secret,
                 'type'         => 'html',
                 'key'        => $consumer->consumer_key,
             );
-            $form['elements']['id'. $consumer->id . '_enabled'] = array(
+            $form['elements']['id' . $consumer->id . '_enabled'] = array(
                 'defaultvalue' => (($consumer->enabled == 1) ? 'checked' : ''),
                 'type'         => 'checkbox',
                 'disabled'     => true,
                 'key'        => $consumer->consumer_key,
             );
-            $form['elements']['id'. $consumer->id . '_calback_uri'] = array(
+            $form['elements']['id' . $consumer->id . '_calback_uri'] = array(
                 'value'        =>  $consumer->callback_uri,
                 'type'         => 'html',
                 'key'        => $consumer->consumer_key,
             );
-    
+
             // edit and delete buttons
-            $form['elements']['id'. $consumer->id . '_actions'] = array(
-                'value'        => '<span class="actions inline">'.
+            $form['elements']['id' . $consumer->id . '_actions'] = array(
+                'value'        => '<span class="actions inline">' .
                                 pieform(array(
-                                    'name'            => 'webservices_server_edit_'.$consumer->id,
+                                    'name'            => 'webservices_server_edit_' . $consumer->id,
                                     'renderer'        => 'div',
                                     'elementclasses'  => false,
                                     'successcallback' => 'webservices_server_submit',
@@ -443,7 +428,7 @@ function webservice_server_list_form($sopts, $iopts) {
                                 ))
                                 .
                                 pieform(array(
-                                    'name'            => 'webservices_server_delete_'.$consumer->id,
+                                    'name'            => 'webservices_server_delete_' . $consumer->id,
                                     'renderer'        => 'div',
                                     'elementclasses'  => false,
                                     'successcallback' => 'webservices_server_submit',
@@ -468,19 +453,8 @@ function webservice_server_list_form($sopts, $iopts) {
         $form = pieform($form);
     }
 
-//    $username = '';
-//    if ($user  = param_integer('user', 0)) {
-//        $dbuser = get_record('usr', 'id', $user);
-//        if (!empty($dbuser)) {
-//            $username = $dbuser->username;
-//        }
-//    }
-//    else {
-//        $username = param_alphanum('username', '');
-//    }
-//    $searchicon = $THEME->get_url('images/btn-search.gif');
-    $form = '<tr><td colspan="2">'.
-            $form.'</td></tr><tr><td colspan="2">'.
+    $form = '<tr><td colspan="2">' .
+            $form . '</td></tr><tr><td colspan="2">' .
                                 pieform(array(
                                     'name'            => 'webservices_token_generate',
                                     'renderer'        => 'div',
@@ -494,7 +468,7 @@ function webservice_server_list_form($sopts, $iopts) {
                                                                'type'        => 'text',
                                                                'title'       => get_string('application', 'artefact.webservice'),
                                                            ),
-                                                           
+
                                          'institution' => array(
                                                                 'type'         => 'select',
                                                                 'options'      => $iopts,
@@ -503,16 +477,7 @@ function webservice_server_list_form($sopts, $iopts) {
                                         'service' => array(
                                                             'type'         => 'select',
                                                             'options'      => $sopts,
-                                        ),     
-//                                        'username'  => array(
-//                                                               'type'        => 'text',
-//                                                               'title'       => get_string('username'),
-//                                                               'value'       => $username,
-//                                                           ),
-//                                        'usersearch'  => array(
-//                                                               'type'        => 'html',
-//                                                               'value'       => '&nbsp;<a href="'.get_config('wwwroot') .'artefact/webservice/search.php?ouid=add"><img src="'.$searchicon.'" id="usersearch"/></a> &nbsp; ',
-//                                                           ),
+                                        ),
                                         'action'     => array('type' => 'hidden', 'value' => 'add'),
                                         'submit'     => array(
                                                 'type'  => 'submit',
@@ -520,9 +485,9 @@ function webservice_server_list_form($sopts, $iopts) {
                                                 'value' => get_string('add', 'artefact.webservice'),
                                             ),
                                     ),
-                                )).
+                                )) .
              '</td></tr>';
-    
+
     $elements = array(
             // fieldset for managing service function list
             'register_server' => array(
@@ -537,7 +502,7 @@ function webservice_server_list_form($sopts, $iopts) {
                                 'collapsible' => false,
                             ),
         );
-    
+
     $form = array(
         'renderer' => 'table',
         'type' => 'div',

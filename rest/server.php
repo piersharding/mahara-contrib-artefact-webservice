@@ -36,10 +36,10 @@ define('TITLE', '');
 
 // Catch anything that goes wrong in init.php
 ob_start();
-    require(dirname(dirname(dirname(dirname(__FILE__)))).'/init.php');
+    require(dirname(dirname(dirname(dirname(__FILE__)))) . '/init.php');
     $errors = trim(ob_get_contents());
 ob_end_clean();
-require_once(get_config('docroot')."/artefact/webservice/rest/locallib.php");
+require_once(get_config('docroot') . "/artefact/webservice/rest/locallib.php");
 
 if (!webservice_protocol_is_enabled('rest')) {
     header("HTTP/1.0 404 Not Found");
@@ -54,4 +54,3 @@ if (webservice_protocol_is_enabled('oauth')) {
 $server = new webservice_rest_server(WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN);
 $server->run();
 die;
-

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
  * Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
@@ -39,15 +38,15 @@ class WSSoapClient extends Zend_Soap_Client_Common {
         $timestamp = gmdate('Y-m-d\TH:i:s\Z');
         $nonce = mt_rand();
         $passdigest = base64_encode(pack('H*', sha1(
-                                pack('H*', $nonce) . pack('a*',$timestamp).
+                                pack('H*', $nonce) . pack('a*',$timestamp) .
                                 pack('a*',$this->password))));
         $auth = '
-<wsse:Security env:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.'.
+<wsse:Security env:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.' .
 'org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
 <wsse:UsernameToken>
-    <wsse:Username>'.$this->username.'</wsse:Username>
-    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-'.
-'wss-username-token-profile-1.0#PasswordText">'.$this->password.'</wsse:Password>
+    <wsse:Username>' . $this->username . '</wsse:Username>
+    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-' .
+'wss-username-token-profile-1.0#PasswordText">' . $this->password . '</wsse:Password>
    </wsse:UsernameToken>
 </wsse:Security>
 ';
@@ -117,4 +116,3 @@ class WSSE_Soap_Client extends Zend_Soap_Client {
         return $result;
     }
 }
-
