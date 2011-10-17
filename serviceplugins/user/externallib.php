@@ -778,7 +778,6 @@ class mahara_user_external extends external_api {
      * @return external_description
      */
     public static function get_extended_context_returns() {
-        return new external_value(PARAM_TEXT, 'The INSTITUTION context of the authenticated user');
         return new external_single_structure(
                 array(
                     'institution'     => new external_value(PARAM_TEXT, 'The INSTITUTION context of the authenticated user'),
