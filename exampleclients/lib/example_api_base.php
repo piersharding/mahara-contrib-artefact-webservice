@@ -59,7 +59,7 @@ function help_text() {
         --bausername   - basic authentication username to get past basic auth
         --bapassword   - basic authentication password to get past basic auth
         --servicegroup - service group as specified in artefact/webservice configuration that contains the necessary functions to call
-        --url          - the URL of the Web Service to call eg: http://your.mahara.local.net/artefact/webservice/soap/simpleserver.php
+        --url          - the URL of the Web Service to call eg: http://your.mahara.local.net/artefact/webservice/soap/server.php
     ";
 }
 
@@ -107,7 +107,7 @@ global $url, $servicegroup, $username, $password, $bausername, $bapassword;
 $bausername = false;
 $bapassword = false;
 
-$url = 'https://apistaging.myportfolio.school.nz/artefact/webservice/soap/simpleserver.php';
+$url = 'https://apistaging.myportfolio.school.nz/artefact/webservice/soap/server.php';
 if (empty($servicegroup)) {
     $servicegroup = 'Simple User Provisioning';
 }

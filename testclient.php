@@ -338,14 +338,13 @@ function testclient_submit(Pieform $form, $values) {
             }
         }
         // now build the test call
-        $type = ($values['authtype'] == 'token' ? 'server' : 'simpleserver');
         switch ($values['protocol']){
             case 'rest':
                 error_log('creating REST client');
                 require_once(get_config('docroot') . '/artefact/webservice/rest/lib.php');
                 $client = new webservice_rest_client(get_config('wwwroot')
-                                . '/artefact/webservice/rest/' . $type . '.php',
-                                 ($type == 'server' ? array('wstoken' => $values['wstoken']) :
+                                . '/artefact/webservice/rest/server.php',
+                                 ($values['authtype'] == 'token' ? array('wstoken' => $values['wstoken']) :
                                                       array('wsusername' => $values['wsusername'], 'wspassword' => $values['wspassword'])), $type);
 
                 break;
@@ -354,16 +353,16 @@ function testclient_submit(Pieform $form, $values) {
                 error_log('creating XML-RPC client');
                 require_once(get_config('docroot') . '/artefact/webservice/xmlrpc/lib.php');
                 $client = new webservice_xmlrpc_client(get_config('wwwroot')
-                        . '/artefact/webservice/xmlrpc/' . $type . '.php',
-                         ($type == 'server' ? array('wstoken' => $values['wstoken']) :
+                        . '/artefact/webservice/xmlrpc/server.php',
+                         ($values['authtype'] == 'token' ? array('wstoken' => $values['wstoken']) :
                                               array('wsusername' => $values['wsusername'], 'wspassword' => $values['wspassword'])));
                 break;
 
             case 'soap':
                 error_log('creating SOAP client');
                 require_once(get_config('docroot') . '/artefact/webservice/soap/lib.php');
-                $client = new webservice_soap_client(get_config('wwwroot') . 'artefact/webservice/soap/' . $type . '.php',
-                                ($type == 'server' ? array('wstoken' => $values['wstoken']) :
+                $client = new webservice_soap_client(get_config('wwwroot') . 'artefact/webservice/soap/server.php',
+                                ($values['authtype'] == 'token' ? array('wstoken' => $values['wstoken']) :
                                                      array('wsusername' => $values['wsusername'], 'wspassword' => $values['wspassword'])),
                                 array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
                 $client->setWsdlCache(false);

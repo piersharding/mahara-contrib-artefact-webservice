@@ -47,7 +47,13 @@ if (!webservice_protocol_is_enabled('soap')) {
     header("HTTP/1.0 404 Not Found");
     die;
 }
+if (!optional_param('wstoken', null, PARAM_RAW) || optional_param('wsservice', null, PARAM_RAW)) {
+    $authmethod = WEBSERVICE_AUTHMETHOD_USERNAME;
+}
+else {
+    $authmethod = WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN;
+}
 
-$server = new webservice_soap_server(WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN);
+$server = new webservice_soap_server($authmethod);
 $server->run();
 die;

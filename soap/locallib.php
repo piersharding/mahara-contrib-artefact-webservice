@@ -170,7 +170,7 @@ class webservice_soap_server extends webservice_zend_server {
             $password = optional_param('wspassword', '', PARAM_RAW);
             // aparently some clients and zend soap server does not work well with "&" in urls :-(
             //TODO: the zend error has been fixed in the last Zend SOAP version, check that is fixed and remove obsolete code
-            $url = get_config('wwwroot') . 'artefact/webservice/soap/simpleserver.php/' . urlencode($username) . '/' . urlencode($password);
+            $url = get_config('wwwroot') . 'artefact/webservice/soap/server.php/' . urlencode($username) . '/' . urlencode($password);
             // the Zend server is using this uri directly in xml - weird :-(
             $this->zend_server->setUri(htmlentities($url));
         } else {

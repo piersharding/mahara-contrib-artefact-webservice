@@ -131,9 +131,7 @@ class TestBase extends PHPUnit_Framework_TestCase {
         // create the new test user
         if (!$dbuser = get_record('usr', 'username', $this->testuser)) {
             db_begin();
-
             error_log('creating test user');
-
             $new_user = new StdClass;
             $new_user->authinstance = $authinstance->id;
             $new_user->username     = $this->testuser;
@@ -171,7 +169,7 @@ class TestBase extends PHPUnit_Framework_TestCase {
         require_once(dirname(dirname(__FILE__)) . '/libs/oauth-php/OAuthServer.php');
         require_once(dirname(dirname(__FILE__)) . '/libs/oauth-php/OAuthStore.php');
         require_once(dirname(dirname(__FILE__)) . '/libs/oauth-php/OAuthRequester.php');
-        $store = OAuthStore::instance('Mahara');
+        $store = OAuthStore::instance('Mahara', array(), true);
         $new_app = array(
                     'application_title' => 'Test Application',
                     'application_uri'   => 'http://example.com',
@@ -270,6 +268,10 @@ class TestBase extends PHPUnit_Framework_TestCase {
         $this->writetests = array(
         );
 
+        ///// Authentication types ////
+        $this->auths = array(
+        );
+
         //performance testing: number of time the web service are run
         $this->iteration = 1;
 
@@ -284,6 +286,123 @@ class TestBase extends PHPUnit_Framework_TestCase {
         $this->timerrest = 0;
         $this->timerxmlrpc = 0;
         $this->timersoap = 0;
+    }
+
+    function testRun() {
+        if (!$this->testrest and !$this->testxmlrpc and !$this->testsoap) {
+            print_r("Web service unit tests are not run as not setup.
+                            (see /artefact/webservice/simpletest/testwebservice.php)");
+        }
+
+        // need a token to test
+        if (!empty($this->testtoken)) {
+
+            // test the REST interface
+            if ($this->testrest) {
+                $this->timerrest = time();
+                require_once(get_config('docroot') . "artefact/webservice/rest/lib.php");
+                // iterate the token and user auth types
+                foreach ($this->auths as $type) {
+                    switch ($type) {
+                        case 'token':
+                             $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/server.php',
+                                                                     array('wstoken' => $this->testtoken), $type);
+                             break;
+                        case 'user':
+                             $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/server.php',
+                                                                     array('wsusername' => $this->testuser, 'wspassword' => $this->testuser), $type);
+                             break;
+                        case 'oauth':
+                             $restclient = new webservice_rest_client(get_config('wwwroot') . '/artefact/webservice/rest/server.php',
+                                                                     array(), $type);
+                             $restclient->set_oauth($this->consumer, $this->access_token);
+                             break;
+                    }
+                    for ($i = 1; $i <= $this->iteration; $i = $i + 1) {
+                        foreach ($this->readonlytests as $functionname => $run) {
+                            if ($run) {
+                                $this->{$functionname}($restclient);
+                            }
+                        }
+                        foreach ($this->writetests as $functionname => $run) {
+                            if ($run) {
+                                $this->{$functionname}($restclient);
+                            }
+                        }
+                    }
+                }
+
+                $this->timerrest = time() - $this->timerrest;
+            }
+
+            // test the XML-RPC interface
+            if ($this->testxmlrpc) {
+                $this->timerxmlrpc = time();
+                require_once(get_config('docroot') . "/artefact/webservice/xmlrpc/lib.php");
+                // iterate the token and user auth types
+                foreach (array('token', 'user') as $type) {
+                    $xmlrpcclient = new webservice_xmlrpc_client(get_config('wwwroot') . 'artefact/webservice/xmlrpc/server.php',
+                                                                 ($type == 'token' ? array('wstoken' => $this->testtoken) :
+                                                                  array('wsusername' => $this->testuser, 'wspassword' => $this->testuser)));
+
+                    for ($i = 1; $i <= $this->iteration; $i = $i + 1) {
+                        foreach ($this->readonlytests as $functionname => $run) {
+                            if ($run) {
+                                $this->{$functionname}($xmlrpcclient);
+                            }
+                        }
+                        foreach ($this->writetests as $functionname => $run) {
+                            if ($run) {
+                                $this->{$functionname}($xmlrpcclient);
+                            }
+                        }
+                    }
+                }
+
+                $this->timerxmlrpc = time() - $this->timerxmlrpc;
+            }
+
+            // test the SOAP interface
+            if ($this->testsoap) {
+                $this->timersoap = time();
+                require_once(get_config('docroot') . "/artefact/webservice/soap/lib.php");
+
+                // iterate the token and user auth types
+                foreach (array(array('wstoken' => $this->testtoken),
+                               array('wsusername' => $this->testuser, 'wspassword' => $this->testuser),
+                               array('wsse' => 1)) as $parms) {
+                    if (isset($parms['wsse'])) {
+                        //force SOAP synchronous mode
+                        $soapclient = new webservice_soap_client(get_config('wwwroot') . 'artefact/webservice/soap/server.php', array('wsservice' => $this->servicename),
+                                                                 array("features" => SOAP_WAIT_ONE_WAY_CALLS));
+                        //when function return null
+                        $wsseSoapClient = new webservice_soap_client_wsse(array($soapclient, '_doRequest'), $soapclient->wsdl, $soapclient->getOptions());
+                        $wsseSoapClient->__setUsernameToken($this->testuser, $this->testuser);
+                        $soapclient->setSoapClient($wsseSoapClient);
+                    }
+                    else {
+                        $soapclient = new webservice_soap_client(get_config('wwwroot') . 'artefact/webservice/soap/server.php', $parms,
+                                                                 array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
+                        //when function return null
+                    }
+                    $soapclient->setWsdlCache(false);
+                    for ($i = 1; $i <= $this->iteration; $i = $i + 1) {
+                        foreach ($this->readonlytests as $functionname => $run) {
+                            if ($run) {
+                                $this->{$functionname}($soapclient);
+                            }
+                        }
+                        foreach ($this->writetests as $functionname => $run) {
+                            if ($run) {
+                                $this->{$functionname}($soapclient);
+                            }
+                        }
+                    }
+                }
+
+                $this->timersoap = time() - $this->timersoap;
+            }
+        }
     }
 
     public function clean_institution() {

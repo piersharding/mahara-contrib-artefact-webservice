@@ -259,7 +259,6 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
                 $consumer['consumer_secret'])
                 );
 
-
             $consumer_key = $consumer['consumer_key'];
         }
         else {
