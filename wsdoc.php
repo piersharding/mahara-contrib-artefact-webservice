@@ -37,7 +37,6 @@ require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 define('TITLE', get_string('pluginadmin', 'admin'));
 require_once('pieforms/pieform.php');
 require_once(get_config('docroot') . '/artefact/webservice/lib.php');
-require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
 
 $function  = param_integer('id', 0);
 $dbfunction = get_record('external_functions', 'id', $function);

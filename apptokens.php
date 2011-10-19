@@ -364,7 +364,8 @@ function webservices_user_token_submit(Pieform $form, $values) {
             $SESSION->add_error_msg(get_string('noservices', 'artefact.webservice'));
         }
         else {
-            $service = array_shift($services); // just pass the first one for the moment
+            // just pass the first one for the moment
+            $service = array_shift($services);
             $authinstance = get_record('auth_instance', 'id', $USER->get('authinstance'));
             $token = external_generate_token(EXTERNAL_TOKEN_USER, $service, $USER->get('id'), $authinstance->institution, (time() + EXTERNAL_TOKEN_USER_EXPIRES));
             $SESSION->add_ok_msg(get_string('token_generated', 'artefact.webservice'));

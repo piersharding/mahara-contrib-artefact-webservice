@@ -218,11 +218,13 @@ class webservice_rest_server extends webservice_base_server {
             }
             if (is_null($returns)) {
                 return '<VALUE null="null"/>' . "\n";
-            } else {
+            }
+            else {
                 return '<VALUE>' . htmlentities($returns, ENT_COMPAT, 'UTF-8') . '</VALUE>' . "\n";
             }
 
-        } else if ($desc instanceof external_multiple_structure) {
+        }
+        else if ($desc instanceof external_multiple_structure) {
             $mult = '<MULTIPLE>' . "\n";
             if (!empty($returns)) {
                 foreach ($returns as $val) {
@@ -239,7 +241,8 @@ class webservice_rest_server extends webservice_base_server {
                     if ($subdesc->required == VALUE_REQUIRED) {
                         $single .= '<ERROR>Missing required key "' . $key . '"</ERROR>';
                         continue;
-                    } else {
+                    }
+                    else {
                         //optional field
                         continue;
                     }
@@ -286,7 +289,9 @@ function format_array_postdata_for_curlcall($arraydata, $currentdata, &$data) {
             //the value is an array, call the function recursively
             $newcurrentdata = $newcurrentdata . '[' . urlencode($k) . ']';
             format_array_postdata_for_curlcall($v, $newcurrentdata, $data);
-        }  else { //add the POST parameter to the $data array
+        }
+        else {
+            //add the POST parameter to the $data array
             $data[] = $newcurrentdata . '[' . urlencode($k) . ']=' . urlencode($v);
         }
     }
@@ -304,7 +309,8 @@ function format_postdata_for_curlcall($postdata) {
         if (is_array($v)) {
             $currentdata = urlencode($k);
             format_array_postdata_for_curlcall($v, $currentdata, $data);
-        }  else {
+        }
+        else {
             $data[] = urlencode($k) . '=' . urlencode($v);
         }
     }
@@ -331,12 +337,10 @@ function format_postdata_for_curlcall($postdata) {
  *   Only use this when already in a trusted location.
  * @param string $tofile store the downloaded content to file instead of returning it.
  * @param bool $calctimeout false by default, true enables an extra head request to try and determine
- *   filesize and appropriately larger timeout based on $CFG->curltimeoutkbitrate
+ *   filesize and appropriately larger timeout based on get_config('curltimeoutkbitrate')
  * @return mixed false if request failed or content of the file as string if ok. True if file downloaded into $tofile successfully.
  */
 function download_file_content($url, $headers=null, $postdata=null, $fullresponse=false, $timeout=300, $connecttimeout=20, $skipcertverify=false, $tofile=NULL, $calctimeout=false) {
-    global $CFG;
-
     // some extra security
     $newlines = array("\r", "\n");
     if (is_array($headers) ) {
@@ -354,7 +358,8 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
             $response->results       = '';
             $response->error         = 'Invalid protocol specified in url';
             return $response;
-        } else {
+        }
+        else {
             return false;
         }
     }
@@ -397,12 +402,15 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
         curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
     }
 
-    if (!empty($CFG->proxyhost) and !$proxybypass) {
+    $proxyhost = get_config('proxyhost');
+    if (!empty($proxyhost) and !$proxybypass) {
         // SOCKS supported in PHP5 only
-        if (!empty($CFG->proxytype) and ($CFG->proxytype == 'SOCKS5')) {
+        $proxytype = get_config('proxytype');
+        if (!empty($proxytype) and (get_config('proxytype') == 'SOCKS5')) {
             if (defined('CURLPROXY_SOCKS5')) {
                 curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
-            } else {
+            }
+            else {
                 curl_close($ch);
                 if ($fullresponse) {
                     $response = new stdClass();
@@ -412,7 +420,8 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
                     $response->results       = '';
                     $response->error         = 'SOCKS5 proxy is not supported in PHP4';
                     return $response;
-                } else {
+                }
+                else {
                     debugging("SOCKS5 proxy is not supported in PHP4.", DEBUG_ALL);
                     return false;
                 }
@@ -421,14 +430,18 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
 
         curl_setopt($ch, CURLOPT_HTTPPROXYTUNNEL, false);
 
-        if (empty($CFG->proxyport)) {
-            curl_setopt($ch, CURLOPT_PROXY, $CFG->proxyhost);
-        } else {
-            curl_setopt($ch, CURLOPT_PROXY, $CFG->proxyhost . ':' . $CFG->proxyport);
+        $proxyport = get_config('proxyport');
+        if (empty($proxyport)) {
+            curl_setopt($ch, CURLOPT_PROXY, get_config('proxyhost'));
+        }
+        else {
+            curl_setopt($ch, CURLOPT_PROXY, get_config('proxyhost') . ':' . get_config('proxyport'));
         }
 
-        if (!empty($CFG->proxyuser) and !empty($CFG->proxypassword)) {
-            curl_setopt($ch, CURLOPT_PROXYUSERPWD, $CFG->proxyuser . ':' . $CFG->proxypassword);
+        $proxyuser = get_config('proxyuser');
+        $proxypassword = get_config('proxypassword');
+        if (!empty($proxyuser) and !empty($proxypassword)) {
+            curl_setopt($ch, CURLOPT_PROXYUSERPWD, get_config('proxyuser') . ':' . get_config('proxypassword'));
             if (defined('CURLOPT_PROXYAUTH')) {
                 // any proxy authentication if PHP 5.1
                 curl_setopt($ch, CURLOPT_PROXYAUTH, CURLAUTH_BASIC | CURLAUTH_NTLM);
@@ -438,7 +451,8 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
 
     // set up header and content handlers
     $received = new stdClass();
-    $received->headers = array(); // received headers array
+    $received->headers = array();
+    // received headers array
     $received->tofile  = $tofile;
     $received->fh      = null;
     curl_setopt($ch, CURLOPT_HEADERFUNCTION, ws_partial('download_file_content_header_handler', $received));
@@ -446,11 +460,13 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
         curl_setopt($ch, CURLOPT_WRITEFUNCTION, ws_partial('download_file_content_write_handler', $received));
     }
 
-    if (!isset($CFG->curltimeoutkbitrate)) {
+    $curltimeoutkbitrate = get_config('curltimeoutkbitrate');
+    if (!isset($curltimeoutkbitrate)) {
         //use very slow rate of 56kbps as a timeout speed when not set
         $bitrate = 56;
-    } else {
-        $bitrate = $CFG->curltimeoutkbitrate;
+    }
+    else {
+        $bitrate = get_config('curltimeoutkbitrate');
     }
 
     // try to calculate the proper amount for timeout from remote file size.
@@ -468,7 +484,8 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
 
         if ($err === '' && $info['download_content_length'] > 0) {
             //no curl errors
-            $timeout = max($timeout, ceil($info['download_content_length'] * 8 / ($bitrate * 1024))); //adjust for large files only - take max timeout.
+            //adjust for large files only - take max timeout.
+            $timeout = max($timeout, ceil($info['download_content_length'] * 8 / ($bitrate * 1024)));
         }
         //reinstate affected curl options
         curl_setopt_array ($ch, array(
@@ -499,7 +516,8 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
             $response = new stdClass();
             if ($error_no == 28) {
                 $response->status    = '-100'; // mimic snoopy
-            } else {
+            }
+            else {
                 $response->status    = '0';
             }
             $response->headers       = array();
@@ -507,7 +525,8 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
             $response->results       = false;
             $response->error         = $error;
             return $response;
-        } else {
+        }
+        else {
             debugging("cURL request for \"$url\" failed with: $error ($error_no)", DEBUG_ALL);
             return false;
         }
@@ -525,7 +544,8 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
             $response->results       = false; // do NOT change this, we really want to ignore the result!
             $response->error         = 'Unknown cURL error';
 
-        } else {
+        }
+        else {
             $response = new stdClass();;
             $response->status        = (string)$info['http_code'];
             $response->headers       = $received->headers;
@@ -536,10 +556,12 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
 
         if ($fullresponse) {
             return $response;
-        } else if ($info['http_code'] != 200) {
+        }
+        else if ($info['http_code'] != 200) {
             debugging("cURL request for \"$url\" failed, HTTP response code: " . $response->response_code, DEBUG_ALL);
             return false;
-        } else {
+        }
+        else {
             return $response->results;
         }
     }
@@ -555,10 +577,10 @@ function download_file_content($url, $headers=null, $postdata=null, $fullrespons
  * @return boolean true if we should bypass the proxy
  */
 function is_proxybypass( $url ) {
-    global $CFG;
-
     // sanity check
-    if (empty($CFG->proxyhost) or empty($CFG->proxybypass)) {
+    $proxyhost = get_config('proxyhost');
+    $proxybypass = get_config('proxybypass');
+    if (empty($proxyhost) or empty($proxybypass)) {
         return false;
     }
 
@@ -568,7 +590,7 @@ function is_proxybypass( $url ) {
     }
 
     // get the possible bypass hosts into an array
-    $matches = explode( ',', $CFG->proxybypass );
+    $matches = explode( ',', get_config('proxybypass') );
 
     // check for a match
     // (IPs need to match the left hand side and hosts the right of the url,

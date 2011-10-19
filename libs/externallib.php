@@ -33,83 +33,6 @@
 defined('INTERNAL') || die();
 
 /**
- * Allowed tags - string of html tags that can be tested against for safe html tags
- * @global string $ALLOWED_TAGS
- * @name $ALLOWED_TAGS
- */
-global $ALLOWED_TAGS;
-$ALLOWED_TAGS =
-'<p><br><b><i><u><font><table><tbody><thead><tfoot><span><div><tr><td><th><ol><ul><dl><li><dt><dd><h1><h2><h3><h4><h5><h6><hr><img><a><strong><emphasis><em><sup><sub><address><cite><blockquote><pre><strike><param><acronym><nolink><lang><tex><algebra><math><mi><mn><mo><mtext><mspace><ms><mrow><mfrac><msqrt><mroot><mstyle><merror><mpadded><mphantom><mfenced><msub><msup><msubsup><munder><mover><munderover><mmultiscripts><mtable><mtr><mtd><maligngroup><malignmark><maction><cn><ci><apply><reln><fn><interval><inverse><sep><condition><declare><lambda><compose><ident><quotient><exp><factorial><divide><max><min><minus><plus><power><rem><times><root><gcd><and><or><xor><not><implies><forall><exists><abs><conjugate><eq><neq><gt><lt><geq><leq><ln><log><int><diff><partialdiff><lowlimit><uplimit><bvar><degree><set><list><union><intersect><in><notin><subset><prsubset><notsubset><notprsubset><setdiff><sum><product><limit><tendsto><mean><sdev><variance><median><mode><moment><vector><matrix><matrixrow><determinant><transpose><selector><annotation><semantics><annotation-xml><tt><code>';
-
-/**
- * Allowed protocols - array of protocols that are safe to use in links and so on
- * @global string $ALLOWED_PROTOCOLS
- */
-$ALLOWED_PROTOCOLS = array('http', 'https', 'ftp', 'news', 'mailto', 'rtsp', 'teamspeak', 'gopher', 'mms',
-                           'color', 'callto', 'cursor', 'text-align', 'font-size', 'font-weight', 'font-style', 'font-family',
-                           'border', 'border-bottom', 'border-left', 'border-top', 'border-right', 'margin', 'margin-bottom', 'margin-left', 'margin-top', 'margin-right',
-                           'padding', 'padding-bottom', 'padding-left', 'padding-top', 'padding-right', 'vertical-align',
-                           'background', 'background-color', 'text-decoration');   // CSS as well to get through kses
-
-
-/// Functions
-
-/**
- * Validates an email to make sure it makes sense.
- *
- * @param string $address The email address to validate.
- * @return boolean
- */
-function validate_email($address) {
-
-    return (preg_match('#^[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+' .
-                 '(\.[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+)*' .
-                  '@' .
-                  '[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+\.' .
-                  '[-!\#$%&\'*+\\./0-9=?A-Z^_`a-z{|}~]+$#',
-                  $address));
-}
-
-
-/**
- * Replaces non-standard HTML entities
- *
- * @param string $string
- * @return string
- */
-function fix_non_standard_entities($string) {
-    $text = preg_replace('/&#0*([0-9]+);?/', '&#$1;', $string);
-    $text = preg_replace('/&#x0*([0-9a-fA-F]+);?/', '&#x$1;', $text);
-    $text = preg_replace('[\x00-\x08\x0b-\x0c\x0e-\x1f]', '', $text);
-    return $text;
-}
-
-/**
- * Given raw text (eg typed in by a user), this function cleans it up
- * and removes any nasty tags that could mess up pages.
- *
- * NOTE: the format parameter was deprecated because we can safely clean only HTML.
- *
- * @param string $text The text to be cleaned
- * @return string The cleaned up text
- */
-function clean_text($text) {
-    global $ALLOWED_TAGS, $CFG;
-
-    if (empty($text) or is_numeric($text)) {
-       return (string)$text;
-    }
-
-    $text = clean_html($text);
-
-    // Remove potential script events - some extra protection for undiscovered bugs in our code
-    $text = preg_replace("~([^a-z])language([[:space:]]*)=~i", "$1Xlanguage=", $text);
-    $text = preg_replace("~([^a-z])on([a-z]+)([[:space:]]*)=~i", "$1Xon$2=", $text);
-
-    return $text;
-}
-
-/**
  * PARAM_ALPHA - contains only english ascii letters a-zA-Z.
  */
 define('PARAM_ALPHA',    'alpha');
@@ -276,6 +199,60 @@ define('NULL_NOT_ALLOWED', false);
  */
 define('NULL_ALLOWED', true);
 
+/// Functions
+
+/**
+ * Validates an email to make sure it makes sense.
+ *
+ * @param string $address The email address to validate.
+ * @return boolean
+ */
+function validate_email($address) {
+
+    return (preg_match('#^[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+' .
+                 '(\.[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+)*' .
+                  '@' .
+                  '[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+\.' .
+                  '[-!\#$%&\'*+\\./0-9=?A-Z^_`a-z{|}~]+$#',
+                  $address));
+}
+
+/**
+ * Replaces non-standard HTML entities
+ *
+ * @param string $string
+ * @return string
+ */
+function fix_non_standard_entities($string) {
+    $text = preg_replace('/&#0*([0-9]+);?/', '&#$1;', $string);
+    $text = preg_replace('/&#x0*([0-9a-fA-F]+);?/', '&#x$1;', $text);
+    $text = preg_replace('[\x00-\x08\x0b-\x0c\x0e-\x1f]', '', $text);
+    return $text;
+}
+
+/**
+ * Given raw text (eg typed in by a user), this function cleans it up
+ * and removes any nasty tags that could mess up pages.
+ *
+ * NOTE: the format parameter was deprecated because we can safely clean only HTML.
+ *
+ * @param string $text The text to be cleaned
+ * @return string The cleaned up text
+ */
+function clean_text($text) {
+    if (empty($text) or is_numeric($text)) {
+       return (string)$text;
+    }
+
+    $text = clean_html($text);
+
+    // Remove potential script events - some extra protection for undiscovered bugs in our code
+    $text = preg_replace("~([^a-z])language([[:space:]]*)=~i", "$1Xlanguage=", $text);
+    $text = preg_replace("~([^a-z])on([a-z]+)([[:space:]]*)=~i", "$1Xon$2=", $text);
+
+    return $text;
+}
+
 /**
  * Strict validation of parameter values, the values are only converted
  * to requested PHP type. Internally it is using clean_param, the values
@@ -319,10 +296,8 @@ function validate_param($param, $type, $allownull=NULL_NOT_ALLOWED, $debuginfo='
  * @return mixed
  */
 function clean_param($param, $type) {
-
-    global $CFG;
-
-    if (is_array($param)) {              // Let's loop
+    // Let's loop
+    if (is_array($param)) {
         $newparam = array();
         foreach ($param as $key => $value) {
             $newparam[$key] = clean_param($value, $type);
@@ -331,46 +306,60 @@ function clean_param($param, $type) {
     }
 
     switch ($type) {
-        case PARAM_RAW:          // no cleaning at all
+        // no cleaning at all
+        case PARAM_RAW:
             return $param;
 
-        case PARAM_RAW_TRIMMED:         // no cleaning, but strip leading and trailing whitespace.
+        // no cleaning, but strip leading and trailing whitespace.
+        case PARAM_RAW_TRIMMED:
             return trim($param);
 
-        case PARAM_CLEAN:        // General HTML cleaning, try to use more specific type if possible
+        // General HTML cleaning, try to use more specific type if possible
+        case PARAM_CLEAN:
             // this is deprecated!, please use more specific type instead
             if (is_numeric($param)) {
                 return $param;
             }
-            return clean_text($param);     // Sweep for scripts, etc
+            // Sweep for scripts, etc
+            return clean_text($param);
 
-        case PARAM_CLEANHTML:    // clean html fragment
-            $param = clean_text($param);     // Sweep for scripts, etc
+        // clean html fragment
+        case PARAM_CLEANHTML:
+            // Sweep for scripts, etc
+            $param = clean_text($param);
             return trim($param);
 
         case PARAM_INT:
-            return (int)$param;  // Convert to integer
+            // Convert to integer
+            return (int)$param;
 
         case PARAM_FLOAT:
         case PARAM_NUMBER:
-            return (float)$param;  // Convert to float
+            // Convert to float
+            return (float)$param;
 
-        case PARAM_ALPHA:        // Remove everything not a-z
+        // Remove everything not a-z
+        case PARAM_ALPHA:
             return preg_replace('/[^a-zA-Z]/i', '', $param);
 
-        case PARAM_ALPHAEXT:     // Remove everything not a-zA-Z_- (originally allowed "/" too)
+        // Remove everything not a-zA-Z_- (originally allowed "/" too)
+        case PARAM_ALPHAEXT:
             return preg_replace('/[^a-zA-Z_-]/i', '', $param);
 
-        case PARAM_ALPHANUM:     // Remove everything not a-zA-Z0-9
+        // Remove everything not a-zA-Z0-9
+        case PARAM_ALPHANUM:
             return preg_replace('/[^A-Za-z0-9]/i', '', $param);
 
-        case PARAM_ALPHANUMEXT:     // Remove everything not a-zA-Z0-9_-
+        // Remove everything not a-zA-Z0-9_-
+        case PARAM_ALPHANUMEXT:
             return preg_replace('/[^A-Za-z0-9_-]/i', '', $param);
 
-        case PARAM_SEQUENCE:     // Remove everything not 0-9,
+        // Remove everything not 0-9,
+        case PARAM_SEQUENCE:
             return preg_replace('/[^0-9,]/i', '', $param);
 
-        case PARAM_BOOL:         // Convert to 1 or 0
+        // Convert to 1 or 0
+        case PARAM_BOOL:
             $tempstr = strtolower($param);
             if ($tempstr === 'on' or $tempstr === 'yes' or $tempstr === 'true') {
                 $param = 1;
@@ -381,10 +370,12 @@ function clean_param($param, $type) {
             }
             return $param;
 
-        case PARAM_NOTAGS:       // Strip all tags
+        // Strip all tags
+        case PARAM_NOTAGS:
             return strip_tags($param);
 
-        case PARAM_TEXT:    // leave only tags needed for multilang
+        // leave only tags needed for multilang
+        case PARAM_TEXT:
             // if the multilang syntax is not correct we strip all tags
             // because it would break xhtml strict which is required for accessibility standards
             // please note this cleaning does not strip unbalanced '>' for BC compatibility reasons
@@ -447,13 +438,16 @@ function clean_param($param, $type) {
             // easy, just strip all tags, if we ever want to fix orphaned '&' we have to do that in format_string()
             return strip_tags($param);
 
-        case PARAM_SAFEDIR:      // Remove everything not a-zA-Z0-9_-
+        // Remove everything not a-zA-Z0-9_-
+        case PARAM_SAFEDIR:
             return preg_replace('/[^a-zA-Z0-9_-]/i', '', $param);
 
-        case PARAM_SAFEPATH:     // Remove everything not a-zA-Z0-9/_-
+        // Remove everything not a-zA-Z0-9/_-
+        case PARAM_SAFEPATH:
             return preg_replace('/[^a-zA-Z0-9\/_-]/i', '', $param);
 
-        case PARAM_FILE:         // Strip all suspicious characters from filename
+        // Strip all suspicious characters from filename
+        case PARAM_FILE:
             $param = preg_replace('~[[:cntrl:]]|[&<>"`\|\':\\\\/]~u', '', $param);
             $param = preg_replace('~\.\.+~', '', $param);
             if ($param === '.') {
@@ -461,15 +455,18 @@ function clean_param($param, $type) {
             }
             return $param;
 
-        case PARAM_PATH:         // Strip all suspicious characters from file path
+        // Strip all suspicious characters from file path
+        case PARAM_PATH:
             $param = str_replace('\\', '/', $param);
             $param = preg_replace('~[[:cntrl:]]|[&<>"`\|\':]~u', '', $param);
             $param = preg_replace('~\.\.+~', '', $param);
             $param = preg_replace('~//+~', '/', $param);
             return preg_replace('~/(\./)+~', '/', $param);
 
-        case PARAM_HOST:         // allow FQDN or IPv4 dotted quad
-            $param = preg_replace('/[^\.\d\w-]/','', $param ); // only allowed chars
+        // allow FQDN or IPv4 dotted quad
+        case PARAM_HOST:
+            // only allowed chars
+            $param = preg_replace('/[^\.\d\w-]/','', $param );
             // match ipv4 dotted quad
             if (preg_match('/(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/',$param, $match)){
                 // confirm values are ok
@@ -480,9 +477,12 @@ function clean_param($param, $type) {
                     // hmmm, what kind of dotted quad is this?
                     $param = '';
                 }
-            } elseif ( preg_match('/^[\w\d\.-]+$/', $param) // dots, hyphens, numbers
-                       && !preg_match('/^[\.-]/',  $param) // no leading dots/hyphens
-                       && !preg_match('/[\.-]$/',  $param) // no trailing dots/hyphens
+            } elseif ( preg_match('/^[\w\d\.-]+$/', $param)
+                       // dots, hyphens, numbers
+                       && !preg_match('/^[\.-]/',  $param)
+                       // no leading dots/hyphens
+                       && !preg_match('/[\.-]$/',  $param)
+                       // no trailing dots/hyphens
                        ) {
                 // all is ok - $param is respected
             } else {
@@ -491,24 +491,28 @@ function clean_param($param, $type) {
             }
             return $param;
 
-        case PARAM_URL:          // allow safe ftp, http, mailto urls
-            include_once($CFG->docroot . '/artefact/webservice/libs/validateurlsyntax.php');
+        // allow safe ftp, http, mailto urls
+        case PARAM_URL:
+            include_once(get_config('docroot') . '/artefact/webservice/libs/validateurlsyntax.php');
             if (!empty($param) && validateUrlSyntax($param, 's?H?S?F?E?u-P-a?I?p?f?q?r?')) {
                 // all is ok, param is respected
             } else {
-                $param =''; // not really ok
+                // not really ok
+                $param ='';
             }
             return $param;
 
-        case PARAM_LOCALURL:     // allow http absolute, root relative and relative URLs within wwwroot
+        // allow http absolute, root relative and relative URLs within wwwroot
+        case PARAM_LOCALURL:
             $param = clean_param($param, PARAM_URL);
             if (!empty($param)) {
                 if (preg_match(':^/:', $param)) {
                     // root-relative, ok!
-                } elseif (preg_match('/^' . preg_quote($CFG->wwwroot, '/') . '/i',$param)) {
+                } elseif (preg_match('/^' . preg_quote(get_config('wwwroot'), '/') . '/i',$param)) {
                     // absolute, and matches our wwwroot
                 } else {
                     // relative - let's make sure there are no tricks
+                    include_once(get_config('docroot') . '/artefact/webservice/libs/validateurlsyntax.php');
                     if (validateUrlSyntax('/' . $param, 's-u-P-a-p-f+q?r?')) {
                         // looks ok.
                     } else {

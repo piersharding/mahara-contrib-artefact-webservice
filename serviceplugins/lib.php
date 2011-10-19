@@ -31,7 +31,7 @@
  * @author     Piers Harding
  */
 
-require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
+require_once(get_config('docroot') . '/artefact/webservice/lib.php');
 require_once(get_config('docroot') . '/lib/user.php');
 require_once(get_config('docroot') . '/lib/group.php');
 require_once('institution.php');

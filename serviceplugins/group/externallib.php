@@ -96,7 +96,8 @@ class mahara_group_external extends external_api {
         foreach ($params['groups'] as $group) {
             // Make sure that the group doesn't already exist
             if (!empty($group['name'])) {
-                if (get_record('group', 'name', $group['name'])) { // don't checked deleted as the real function doesn't
+                // don't checked deleted as the real function doesn't
+                if (get_record('group', 'name', $group['name'])) {
                     throw new invalid_parameter_exception('Group already exists: ' . $group['name']);
                 }
             }
@@ -474,7 +475,8 @@ class mahara_group_external extends external_api {
             }
 
             // build up the changes
-            $newvalues = (object) array( // not allowed to change these
+            // not allowed to change these
+            $newvalues = (object) array(
                 'id'             => $dbgroup->id,
             );
             foreach (array('name', 'description', 'grouptype', 'category', 'editroles',
@@ -631,7 +633,8 @@ class mahara_group_external extends external_api {
                     }
                     // silently fail
                 }
-                else if ($member['action'] == 'add') { // add also can be used to update role
+                // add also can be used to update role
+                else if ($member['action'] == 'add') {
                     // check the specified role
                     if (!in_array($member['role'], self::$member_roles)) {
                         throw new invalid_parameter_exception('update_group_members: Invalid group membership role: ' . $member['role'] . ' for user: ' . $dbuser->username);
@@ -688,7 +691,7 @@ class mahara_group_external extends external_api {
      * @return array An array of arrays describing groups
      */
     public static function get_groups_by_id($groups) {
-        global $CFG, $WEBSERVICE_INSTITUTION, $USER;
+        global $WEBSERVICE_INSTITUTION, $USER;
 
         $params = self::validate_parameters(self::get_groups_by_id_parameters(),
                 array('groups' => $groups));

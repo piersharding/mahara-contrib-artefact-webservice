@@ -161,8 +161,6 @@ class webservice_soap_server extends webservice_zend_server {
      * @return void
      */
     protected function init_zend_server() {
-        global $CFG;
-
         parent::init_zend_server();
 
         if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {

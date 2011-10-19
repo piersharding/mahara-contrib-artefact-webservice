@@ -88,7 +88,8 @@ function external_upgrade_webservices() {
         unset($items);
 
         foreach ($plugindirs as $plugin) {
-            $module = $component . '/' . $plugin; // needs to be specific to plugin
+            // needs to be specific to plugin
+            $module = $component . '/' . $plugin;
 
             $defpath = $basepath . '/' . $plugin . '/services.php';
             if (!file_exists($defpath)) {

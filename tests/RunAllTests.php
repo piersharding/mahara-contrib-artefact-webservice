@@ -13,7 +13,6 @@ class RunAllTests {
             echo "Setting up: $parts[0]\n";
             require_once($test);
             $suite->addTestSuite($parts[0]);
-
         }
         return $suite;
     }

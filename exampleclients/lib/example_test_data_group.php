@@ -48,7 +48,8 @@ $create_group = array(
 
 $change_group = array(
                         array(
-                        // 'id' => 123, // this can be done by id instead of match on shortname+institution
+                            // this can be done by id instead of match on shortname+institution
+                            // 'id' => 123,
                             'name' => 'The test group 1 - changed',
                             'shortname' => 'testgroupshortname1',
                             'description' => 'a description for test group 1 - changed',
@@ -59,9 +60,11 @@ $change_group = array(
                         )
                 );
 
-$get_group = array(array('shortname' => 'testgroupshortname1', 'institution' => 'mahara'));// this can be done by id eg: array('id' => 123)
+// this can be done by id eg: array('id' => 123)
+$get_group = array(array('shortname' => 'testgroupshortname1', 'institution' => 'mahara'));
 
-$delete_group = array(array('shortname' => 'testgroupshortname1', 'institution' => 'mahara')); // this can be done by id eg: array('id' => 123)
+// this can be done by id eg: array('id' => 123)
+$delete_group = array(array('shortname' => 'testgroupshortname1', 'institution' => 'mahara'));
 
 $update_members = array(
                   array('shortname' => 'testgroupshortname1',

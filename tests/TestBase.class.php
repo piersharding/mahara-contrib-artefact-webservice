@@ -56,7 +56,6 @@ require_once(get_config('libroot') . 'phpunit.php');
 $path = get_config('docroot') . 'artefact/webservice/libs/zend';
 set_include_path($path . PATH_SEPARATOR . get_include_path());
 
-require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
 require_once(get_config('docroot') . '/artefact/webservice/locallib.php');
 require_once(get_config('docroot') . '/artefact/lib.php');
 require_once('institution.php');
@@ -381,8 +380,9 @@ class TestBase extends PHPUnit_Framework_TestCase {
                         $soapclient->setSoapClient($wsseSoapClient);
                     }
                     else {
+                        //force SOAP synchronous mode
                         $soapclient = new webservice_soap_client(get_config('wwwroot') . 'artefact/webservice/soap/server.php', $parms,
-                                                                 array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
+                                                                 array("features" => SOAP_WAIT_ONE_WAY_CALLS));
                         //when function return null
                     }
                     $soapclient->setWsdlCache(false);

@@ -487,7 +487,7 @@ class mahara_user_external extends external_api {
      * @return array An array of arrays describing users
      */
     public static function get_users_by_id($users) {
-        global $CFG, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER, $USER;
+        global $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER, $USER;
 
         $params = self::validate_parameters(self::get_users_by_id_parameters(),
                 array('users'=>$users));
@@ -909,7 +909,7 @@ class mahara_user_external extends external_api {
      * @return array An array of arrays describing users favourites
      */
     public static function get_favourites($users) {
-        global $CFG, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
+        global $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         $params = self::validate_parameters(self::get_favourites_parameters(), array('users' => $users));
 
@@ -991,7 +991,7 @@ class mahara_user_external extends external_api {
      * @param string $shortname  shortname of the favourites
      */
     public static function get_all_favourites($shortname) {
-        global $CFG, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
+        global $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         $params = self::validate_parameters(self::get_all_favourites_parameters(), array('shortname' => $shortname));
 

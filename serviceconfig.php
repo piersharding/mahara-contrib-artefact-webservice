@@ -289,7 +289,8 @@ function serviceconfig_submit(Pieform $form, $values) {
         $SESSION->add_ok_msg(get_string('configsaved', 'artefact.webservice'));
     }
     else if (isset($values['restrictedusers'])) {
-        $restrict = ($values['restrictedusers'] <= 0 ? 1 : 0); // flip flop
+        // flip flop
+        $restrict = ($values['restrictedusers'] <= 0 ? 1 : 0);
         if ($restrict) {
             // must not disable token users
             $cnt = count_records('external_tokens', 'externalserviceid', $service);

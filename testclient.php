@@ -361,10 +361,11 @@ function testclient_submit(Pieform $form, $values) {
             case 'soap':
                 error_log('creating SOAP client');
                 require_once(get_config('docroot') . '/artefact/webservice/soap/lib.php');
+                //force SOAP synchronous mode
                 $client = new webservice_soap_client(get_config('wwwroot') . 'artefact/webservice/soap/server.php',
                                 ($values['authtype'] == 'token' ? array('wstoken' => $values['wstoken']) :
                                                      array('wsusername' => $values['wsusername'], 'wspassword' => $values['wspassword'])),
-                                array("features" => SOAP_WAIT_ONE_WAY_CALLS)); //force SOAP synchronous mode
+                                array("features" => SOAP_WAIT_ONE_WAY_CALLS));
                 $client->setWsdlCache(false);
                 break;
         }

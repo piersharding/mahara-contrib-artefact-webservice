@@ -148,7 +148,8 @@ function webservices_token_submit(Pieform $form, $values) {
                     $SESSION->add_error_msg(get_string('noservices', 'artefact.webservice'));
                 }
                 else {
-                    $service = array_shift($services); // just pass the first one for the moment
+                    // just pass the first one for the moment
+                    $service = array_shift($services);
                     $token = external_generate_token(EXTERNAL_TOKEN_PERMANENT, $service, $dbuser->id);
                     $dbtoken = get_record('external_tokens', 'token', $token);
                     redirect('/artefact/webservice/tokenconfig.php?token=' . $dbtoken->id);
@@ -197,7 +198,8 @@ function webservices_user_submit(Pieform $form, $values) {
                       $SESSION->add_error_msg(get_string('noservices', 'artefact.webservice'));
                     }
                     else {
-                        $service = array_shift($services); // just pass the first one for the moment
+                        // just pass the first one for the moment
+                        $service = array_shift($services);
                         $dbserviceuser = (object) array('externalserviceid' => $service->id,
                                         'userid' => $dbuser->id,
                                         'institution' => $auth_instance->institution,

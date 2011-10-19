@@ -71,8 +71,6 @@ class webservice_soap_client extends Zend_Soap_Client {
      * @return mixed
      */
     public function call($functionname, $params) {
-        global $CFG;
-
         //zend expects 0 based array with numeric indexes
         $params = array_values($params);
 

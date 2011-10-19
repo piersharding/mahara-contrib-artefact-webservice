@@ -74,8 +74,6 @@ class webservice_rest_client {
      * @return mixed
      */
     public function call($functionname, $params, $json=false) {
-        global $CFG;
-
         if ($this->type == 'oauth') {
             $url = $this->serverurl . '?wsfunction=' . $functionname;
             $body = '';

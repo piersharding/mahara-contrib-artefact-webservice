@@ -28,7 +28,6 @@
  * @author    Piers Harding
  */
 
-require_once(get_config('docroot').'/artefact/webservice/libs/externallib.php');
 require_once(dirname(__FILE__) . '/OAuthStoreAbstract.class.php');
 
 class OAuthStoreMahara extends OAuthStoreAbstract {
@@ -329,7 +328,6 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
                 (isset($consumer['application_descr'])   ? $consumer['application_descr']         : ''),
                 (isset($consumer['application_notes'])   ? $consumer['application_notes']         : ''),
                 (isset($consumer['application_type'])    ? $consumer['application_type']          : ''),
-//                (isset($consumer['application_commercial']) ? $consumer['application_commercial'] : 0)
                     )
                 );
         }

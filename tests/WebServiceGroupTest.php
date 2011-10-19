@@ -176,7 +176,8 @@ class WebServiceGroupTest extends TestBase {
         $this->assertEquals($dbgroup1->public, 0);
         $this->assertEquals($dbgroup1->usersautoadded, 0);
         $this->assertEquals($dbgroup1->viewnotify, 1);
-        $this->assertEquals(count($dbgroupmembers1), count($group1->members)+1); // current user added as admin
+        // current user added as admin
+        $this->assertEquals(count($dbgroupmembers1), count($group1->members)+1);
 
         $this->assertEquals($dbgroup2->name, $group2->name);
         $this->assertEquals($dbgroup2->description, $group2->description);
@@ -188,7 +189,8 @@ class WebServiceGroupTest extends TestBase {
         $this->assertEquals($dbgroup2->public, $group2->public);
         $this->assertEquals($dbgroup2->usersautoadded, $group2->usersautoadded);
         $this->assertEquals($dbgroup2->viewnotify, 1);
-        $this->assertEquals(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
+        // current user added as admin
+        $this->assertEquals(count($dbgroupmembers2), count($group2->members)+1);
     }
 
     // delete user test
@@ -372,7 +374,8 @@ class WebServiceGroupTest extends TestBase {
         $this->assertEquals($dbgroup1->submitpages, $group1->submitpages);
         $this->assertEquals($dbgroup1->public, $group1->public);
         $this->assertEquals($dbgroup1->usersautoadded, $group1->usersautoadded);
-        $this->assertEquals(count($dbgroupmembers1), count($group1->members)+1); // current user added as admin
+        // current user added as admin
+        $this->assertEquals(count($dbgroupmembers1), count($group1->members)+1);
 
         $this->assertEquals($dbgroup2->name, $group2->name);
         $this->assertEquals($dbgroup2->description, $group2->description);
@@ -384,7 +387,8 @@ class WebServiceGroupTest extends TestBase {
         $this->assertEquals($dbgroup2->submitpages, 0);
         $this->assertEquals($dbgroup2->public, $group2->public);
         $this->assertEquals($dbgroup2->usersautoadded, $group2->usersautoadded);
-        $this->assertEquals(count($dbgroupmembers2), count($group2->members)+1); // current user added as admin
+        // current user added as admin
+        $this->assertEquals(count($dbgroupmembers2), count($group2->members)+1);
     }
 
     // update user test
@@ -469,7 +473,9 @@ class WebServiceGroupTest extends TestBase {
         $dbgroupmembers2 = get_records_array('group_member', 'group', $dbgroup2->id);
 
         //compare DB group with the test data
-        $this->assertEquals(count($dbgroupmembers1), 1); // current user added as admin
-        $this->assertEquals(count($dbgroupmembers2), 2); // current user added as admin
+        // current user added as admin
+        $this->assertEquals(count($dbgroupmembers1), 1);
+        // current user added as admin
+        $this->assertEquals(count($dbgroupmembers2), 2);
     }
 }

@@ -30,6 +30,7 @@
  */
 $path = get_config('docroot') . 'artefact/webservice/libs/zend';
 set_include_path($path . PATH_SEPARATOR . get_include_path());
+require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
 
 /**
  *  is debugging switched on for Web Services
@@ -90,8 +91,6 @@ function webservices_validate_user($dbuser) {
     return NULL;
 }
 
-require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
-
 /**
  * Security token used for allowing access
  * from external application such as web services.
@@ -126,7 +125,7 @@ define('EXTERNAL_TOKEN_USER_EXPIRES', (30 * 24 * 60 * 60));
 
 define('WEBSERVICE_AUTHMETHOD_USERNAME', 0);
 define('WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN', 1);
-define('WEBSERVICE_AUTHMETHOD_SESSION_TOKEN', 2); // legacy from Moodle
+define('WEBSERVICE_AUTHMETHOD_SESSION_TOKEN', 2);
 define('WEBSERVICE_AUTHMETHOD_OAUTH_TOKEN', 3);
 define('WEBSERVICE_AUTHMETHOD_USER_TOKEN', 4);
 
@@ -228,8 +227,6 @@ function get_component_directory($component) {
  * @return array of (string)name => (string|null)location
  */
 function get_core_subsystems() {
-    global $CFG;
-
     static $info = null;
 
     if (!$info) {
@@ -267,7 +264,8 @@ function address_in_subnet($addr, $subnetstr) {
     $subnets = explode(',', $subnetstr);
     $found = false;
     $addr = trim($addr);
-    $addr = cleanremoteaddr($addr, false); // normalise
+    // normalise
+    $addr = cleanremoteaddr($addr, false);
     if ($addr === null) {
         return false;
     }
@@ -286,9 +284,11 @@ function address_in_subnet($addr, $subnetstr) {
             list($ip, $mask) = explode('/', $subnet);
             $mask = trim($mask);
             if (!is_number($mask)) {
-                continue; // incorect mask number, eh?
+                // incorect mask number, eh?
+                continue;
             }
-            $ip = cleanremoteaddr($ip, false); // normalise
+            // normalise
+            $ip = cleanremoteaddr($ip, false);
             if ($ip === null) {
                 continue;
             }
@@ -298,10 +298,12 @@ function address_in_subnet($addr, $subnetstr) {
                     continue;
                 }
                 if ($mask > 128 or $mask < 0) {
-                    continue; // nonsense
+                    // nonsense
+                    continue;
                 }
                 if ($mask == 0) {
-                    return true; // any address
+                    // any address
+                    return true;
                 }
                 if ($mask == 128) {
                     if ($ip === $addr) {
@@ -332,7 +334,8 @@ function address_in_subnet($addr, $subnetstr) {
                     continue;
                 }
                 if ($mask > 32 or $mask < 0) {
-                    continue; // nonsense
+                    // nonsense
+                    continue;
                 }
                 if ($mask == 0) {
                     return true;
@@ -361,14 +364,16 @@ function address_in_subnet($addr, $subnetstr) {
                 if (!$ipv6) {
                     continue;
                 }
-                $ipstart = cleanremoteaddr(trim($parts[0]), false); // normalise
+                // normalise
+                $ipstart = cleanremoteaddr(trim($parts[0]), false);
                 if ($ipstart === null) {
                     continue;
                 }
                 $ipparts = explode(':', $ipstart);
                 $start = hexdec(array_pop($ipparts));
                 $ipparts[] = trim($parts[1]);
-                $ipend = cleanremoteaddr(implode(':', $ipparts), false); // normalise
+                // normalise
+                $ipend = cleanremoteaddr(implode(':', $ipparts), false);
                 if ($ipend === null) {
                     continue;
                 }
@@ -391,13 +396,15 @@ function address_in_subnet($addr, $subnetstr) {
                 if ($ipv6) {
                     continue;
                 }
-                $ipstart = cleanremoteaddr(trim($parts[0]), false); // normalise
+                // normalise
+                $ipstart = cleanremoteaddr(trim($parts[0]), false);
                 if ($ipstart === null) {
                     continue;
                 }
                 $ipparts = explode('.', $ipstart);
                 $ipparts[3] = trim($parts[1]);
-                $ipend = cleanremoteaddr(implode('.', $ipparts), false); // normalise
+                // normalise
+                $ipend = cleanremoteaddr(implode('.', $ipparts), false);
                 if ($ipend === null) {
                     continue;
                 }
@@ -417,11 +424,13 @@ function address_in_subnet($addr, $subnetstr) {
                 $parts = explode(':', $subnet);
                 $count = count($parts);
                 if ($parts[$count-1] === '') {
-                    unset($parts[$count-1]); // trim trailing :
+                    // trim trailing :
+                    unset($parts[$count-1]);
                     $count--;
                     $subnet = implode('.', $parts);
                 }
-                $isip = cleanremoteaddr($subnet, false); // normalise
+                // normalise
+                $isip = cleanremoteaddr($subnet, false);
                 if ($isip !== null) {
                     if ($isip === $addr) {
                         return true;
@@ -444,12 +453,14 @@ function address_in_subnet($addr, $subnetstr) {
                 $parts = explode('.', $subnet);
                 $count = count($parts);
                 if ($parts[$count-1] === '') {
-                    unset($parts[$count-1]); // trim trailing .
+                    // trim trailing .
+                    unset($parts[$count-1]);
                     $count--;
                     $subnet = implode('.', $parts);
                 }
                 if ($count == 4) {
-                    $subnet = cleanremoteaddr($subnet, false); // normalise
+                    // normalise
+                    $subnet = cleanremoteaddr($subnet, false);
                     if ($subnet === $addr) {
                         return true;
                     }
@@ -519,14 +530,13 @@ function remoteip_in_list($list){
  * @return string The remote IP address
  */
 function getremoteaddr($default='0.0.0.0') {
-    global $CFG;
-
-    if (empty($CFG->getremoteaddrconf)) {
+    $getremoteaddrconf = get_config('getremoteaddrconf');
+    if (empty($getremoteaddrconf)) {
         // This will happen, for example, before just after the upgrade, as the
         // user is redirected to the admin screen.
         $variablestoskip = 0;
     } else {
-        $variablestoskip = $CFG->getremoteaddrconf;
+        $variablestoskip = get_config('getremoteaddrconf');
     }
     if (!($variablestoskip & GETREMOTEADDR_SKIP_HTTP_CLIENT_IP)) {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
@@ -581,12 +591,14 @@ function cleanremoteaddr($addr, $compress=false) {
         }
 
         if ($count < 3 or $count > 8) {
-            return null; // severly malformed
+            // severly malformed
+            return null;
         }
 
         if ($count != 8) {
             if (strpos($addr, '::') === false) {
-                return null; // malformed
+                // malformed
+                return null;
             }
             // uncompress ::
             $insertat = array_search('', $parts, true);
@@ -601,7 +613,8 @@ function cleanremoteaddr($addr, $compress=false) {
 
         $adr = implode(':', $parts);
         if (!preg_match('/^([0-9a-f]{1,4})(:[0-9a-f]{1,4})*$/i', $adr)) {
-            return null; // incorrect format - sorry
+            // incorrect format - sorry
+            return null;
         }
 
         // normalise 0s and case
@@ -615,7 +628,8 @@ function cleanremoteaddr($addr, $compress=false) {
         }
 
         if ($result === '0:0:0:0:0:0:0:0') {
-            return '::'; // all addresses
+            // all addresses
+            return '::';
         }
 
         $compressed = preg_replace('/(:0)+:0$/', '::', $result, 1);
@@ -647,7 +661,8 @@ function cleanremoteaddr($addr, $compress=false) {
         if ($match > 255) {
             return null;
         }
-        $parts[$key] = (int)$match; // normalise 0s
+        // normalise 0s
+        $parts[$key] = (int)$match;
     }
 
     return implode('.', $parts);
@@ -714,8 +729,6 @@ function external_create_service_token($servicename, $userid, $institution = 'ma
  * @return object description or false if not found or exception thrown
  */
 function external_function_info($function, $strictness=MUST_EXIST) {
-    global $CFG;
-
     if (!is_object($function)) {
         if (!$function = get_record('external_functions', 'name', $function, NULL, NULL, NULL, NULL, '*')) {
             return false;
@@ -815,7 +828,6 @@ class webservice {
      * @return array $users
      */
     public function get_ws_authorised_users($serviceid) {
-        global $CFG;
         $sql = " SELECT u.id as id, esu.id as serviceuserid, u.email as email, u.firstname as firstname,
                         u.lastname as lastname,
                         esu.iprestriction as iprestriction, esu.validuntil as validuntil,
@@ -836,7 +848,6 @@ class webservice {
      * @return object
      */
     public function get_ws_authorised_user($serviceid, $userid) {
-        global $CFG;
         $sql = " SELECT u.id as id, esu.id as serviceuserid, u.email as email, u.firstname as firstname,
                         u.lastname as lastname,
                         esu.iprestriction as iprestriction, esu.validuntil as validuntil,
@@ -855,8 +866,6 @@ class webservice {
      * @param int $userid
      */
     public function generate_user_ws_tokens($userid) {
-        global $CFG;
-
        /// generate a token for non admin if web service are enable and the user has the capability to create a token
        /// for every service than the user is authorised on, create a token (if it doesn't already exist)
 
@@ -988,12 +997,12 @@ class webservice {
         global $WS_FUNCTIONS;
 
         if (!empty($serviceids)) {
-            $serviceids = ' IN (' . implode(',', $serviceids) . ')';
+            $where = (count($serviceids) == 1 ? ' = '.array_shift($serviceids) : ' IN (' . implode(',', $serviceids) . ')');
             $sql = "SELECT f.*
                       FROM {external_functions} f
                      WHERE f.name IN (SELECT sf.functionname
                                         FROM {external_services_functions} sf
-                                       WHERE sf.externalserviceid $serviceids)";
+                                       WHERE sf.externalserviceid $where)";
             $functions = get_records_sql_array($sql, array());
         } else {
             $functions = array();
@@ -1531,8 +1540,6 @@ class invalid_state_exception extends mahara_ws_exception {
  * @return bool
  */
 function webservice_protocol_is_enabled($protocol) {
-    global $CFG;
-
     if (!get_config_plugin('artefact', 'webservice', 'enabled')) {
         return false;
     }
@@ -1623,7 +1630,7 @@ abstract class webservice_server implements webservice_server_interface {
      * @return void
      */
     protected function authenticate_user() {
-        global $CFG, $USER, $SESSION, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
+        global $USER, $SESSION, $WEBSERVICE_INSTITUTION, $WEBSERVICE_OAUTH_USER;
 
         if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
             $this->auth = 'USER';
@@ -1746,7 +1753,8 @@ abstract class webservice_server implements webservice_server_interface {
             throw new webservice_access_exception(get_string('invalidtimedtoken', 'artefact.webservice'));
         }
 
-        if ($token->sid){//assumes that if sid is set then there must be a valid associated session no matter the token type
+        //assumes that if sid is set then there must be a valid associated session no matter the token type
+        if ($token->sid){
             $session = session_get_instance();
             if (!$session->session_exists($token->sid)){
                 delete_records('external_tokens', 'sid', $token->sid);
@@ -1960,7 +1968,8 @@ abstract class webservice_zend_server extends webservice_server {
         // first ofall get a complete list of services user is allowed to access
 
         if ($this->restricted_serviceid) {
-            $params = array('sid1'=>$this->restricted_serviceid, 'sid2'=>$this->restricted_serviceid); // FIXME
+            // FIXME
+            $params = array('sid1'=>$this->restricted_serviceid, 'sid2'=>$this->restricted_serviceid);
             $wscond1 = 'AND s.id = ' . $this->restricted_serviceid;
             $wscond2 = 'AND s.id = ' . $this->restricted_serviceid;
         } else {
@@ -1998,12 +2007,14 @@ abstract class webservice_zend_server extends webservice_server {
         $remoteaddr = getremoteaddr();
         $allowed = false;
         foreach ($rs as $service) {
-            $service = (object)$service; // FIXME - had to cast to object
+            // FIXME - had to cast to object
+            $service = (object)$service;
             if (isset($serviceids[$service->id])) {
                 continue;
             }
             if ($service->iprestriction and !address_in_subnet($remoteaddr, $service->iprestriction)) {
-                continue; // wrong request source ip, sorry
+                // wrong request source ip, sorry
+                continue;
             }
             $serviceids[$service->id] = $service->id;
         }
@@ -2067,8 +2078,6 @@ class ' . $classname . ' {
      * @return string PHP code
      */
     protected function get_virtual_method_code($function) {
-        global $CFG;
-
         $function = external_function_info($function);
 
         //arguments in function declaration line with defaults.
@@ -2101,7 +2110,8 @@ class ' . $classname . ' {
                     //VALUE_OPTIONAL is used only for array/object key
                     throw new mahara_ws_exception('parametercannotbevalueoptional');
                 }
-            } else { //for the moment we do not support default for other structure types
+            //for the moment we do not support default for other structure types
+            } else {
                  if ($keydesc->required == VALUE_DEFAULT) {
                      //accept empty array as default
                      if (isset($keydesc->default) and is_array($keydesc->default)
@@ -2154,7 +2164,8 @@ class ' . $classname . ' {
     protected function get_phpdoc_type($keydesc) {
         if ($keydesc instanceof external_value) {
             switch($keydesc->type) {
-                case PARAM_BOOL: // 0 or 1 only for now
+                // 0 or 1 only for now
+                case PARAM_BOOL:
                 case PARAM_INT:
                     $type = 'int'; break;
                 case PARAM_FLOAT;
@@ -2175,7 +2186,8 @@ class ' . $classname . ' {
     }
 
     protected function generate_simple_struct_class(external_single_structure $structdesc) {
-        return 'object|struct'; //only 'object' is supported by SOAP, 'struct' by XML-RPC MDL-23083
+        //only 'object' is supported by SOAP, 'struct' by XML-RPC MDL-23083
+        return 'object|struct';
     }
 
     /**
@@ -2485,7 +2497,7 @@ abstract class webservice_base_server extends webservice_server {
      * @return void
      */
     protected function load_function_info() {
-        global $USER, $CFG;
+        global $USER;
 
         if (empty($this->functionname)) {
             throw new invalid_parameter_exception('Missing function name');
@@ -2536,10 +2548,12 @@ abstract class webservice_base_server extends webservice_server {
         foreach ($rs as $service) {
             $serviceids[]= $service['id'];
             if ($service['iprestriction'] and !address_in_subnet($remoteaddr, $service['iprestriction'])) {
-                continue; // wrong request source ip, sorry
+                // wrong request source ip, sorry
+                continue;
             }
             $allowed = true;
-            break; // one service is enough, no need to continue
+            // one service is enough, no need to continue
+            break;
         }
         $rs->close();
         if (!$allowed) {
