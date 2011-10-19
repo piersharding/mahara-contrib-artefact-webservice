@@ -51,7 +51,7 @@ if (webservice_protocol_is_enabled('oauth')) {
     OAuthStore::instance('Mahara');
     $OAUTH_SERVER = new OAuthServer();
 }
-if (optional_param('wsusername', null, PARAM_RAW) || optional_param('wspassword', null, PARAM_RAW)) {
+if (param_variable('wsusername', null) || param_variable('wspassword', null)) {
     $authmethod = WEBSERVICE_AUTHMETHOD_USERNAME;
 }
 else {

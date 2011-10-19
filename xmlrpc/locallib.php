@@ -405,7 +405,7 @@ class webservice_xmlrpc_server extends webservice_zend_server {
             // we need the token so that we can find the key
             if (!$dbtoken = get_record('external_tokens', 'token', $this->token, 'tokentype', EXTERNAL_TOKEN_PERMANENT)) {
                 // log failed login attempts
-                ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . $this->token . " - " . getremoteaddr() , 0);
+                ws_add_to_log('webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . $this->token . " - " . getremoteaddr() , 0);
                 throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
             }
             // is WS-Security active ?
@@ -482,7 +482,7 @@ class webservice_xmlrpc_server extends webservice_zend_server {
             $request = new Zend_XmlRpc_Request();
             $request->loadXML($xml);
             $xml = $request;
-            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , 'XML-RPC method to call: ' . $xml->getMethod() . " From: " . $this->token . " - " . getremoteaddr() , 0);
+            ws_add_to_log('webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , 'XML-RPC method to call: ' . $xml->getMethod() . " From: " . $this->token . " - " . getremoteaddr() , 0);
         }
         return $xml;
     }

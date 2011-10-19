@@ -58,9 +58,9 @@ function external_delete_descriptions($component) {
 
 function external_upgrade_webservices() {
 
-    $ignored = array('CVS', '_vti_cnf', 'simpletest', 'db', 'yui', 'phpunit');
+    $ignored = array('CVS', '_vti_cnf', 'tests', 'db', 'yui', 'phpunit');
 
-    foreach (array('webservice', 'admin', 'api', 'local') as $component) {
+    foreach (array_keys(get_core_subsystems()) as $component) {
         // are there service plugins
         $basepath = get_component_directory($component) . '/serviceplugins';
 
@@ -225,6 +225,7 @@ function external_upgrade_webservices() {
 class PluginArtefactWebservice extends PluginArtefact {
     /*
      * cron cleanup service for web service logs
+     * set this to go daily at 5 past 1
      */
     public static function get_cron() {
         return array(
@@ -236,6 +237,10 @@ class PluginArtefactWebservice extends PluginArtefact {
         );
     }
 
+    /**
+     * The web services cron callback
+     * clean out the old records that are N seconds old
+     */
     public static function clean_webservice_logs() {
         $LOG_AGE = 8 * 24 * 60 * 60; // 8 days
         delete_records_select('external_services_logs', 'timelogged < ?', array(time() - $LOG_AGE));

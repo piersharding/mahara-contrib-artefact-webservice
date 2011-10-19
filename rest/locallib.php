@@ -268,3 +268,397 @@ class webservice_rest_test_client implements webservice_test_client_interface {
         return download_file_content($serverurl . '&wsfunction=' . $function, null, $params);
     }
 }
+
+/**
+ * Recursive function formating an array in POST parameter
+ * @param array $arraydata - the array that we are going to format and add into &$data array
+ * @param string $currentdata - a row of the final postdata array at instant T
+ *                when finish, it's assign to $data under this format: name[keyname][][]...[]='value'
+ * @param array $data - the final data array containing all POST parameters : 1 row = 1 parameter
+ */
+function format_array_postdata_for_curlcall($arraydata, $currentdata, &$data) {
+    foreach ($arraydata as $k=>$v) {
+        $newcurrentdata = $currentdata;
+        if (is_object($v)) {
+            $v = (array)$v;
+        }
+        if (is_array($v)) {
+            //the value is an array, call the function recursively
+            $newcurrentdata = $newcurrentdata . '[' . urlencode($k) . ']';
+            format_array_postdata_for_curlcall($v, $newcurrentdata, $data);
+        }  else { //add the POST parameter to the $data array
+            $data[] = $newcurrentdata . '[' . urlencode($k) . ']=' . urlencode($v);
+        }
+    }
+}
+
+/**
+ * Transform a PHP array into POST parameter
+ * (see the recursive function format_array_postdata_for_curlcall)
+ * @param array $postdata
+ * @return array containing all POST parameters  (1 row = 1 POST parameter)
+ */
+function format_postdata_for_curlcall($postdata) {
+    $data = array();
+    foreach ($postdata as $k=>$v) {
+        if (is_array($v)) {
+            $currentdata = urlencode($k);
+            format_array_postdata_for_curlcall($v, $currentdata, $data);
+        }  else {
+            $data[] = urlencode($k) . '=' . urlencode($v);
+        }
+    }
+    $convertedpostdata = implode('&', $data);
+    return $convertedpostdata;
+}
+
+/**
+ * Fetches content of file from Internet (using proxy if defined). Uses cURL extension if present.
+ * Due to security concerns only downloads from http(s) sources are supported.
+ *
+ * @param string $url file url starting with http(s)://
+ * @param array $headers http headers, null if none. If set, should be an
+ *   associative array of header name => value pairs.
+ * @param array $postdata array means use POST request with given parameters
+ * @param bool $fullresponse return headers, responses, etc in a similar way snoopy does
+ *   (if false, just returns content)
+ * @param int $timeout timeout for complete download process including all file transfer
+ *   (default 5 minutes)
+ * @param int $connecttimeout timeout for connection to server; this is the timeout that
+ *   usually happens if the remote server is completely down (default 20 seconds);
+ *   may not work when using proxy
+ * @param bool $skipcertverify If true, the peer's SSL certificate will not be checked.
+ *   Only use this when already in a trusted location.
+ * @param string $tofile store the downloaded content to file instead of returning it.
+ * @param bool $calctimeout false by default, true enables an extra head request to try and determine
+ *   filesize and appropriately larger timeout based on $CFG->curltimeoutkbitrate
+ * @return mixed false if request failed or content of the file as string if ok. True if file downloaded into $tofile successfully.
+ */
+function download_file_content($url, $headers=null, $postdata=null, $fullresponse=false, $timeout=300, $connecttimeout=20, $skipcertverify=false, $tofile=NULL, $calctimeout=false) {
+    global $CFG;
+
+    // some extra security
+    $newlines = array("\r", "\n");
+    if (is_array($headers) ) {
+        foreach ($headers as $key => $value) {
+            $headers[$key] = str_replace($newlines, '', $value);
+        }
+    }
+    $url = str_replace($newlines, '', $url);
+    if (!preg_match('|^https?://|i', $url)) {
+        if ($fullresponse) {
+            $response = new stdClass();
+            $response->status        = 0;
+            $response->headers       = array();
+            $response->response_code = 'Invalid protocol specified in url';
+            $response->results       = '';
+            $response->error         = 'Invalid protocol specified in url';
+            return $response;
+        } else {
+            return false;
+        }
+    }
+
+    // check if proxy (if used) should be bypassed for this url
+    $proxybypass = is_proxybypass($url);
+
+    if (!$ch = curl_init($url)) {
+        debugging('Can not init curl.');
+        return false;
+    }
+
+    // set extra headers
+    if (is_array($headers) ) {
+        $headers2 = array();
+        foreach ($headers as $key => $value) {
+            $headers2[] = "$key: $value";
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers2);
+    }
+
+    if ($skipcertverify) {
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    }
+
+    // use POST if requested
+    if (is_array($postdata)) {
+        $postdata = format_postdata_for_curlcall($postdata);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postdata);
+    }
+
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HEADER, false);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $connecttimeout);
+
+    if (!ini_get('open_basedir') and !ini_get('safe_mode')) {
+        // TODO: add version test for '7.10.5'
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+    }
+
+    if (!empty($CFG->proxyhost) and !$proxybypass) {
+        // SOCKS supported in PHP5 only
+        if (!empty($CFG->proxytype) and ($CFG->proxytype == 'SOCKS5')) {
+            if (defined('CURLPROXY_SOCKS5')) {
+                curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+            } else {
+                curl_close($ch);
+                if ($fullresponse) {
+                    $response = new stdClass();
+                    $response->status        = '0';
+                    $response->headers       = array();
+                    $response->response_code = 'SOCKS5 proxy is not supported in PHP4';
+                    $response->results       = '';
+                    $response->error         = 'SOCKS5 proxy is not supported in PHP4';
+                    return $response;
+                } else {
+                    debugging("SOCKS5 proxy is not supported in PHP4.", DEBUG_ALL);
+                    return false;
+                }
+            }
+        }
+
+        curl_setopt($ch, CURLOPT_HTTPPROXYTUNNEL, false);
+
+        if (empty($CFG->proxyport)) {
+            curl_setopt($ch, CURLOPT_PROXY, $CFG->proxyhost);
+        } else {
+            curl_setopt($ch, CURLOPT_PROXY, $CFG->proxyhost . ':' . $CFG->proxyport);
+        }
+
+        if (!empty($CFG->proxyuser) and !empty($CFG->proxypassword)) {
+            curl_setopt($ch, CURLOPT_PROXYUSERPWD, $CFG->proxyuser . ':' . $CFG->proxypassword);
+            if (defined('CURLOPT_PROXYAUTH')) {
+                // any proxy authentication if PHP 5.1
+                curl_setopt($ch, CURLOPT_PROXYAUTH, CURLAUTH_BASIC | CURLAUTH_NTLM);
+            }
+        }
+    }
+
+    // set up header and content handlers
+    $received = new stdClass();
+    $received->headers = array(); // received headers array
+    $received->tofile  = $tofile;
+    $received->fh      = null;
+    curl_setopt($ch, CURLOPT_HEADERFUNCTION, ws_partial('download_file_content_header_handler', $received));
+    if ($tofile) {
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, ws_partial('download_file_content_write_handler', $received));
+    }
+
+    if (!isset($CFG->curltimeoutkbitrate)) {
+        //use very slow rate of 56kbps as a timeout speed when not set
+        $bitrate = 56;
+    } else {
+        $bitrate = $CFG->curltimeoutkbitrate;
+    }
+
+    // try to calculate the proper amount for timeout from remote file size.
+    // if disabled or zero, we won't do any checks nor head requests.
+    if ($calctimeout && $bitrate > 0) {
+        //setup header request only options
+        curl_setopt_array ($ch, array(
+        CURLOPT_RETURNTRANSFER => false,
+        CURLOPT_NOBODY         => true)
+        );
+
+        curl_exec($ch);
+        $info = curl_getinfo($ch);
+        $err = curl_error($ch);
+
+        if ($err === '' && $info['download_content_length'] > 0) {
+            //no curl errors
+            $timeout = max($timeout, ceil($info['download_content_length'] * 8 / ($bitrate * 1024))); //adjust for large files only - take max timeout.
+        }
+        //reinstate affected curl options
+        curl_setopt_array ($ch, array(
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_NOBODY         => false)
+        );
+    }
+
+    curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+    $result = curl_exec($ch);
+
+    // try to detect encoding problems
+    if ((curl_errno($ch) == 23 or curl_errno($ch) == 61) and defined('CURLOPT_ENCODING')) {
+        curl_setopt($ch, CURLOPT_ENCODING, 'none');
+        $result = curl_exec($ch);
+    }
+
+    if ($received->fh) {
+        fclose($received->fh);
+    }
+
+    if (curl_errno($ch)) {
+        $error    = curl_error($ch);
+        $error_no = curl_errno($ch);
+        curl_close($ch);
+
+        if ($fullresponse) {
+            $response = new stdClass();
+            if ($error_no == 28) {
+                $response->status    = '-100'; // mimic snoopy
+            } else {
+                $response->status    = '0';
+            }
+            $response->headers       = array();
+            $response->response_code = $error;
+            $response->results       = false;
+            $response->error         = $error;
+            return $response;
+        } else {
+            debugging("cURL request for \"$url\" failed with: $error ($error_no)", DEBUG_ALL);
+            return false;
+        }
+
+    } else {
+        $info = curl_getinfo($ch);
+        curl_close($ch);
+
+        if (empty($info['http_code'])) {
+            // for security reasons we support only true http connections (Location: file:// exploit prevention)
+            $response = new stdClass();
+            $response->status        = '0';
+            $response->headers       = array();
+            $response->response_code = 'Unknown cURL error';
+            $response->results       = false; // do NOT change this, we really want to ignore the result!
+            $response->error         = 'Unknown cURL error';
+
+        } else {
+            $response = new stdClass();;
+            $response->status        = (string)$info['http_code'];
+            $response->headers       = $received->headers;
+            $response->response_code = $received->headers[0];
+            $response->results       = $result;
+            $response->error         = '';
+        }
+
+        if ($fullresponse) {
+            return $response;
+        } else if ($info['http_code'] != 200) {
+            debugging("cURL request for \"$url\" failed, HTTP response code: " . $response->response_code, DEBUG_ALL);
+            return false;
+        } else {
+            return $response->results;
+        }
+    }
+}
+
+/**
+ * check if $url matches anything in proxybypass list
+ *
+ * any errors just result in the proxy being used (least bad)
+ *
+ * @global object
+ * @param string $url url to check
+ * @return boolean true if we should bypass the proxy
+ */
+function is_proxybypass( $url ) {
+    global $CFG;
+
+    // sanity check
+    if (empty($CFG->proxyhost) or empty($CFG->proxybypass)) {
+        return false;
+    }
+
+    // get the host part out of the url
+    if (!$host = parse_url( $url, PHP_URL_HOST )) {
+        return false;
+    }
+
+    // get the possible bypass hosts into an array
+    $matches = explode( ',', $CFG->proxybypass );
+
+    // check for a match
+    // (IPs need to match the left hand side and hosts the right of the url,
+    // but we can recklessly check both as there can't be a false +ve)
+    $bypass = false;
+    foreach ($matches as $match) {
+        $match = trim($match);
+
+        // try for IP match (Left side)
+        $lhs = substr($host,0,strlen($match));
+        if (strcasecmp($match,$lhs)==0) {
+            return true;
+        }
+
+        // try for host match (Right side)
+        $rhs = substr($host,-strlen($match));
+        if (strcasecmp($match,$rhs)==0) {
+            return true;
+        }
+    }
+
+    // nothing matched.
+    return false;
+}
+
+/**
+ * internal implementation
+ */
+function download_file_content_header_handler($received, $ch, $header) {
+    $received->headers[] = $header;
+    return strlen($header);
+}
+
+/**
+ * internal implementation
+ */
+function download_file_content_write_handler($received, $ch, $data) {
+    if (!$received->fh) {
+        $received->fh = fopen($received->tofile, 'w');
+        if ($received->fh === false) {
+            // bad luck, file creation or overriding failed
+            return 0;
+        }
+    }
+    if (fwrite($received->fh, $data) === false) {
+        // bad luck, write failed, let's abort completely
+        return 0;
+    }
+    return strlen($data);
+}
+
+/**
+ * helper function to do partial function binding
+ * so we can use it for preg_replace_callback, for example
+ * this works with php functions, user functions, static methods and class methods
+ * it returns you a callback that you can pass on like so:
+ *
+ * $callback = ws_partial('somefunction', $arg1, $arg2);
+ *     or
+ * $callback = ws_partial(array('someclass', 'somestaticmethod'), $arg1, $arg2);
+ *     or even
+ * $obj = new someclass();
+ * $callback = ws_partial(array($obj, 'somemethod'), $arg1, $arg2);
+ *
+ * and then the arguments that are passed through at calltime are appended to the argument list.
+ *
+ * @param mixed $function a php callback
+ * $param mixed $arg1.. $argv arguments to partially bind with
+ *
+ * @return callback
+ */
+function ws_partial() {
+    if (!class_exists('ws_partial')) {
+        class ws_partial{
+            var $values = array();
+            var $func;
+
+            function __construct($func, $args) {
+                $this->values = $args;
+                $this->func = $func;
+            }
+
+            function method() {
+                $args = func_get_args();
+                return call_user_func_array($this->func, array_merge($this->values, $args));
+            }
+        }
+    }
+    $args = func_get_args();
+    $func = array_shift($args);
+    $p = new ws_partial($func, $args);
+    return array($p, 'method');
+}

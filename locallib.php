@@ -42,6 +42,25 @@ function ws_debugging() {
 }
 
 /**
+ * Add an entry to the log table.
+ *
+ * Add an entry to the log table.  These are "action" focussed rather
+ * than web server hits, and provide a way to easily reconstruct what
+ * any particular student has been doing.
+ *
+ * @param    string  $module  The module name - e.g. forum, journal, resource, course, user etc
+ * @param    string  $action  'view', 'update', 'add' or 'delete', possibly followed by another word to clarify.
+ * @param    string  $url     The file and parameters used to see the results of the action
+ * @param    string  $info    Additional description information
+ * @param    string  $cm      The course_module->id if there is one
+ * @param    string  $user    If log regards $user other than $USER
+ * @return void
+ */
+function ws_add_to_log($module, $action, $url='', $info='', $cm=0, $user=0) {
+    error_log("module: $module action: $action ($url) info: $info");
+}
+
+/**
  * validate the user for webservices access
  * the account must use the webservice auth plugin
  * the account must have membership for the selected auth_instance
@@ -71,35 +90,48 @@ function webservices_validate_user($dbuser) {
     return NULL;
 }
 
-
-/** // FIXME
- * Constructs IN() or = sql fragment
- * @param mixed $items single or array of values
- * @param int $type bound param type SQL_PARAMS_QM or SQL_PARAMS_NAMED
- * @param string named param placeholder start
- * @param bool true means equal, false not equal
- * @return array - $sql and $params
- */
-function get_in_or_equal($items, $type=SQL_PARAMS_QM, $start='param0000', $equal=true) {
-    if (is_array($items) and empty($items)) {
-        throw new coding_exception('get_in_or_equal() does not accept empty arrays');
-    }
-    if (count($items) == 1) {
-        return array('= ' . array_shift($items), NULL);
-    }
-    else {
-        $parms = ' IN (' . implode(',', $items) . ')';
-        return array($parms, NULL);
-    }
-}
-
 require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
+
+/**
+ * Security token used for allowing access
+ * from external application such as web services.
+ * Scripts do not use any session, performance is relatively
+ * low because we need to load access info in each request.
+ * Scripts are executed in parallel.
+ */
+define('EXTERNAL_TOKEN_PERMANENT', 0);
+
+/**
+ * Security token used for allowing access
+ * of embedded applications, the code is executed in the
+ * active user session. Token is invalidated after user logs out.
+ * Scripts are executed serially - normal session locking is used.
+ */
+define('EXTERNAL_TOKEN_EMBEDDED', 1);
+
+/**
+ * OAuth Token type for registered applications oauth v1
+ */
+define('EXTERNAL_TOKEN_OAUTH1', 2);
+
+/**
+ * OAuth Token type for registered applications oauth v1
+ */
+define('EXTERNAL_TOKEN_USER', 3);
+
+/**
+ * Personal User Tokens expiry time
+ */
+define('EXTERNAL_TOKEN_USER_EXPIRES', (30 * 24 * 60 * 60));
 
 define('WEBSERVICE_AUTHMETHOD_USERNAME', 0);
 define('WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN', 1);
 define('WEBSERVICE_AUTHMETHOD_SESSION_TOKEN', 2); // legacy from Moodle
 define('WEBSERVICE_AUTHMETHOD_OAUTH_TOKEN', 3);
 define('WEBSERVICE_AUTHMETHOD_USER_TOKEN', 4);
+
+// strictness check
+define('MUST_EXIST', 2);
 
 /// Debug levels ///
 /** no warnings at all */
@@ -119,6 +151,11 @@ define('MEMORY_EXTRA', -3);
 /** Extremely large memory limit - not recommended for standard scripts */
 define('MEMORY_HUGE', -4);
 
+/** Get remote addr constant */
+define('GETREMOTEADDR_SKIP_HTTP_CLIENT_IP', '1');
+/** Get remote addr constant */
+define('GETREMOTEADDR_SKIP_HTTP_X_FORWARDED_FOR', '2');
+
 /**
  * Extracts file argument either from file parameter or PATH_INFO
  * Note: $scriptname parameter is not needed anymore
@@ -131,7 +168,7 @@ define('MEMORY_HUGE', -4);
 function get_file_argument() {
     global $SCRIPT;
 
-    $relativepath = optional_param('file', FALSE, PARAM_PATH);
+    $relativepath = clean_param(param_variable('file', FALSE), PARAM_PATH);
 
     if ($relativepath !== false and $relativepath !== '') {
         return $relativepath;
@@ -163,6 +200,580 @@ function get_file_argument() {
 
 
     return $relativepath;
+}
+
+/**
+ * Return exact absolute path to a plugin directory,
+ * this method support "simpletest_" prefix designed for unit testing.
+ *
+ * @param string $component name such as 'moodle', 'mod_forum' or special simpletest value
+ * @return string full path to component directory; NULL if not found
+ */
+function get_component_directory($component) {
+    $subsystems = get_core_subsystems();
+    if (isset($subsystems[$component])) {
+        $path = get_config('docroot') . '/' . $subsystems[$component];
+    } else {
+        $path = NULL;
+    }
+
+    return $path;
+}
+
+/**
+ * List all core subsystems and their location
+ *
+ * This is a whitelist of components that are part of the core
+ *
+ * @return array of (string)name => (string|null)location
+ */
+function get_core_subsystems() {
+    global $CFG;
+
+    static $info = null;
+
+    if (!$info) {
+        $info = array(
+            'webservice'  => 'artefact/webservice',
+            'admin'       => 'admin',
+            'api'         => 'api',
+            'local'       => 'local',
+        );
+    }
+
+    return $info;
+}
+
+/**
+ * Function to check the passed address is within the passed subnet
+ *
+ * The parameter is a comma separated string of subnet definitions.
+ * Subnet strings can be in one of three formats:
+ *   1: xxx.xxx.xxx.xxx/nn or xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx/nnn          (number of bits in net mask)
+ *   2: xxx.xxx.xxx.xxx-yyy or  xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx::xxxx-yyyy (a range of IP addresses in the last group)
+ *   3: xxx.xxx or xxx.xxx. or xxx:xxx:xxxx or xxx:xxx:xxxx.                  (incomplete address, a bit non-technical ;-)
+ * Code for type 1 modified from user posted comments by mediator at
+ * {@link http://au.php.net/manual/en/function.ip2long.php}
+ *
+ * @param string $addr    The address you are checking
+ * @param string $subnetstr    The string of subnet addresses
+ * @return bool
+ */
+function address_in_subnet($addr, $subnetstr) {
+
+    if ($addr == '0.0.0.0') {
+        return false;
+    }
+    $subnets = explode(',', $subnetstr);
+    $found = false;
+    $addr = trim($addr);
+    $addr = cleanremoteaddr($addr, false); // normalise
+    if ($addr === null) {
+        return false;
+    }
+    $addrparts = explode(':', $addr);
+
+    $ipv6 = strpos($addr, ':');
+
+    foreach ($subnets as $subnet) {
+        $subnet = trim($subnet);
+        if ($subnet === '') {
+            continue;
+        }
+
+        if (strpos($subnet, '/') !== false) {
+            ///1: xxx.xxx.xxx.xxx/nn or xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx/nnn
+            list($ip, $mask) = explode('/', $subnet);
+            $mask = trim($mask);
+            if (!is_number($mask)) {
+                continue; // incorect mask number, eh?
+            }
+            $ip = cleanremoteaddr($ip, false); // normalise
+            if ($ip === null) {
+                continue;
+            }
+            if (strpos($ip, ':') !== false) {
+                // IPv6
+                if (!$ipv6) {
+                    continue;
+                }
+                if ($mask > 128 or $mask < 0) {
+                    continue; // nonsense
+                }
+                if ($mask == 0) {
+                    return true; // any address
+                }
+                if ($mask == 128) {
+                    if ($ip === $addr) {
+                        return true;
+                    }
+                    continue;
+                }
+                $ipparts = explode(':', $ip);
+                $modulo  = $mask % 16;
+                $ipnet   = array_slice($ipparts, 0, ($mask-$modulo)/16);
+                $addrnet = array_slice($addrparts, 0, ($mask-$modulo)/16);
+                if (implode(':', $ipnet) === implode(':', $addrnet)) {
+                    if ($modulo == 0) {
+                        return true;
+                    }
+                    $pos     = ($mask-$modulo)/16;
+                    $ipnet   = hexdec($ipparts[$pos]);
+                    $addrnet = hexdec($addrparts[$pos]);
+                    $mask    = 0xffff << (16 - $modulo);
+                    if (($addrnet & $mask) == ($ipnet & $mask)) {
+                        return true;
+                    }
+                }
+
+            } else {
+                // IPv4
+                if ($ipv6) {
+                    continue;
+                }
+                if ($mask > 32 or $mask < 0) {
+                    continue; // nonsense
+                }
+                if ($mask == 0) {
+                    return true;
+                }
+                if ($mask == 32) {
+                    if ($ip === $addr) {
+                        return true;
+                    }
+                    continue;
+                }
+                $mask = 0xffffffff << (32 - $mask);
+                if (((ip2long($addr) & $mask) == (ip2long($ip) & $mask))) {
+                    return true;
+                }
+            }
+
+        } else if (strpos($subnet, '-') !== false)  {
+            /// 2: xxx.xxx.xxx.xxx-yyy or  xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx::xxxx-yyyy ...a range of IP addresses in the last group.
+            $parts = explode('-', $subnet);
+            if (count($parts) != 2) {
+                continue;
+            }
+
+            if (strpos($subnet, ':') !== false) {
+                // IPv6
+                if (!$ipv6) {
+                    continue;
+                }
+                $ipstart = cleanremoteaddr(trim($parts[0]), false); // normalise
+                if ($ipstart === null) {
+                    continue;
+                }
+                $ipparts = explode(':', $ipstart);
+                $start = hexdec(array_pop($ipparts));
+                $ipparts[] = trim($parts[1]);
+                $ipend = cleanremoteaddr(implode(':', $ipparts), false); // normalise
+                if ($ipend === null) {
+                    continue;
+                }
+                $ipparts[7] = '';
+                $ipnet = implode(':', $ipparts);
+                if (strpos($addr, $ipnet) !== 0) {
+                    continue;
+                }
+                $ipparts = explode(':', $ipend);
+                $end = hexdec($ipparts[7]);
+
+                $addrend = hexdec($addrparts[7]);
+
+                if (($addrend >= $start) and ($addrend <= $end)) {
+                    return true;
+                }
+
+            } else {
+                // IPv4
+                if ($ipv6) {
+                    continue;
+                }
+                $ipstart = cleanremoteaddr(trim($parts[0]), false); // normalise
+                if ($ipstart === null) {
+                    continue;
+                }
+                $ipparts = explode('.', $ipstart);
+                $ipparts[3] = trim($parts[1]);
+                $ipend = cleanremoteaddr(implode('.', $ipparts), false); // normalise
+                if ($ipend === null) {
+                    continue;
+                }
+
+                if ((ip2long($addr) >= ip2long($ipstart)) and (ip2long($addr) <= ip2long($ipend))) {
+                    return true;
+                }
+            }
+
+        } else {
+            /// 3: xxx.xxx or xxx.xxx. or xxx:xxx:xxxx or xxx:xxx:xxxx.
+            if (strpos($subnet, ':') !== false) {
+                // IPv6
+                if (!$ipv6) {
+                    continue;
+                }
+                $parts = explode(':', $subnet);
+                $count = count($parts);
+                if ($parts[$count-1] === '') {
+                    unset($parts[$count-1]); // trim trailing :
+                    $count--;
+                    $subnet = implode('.', $parts);
+                }
+                $isip = cleanremoteaddr($subnet, false); // normalise
+                if ($isip !== null) {
+                    if ($isip === $addr) {
+                        return true;
+                    }
+                    continue;
+                } else if ($count > 8) {
+                    continue;
+                }
+                $zeros = array_fill(0, 8-$count, '0');
+                $subnet = $subnet . ':' . implode(':', $zeros) . '/' . ($count*16);
+                if (address_in_subnet($addr, $subnet)) {
+                    return true;
+                }
+
+            } else {
+                // IPv4
+                if ($ipv6) {
+                    continue;
+                }
+                $parts = explode('.', $subnet);
+                $count = count($parts);
+                if ($parts[$count-1] === '') {
+                    unset($parts[$count-1]); // trim trailing .
+                    $count--;
+                    $subnet = implode('.', $parts);
+                }
+                if ($count == 4) {
+                    $subnet = cleanremoteaddr($subnet, false); // normalise
+                    if ($subnet === $addr) {
+                        return true;
+                    }
+                    continue;
+                } else if ($count > 4) {
+                    continue;
+                }
+                $zeros = array_fill(0, 4-$count, '0');
+                $subnet = $subnet . '.' . implode('.', $zeros) . '/' . ($count*8);
+                if (address_in_subnet($addr, $subnet)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Return true if given value is integer or string with integer value
+ *
+ * @param mixed $value String or Int
+ * @return bool true if number, false if not
+ */
+function is_number($value) {
+    if (is_int($value)) {
+        return true;
+    } else if (is_string($value)) {
+        return ((string)(int)$value) === $value;
+    } else {
+        return false;
+    }
+}
+
+/**
+ * Is current ip in give list?
+ *
+ * @param string $list
+ * @return bool
+ */
+function remoteip_in_list($list){
+    $inlist = false;
+    $client_ip = getremoteaddr(null);
+
+    if(!$client_ip){
+        // ensure access on cli
+        return true;
+    }
+
+    $list = explode("\n", $list);
+    foreach($list as $subnet) {
+        $subnet = trim($subnet);
+        if (address_in_subnet($client_ip, $subnet)) {
+            $inlist = true;
+            break;
+        }
+    }
+    return $inlist;
+}
+
+/**
+ * Returns most reliable client address
+ *
+ * @global object
+ * @param string $default If an address can't be determined, then return this
+ * @return string The remote IP address
+ */
+function getremoteaddr($default='0.0.0.0') {
+    global $CFG;
+
+    if (empty($CFG->getremoteaddrconf)) {
+        // This will happen, for example, before just after the upgrade, as the
+        // user is redirected to the admin screen.
+        $variablestoskip = 0;
+    } else {
+        $variablestoskip = $CFG->getremoteaddrconf;
+    }
+    if (!($variablestoskip & GETREMOTEADDR_SKIP_HTTP_CLIENT_IP)) {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $address = cleanremoteaddr($_SERVER['HTTP_CLIENT_IP']);
+            return $address ? $address : $default;
+        }
+    }
+    if (!($variablestoskip & GETREMOTEADDR_SKIP_HTTP_X_FORWARDED_FOR)) {
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $address = cleanremoteaddr($_SERVER['HTTP_X_FORWARDED_FOR']);
+            return $address ? $address : $default;
+        }
+    }
+    if (!empty($_SERVER['REMOTE_ADDR'])) {
+        $address = cleanremoteaddr($_SERVER['REMOTE_ADDR']);
+        return $address ? $address : $default;
+    } else {
+        return $default;
+    }
+}
+
+/**
+ * Cleans an ip address. Internal addresses are now allowed.
+ * (Originally local addresses were not allowed.)
+ *
+ * @param string $addr IPv4 or IPv6 address
+ * @param bool $compress use IPv6 address compression
+ * @return string normalised ip address string, null if error
+ */
+function cleanremoteaddr($addr, $compress=false) {
+    $addr = trim($addr);
+
+    //TODO: maybe add a separate function is_addr_public() or something like this
+
+    if (strpos($addr, ':') !== false) {
+        // can be only IPv6
+        $parts = explode(':', $addr);
+        $count = count($parts);
+
+        if (strpos($parts[$count-1], '.') !== false) {
+            //legacy ipv4 notation
+            $last = array_pop($parts);
+            $ipv4 = cleanremoteaddr($last, true);
+            if ($ipv4 === null) {
+                return null;
+            }
+            $bits = explode('.', $ipv4);
+            $parts[] = dechex($bits[0]).dechex($bits[1]);
+            $parts[] = dechex($bits[2]).dechex($bits[3]);
+            $count = count($parts);
+            $addr = implode(':', $parts);
+        }
+
+        if ($count < 3 or $count > 8) {
+            return null; // severly malformed
+        }
+
+        if ($count != 8) {
+            if (strpos($addr, '::') === false) {
+                return null; // malformed
+            }
+            // uncompress ::
+            $insertat = array_search('', $parts, true);
+            $missing = array_fill(0, 1 + 8 - $count, '0');
+            array_splice($parts, $insertat, 1, $missing);
+            foreach ($parts as $key=>$part) {
+                if ($part === '') {
+                    $parts[$key] = '0';
+                }
+            }
+        }
+
+        $adr = implode(':', $parts);
+        if (!preg_match('/^([0-9a-f]{1,4})(:[0-9a-f]{1,4})*$/i', $adr)) {
+            return null; // incorrect format - sorry
+        }
+
+        // normalise 0s and case
+        $parts = array_map('hexdec', $parts);
+        $parts = array_map('dechex', $parts);
+
+        $result = implode(':', $parts);
+
+        if (!$compress) {
+            return $result;
+        }
+
+        if ($result === '0:0:0:0:0:0:0:0') {
+            return '::'; // all addresses
+        }
+
+        $compressed = preg_replace('/(:0)+:0$/', '::', $result, 1);
+        if ($compressed !== $result) {
+            return $compressed;
+        }
+
+        $compressed = preg_replace('/^(0:){2,7}/', '::', $result, 1);
+        if ($compressed !== $result) {
+            return $compressed;
+        }
+
+        $compressed = preg_replace('/(:0){2,6}:/', '::', $result, 1);
+        if ($compressed !== $result) {
+            return $compressed;
+        }
+
+        return $result;
+    }
+
+    // first get all things that look like IPv4 addresses
+    $parts = array();
+    if (!preg_match('/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/', $addr, $parts)) {
+        return null;
+    }
+    unset($parts[0]);
+
+    foreach ($parts as $key=>$match) {
+        if ($match > 255) {
+            return null;
+        }
+        $parts[$key] = (int)$match; // normalise 0s
+    }
+
+    return implode('.', $parts);
+}
+
+function external_generate_token($tokentype, $serviceorid, $userid, $institution = 'mahara',  $validuntil=0, $iprestriction=''){
+    global $USER;
+    // make sure the token doesn't exist (even if it should be almost impossible with the random generation)
+    $numtries = 0;
+    do {
+        $numtries ++;
+        $generatedtoken = md5(uniqid(rand(),1));
+        if ($numtries > 5){
+            throw new mahara_ws_exception('tokengenerationfailed');
+        }
+    } while (record_exists('external_tokens', 'token', $generatedtoken));
+    $newtoken = new stdClass();
+    $newtoken->token = $generatedtoken;
+    if (!is_object($serviceorid)){
+        $service = get_record('external_services', 'id', $serviceorid);
+    } else {
+        $service = $serviceorid;
+    }
+    $newtoken->externalserviceid = $service->id;
+    $newtoken->tokentype = $tokentype;
+    $newtoken->userid = $userid;
+    if ($tokentype == EXTERNAL_TOKEN_EMBEDDED){
+        $newtoken->sid = session_id();
+    }
+
+    $newtoken->institution = $institution;
+    $newtoken->creatorid = $USER->get('id');
+    $newtoken->timecreated = time();
+    $newtoken->publickeyexpires = time();
+    $newtoken->wssigenc = 0;
+    $newtoken->publickey = '';
+    $newtoken->validuntil = $validuntil;
+    if (!empty($iprestriction)) {
+        $newtoken->iprestriction = $iprestriction;
+    }
+    insert_record('external_tokens', $newtoken);
+    return $newtoken->token;
+}
+
+/**
+ * Create and return a session linked token. Token to be used for html embedded client apps that want to communicate
+ * with the Moodle server through web services. The token is linked to the current session for the current page request.
+ * It is expected this will be called in the script generating the html page that is embedding the client app and that the
+ * returned token will be somehow passed into the client app being embedded in the page.
+ * @param string $servicename name of the web service. Service name as defined in db/services.php
+ * @param int $context context within which the web service can operate.
+ * @return int returns token id.
+ */
+function external_create_service_token($servicename, $userid, $institution = 'mahara',  $validuntil=0, $iprestriction=''){
+    $service = get_record('external_services', 'name', $servicename, '*');
+    return external_generate_token(EXTERNAL_TOKEN_EMBEDDED, $service, $userid, $institution,  $validuntil, $iprestriction);
+}
+
+/**
+ * Returns detailed function information
+ * @param string|object $function name of external function or record from external_function
+ * @param int $strictness IGNORE_MISSING means compatible mode, false returned if record not found, debug message if more found;
+ *                        MUST_EXIST means throw exception if no record or multiple records found
+ * @return object description or false if not found or exception thrown
+ */
+function external_function_info($function, $strictness=MUST_EXIST) {
+    global $CFG;
+
+    if (!is_object($function)) {
+        if (!$function = get_record('external_functions', 'name', $function, NULL, NULL, NULL, NULL, '*')) {
+            return false;
+        }
+    }
+
+    //first find and include the ext implementation class
+    $function->classpath = empty($function->classpath) ? get_component_directory($function->component) : get_config('docroot')  .'/' . $function->classpath;
+    if (!file_exists($function->classpath . '/externallib.php')) {
+        throw new coding_exception('Can not find file with external function implementation');
+    }
+    require_once($function->classpath . '/externallib.php');
+
+    $function->parameters_method = $function->methodname . '_parameters';
+    $function->returns_method    = $function->methodname . '_returns';
+
+    // make sure the implementaion class is ok
+    if (!method_exists($function->classname, $function->methodname)) {
+        throw new coding_exception('Missing implementation method of ' . $function->classname . '::' . $function->methodname);
+    }
+    if (!method_exists($function->classname, $function->parameters_method)) {
+        throw new coding_exception('Missing parameters description');
+    }
+    if (!method_exists($function->classname, $function->returns_method)) {
+        throw new coding_exception('Missing returned values description');
+    }
+
+    // fetch the parameters description
+    $function->parameters_desc = call_user_func(array($function->classname, $function->parameters_method));
+    if (!($function->parameters_desc instanceof external_function_parameters)) {
+        throw new coding_exception('Invalid parameters description');
+    }
+
+    // fetch the return values description
+    $function->returns_desc = call_user_func(array($function->classname, $function->returns_method));
+    // null means void result or result is ignored
+    if (!is_null($function->returns_desc) and !($function->returns_desc instanceof external_description)) {
+        throw new coding_exception('Invalid return description');
+    }
+
+    //now get the function description
+    //TODO: use localised lang pack descriptions, it would be nice to have
+    //      easy to understand descriptions in admin UI,
+    //      on the other hand this is still a bit in a flux and we need to find some new naming
+    //      conventions for these descriptions in lang packs
+    $function->description = null;
+
+    $servicesfile = $function->classpath . '/services.php';
+
+    if (file_exists($servicesfile)) {
+        $functions = null;
+        include($servicesfile);
+        if (isset($functions[$function->name]['description'])) {
+            $function->description = $functions[$function->name]['description'];
+        }
+    }
+
+    return $function;
 }
 
 /**
@@ -377,7 +988,7 @@ class webservice {
         global $WS_FUNCTIONS;
 
         if (!empty($serviceids)) {
-            list($serviceids, $params) = get_in_or_equal($serviceids);
+            $serviceids = ' IN (' . implode(',', $serviceids) . ')';
             $sql = "SELECT f.*
                       FROM {external_functions} f
                      WHERE f.name IN (SELECT sf.functionname
@@ -491,6 +1102,47 @@ class webservice {
 }
 
 /**
+ * Base Mahara WS Exception class
+ *
+ * Although this class is defined here, you cannot throw a mahara_ws_exception until
+ * after moodlelib.php has been included (which will happen very soon).
+ *
+ * @package    core
+ * @subpackage lib
+ * @copyright  2008 Petr Skoda  {@link http://skodak.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class mahara_ws_exception extends Exception {
+    public $errorcode;
+    public $module;
+    public $a;
+    public $link;
+    public $debuginfo;
+
+    /**
+     * Constructor
+     * @param string $errorcode The name of the string from error.php to print
+     * @param string $module name of module
+     * @param string $link The url where the user will be prompted to continue. If no url is provided the user will be directed to the site index page.
+     * @param object $a Extra words and phrases that might be required in the error string
+     * @param string $debuginfo optional debugging information
+     */
+    function __construct($errorcode, $module='', $link='', $a=NULL, $debuginfo=null) {
+        if (empty($module) || $module == 'mahara' || $module == 'core') {
+            $module = 'error';
+        }
+
+        $this->errorcode = $errorcode;
+        $this->module    = $module;
+        $this->link      = $link;
+        $this->a         = $a;
+        $this->debuginfo = $debuginfo;
+        $message = get_string($errorcode, $module, $a) . $debuginfo;
+        parent::__construct($message, 0);
+    }
+}
+
+/**
  * Exception indicating access control problem in web service call
  * @author Petr Skoda (skodak)
  */
@@ -500,6 +1152,376 @@ class webservice_access_exception extends mahara_ws_exception {
      */
     function __construct($debuginfo) {
         parent::__construct('accessexception', 'artefact.webservice', '', null, $debuginfo);
+    }
+}
+
+/**
+ * Base class for external api methods.
+ */
+class external_api {
+    private static $contextrestriction;
+
+    /**
+     * Set context restriction for all following subsequent function calls.
+     * @param stdClass $contex
+     * @return void
+     */
+    public static function set_context_restriction($context) {
+        self::$contextrestriction = $context;
+    }
+
+    /**
+     * This method has to be called before every operation
+     * that takes a longer time to finish!
+     *
+     * @param int $seconds max expected time the next operation needs
+     * @return void
+     */
+    public static function set_timeout($seconds=360) {
+        $seconds = ($seconds < 300) ? 300 : $seconds;
+        set_time_limit($seconds);
+    }
+
+    /**
+     * Validates submitted function parameters, if anything is incorrect
+     * invalid_parameter_exception is thrown.
+     * This is a simple recursive method which is intended to be called from
+     * each implementation method of external API.
+     * @param external_description $description description of parameters
+     * @param mixed $params the actual parameters
+     * @return mixed params with added defaults for optional items, invalid_parameters_exception thrown if any problem found
+     */
+    public static function validate_parameters(external_description $description, $params) {
+        if ($description instanceof external_value) {
+            if (is_array($params) or is_object($params)) {
+                throw new invalid_parameter_exception(get_string('errorscalartype', 'artefact.webservice'));
+            }
+
+            if ($description->type == PARAM_BOOL) {
+                // special case for PARAM_BOOL - we want true/false instead of the usual 1/0 - we can not be too strict here ;-)
+                if (is_bool($params) or $params === 0 or $params === 1 or $params === '0' or $params === '1') {
+                    return (bool)$params;
+                }
+            }
+            return validate_param($params, $description->type, $description->allownull, get_string('errorinvalidparamsapi', 'artefact.webservice'));
+
+        } else if ($description instanceof external_single_structure) {
+            if (!is_array($params)) {
+                throw new invalid_parameter_exception(get_string('erroronlyarray', 'artefact.webservice'));
+            }
+            $result = array();
+            foreach ($description->keys as $key=>$subdesc) {
+                if (!array_key_exists($key, $params)) {
+                    if ($subdesc->required == VALUE_REQUIRED) {
+                        throw new invalid_parameter_exception(get_string('errormissingkey', 'artefact.webservice', $key));
+                    }
+                    if ($subdesc->required == VALUE_DEFAULT) {
+                        try {
+                            $result[$key] = self::validate_parameters($subdesc, $subdesc->default);
+                        } catch (invalid_parameter_exception $e) {
+                            throw new webservice_parameter_exception('invalidextparam', $key);
+                        }
+                    }
+                } else {
+                    try {
+                        $result[$key] = self::validate_parameters($subdesc, $params[$key]);
+                    } catch (invalid_parameter_exception $e) {
+                        //it's ok to display debug info as here the information is useful for ws client/dev
+                        throw new webservice_parameter_exception('invalidextparam',"key: $key (debuginfo: " . $e->debuginfo.") ");
+                    }
+                }
+                unset($params[$key]);
+            }
+            if (!empty($params)) {
+                //list all unexpected keys
+                $keys = '';
+                foreach($params as $key => $value) {
+                    $keys .= $key . ',';
+                }
+                throw new invalid_parameter_exception(get_string('errorunexpectedkey', 'artefact.webservice', $keys));
+            }
+            return $result;
+
+        } else if ($description instanceof external_multiple_structure) {
+            if (!is_array($params)) {
+                throw new invalid_parameter_exception(get_string('erroronlyarray', 'artefact.webservice'));
+            }
+            $result = array();
+            foreach ($params as $param) {
+                $result[] = self::validate_parameters($description->content, $param);
+            }
+            return $result;
+
+        } else {
+            throw new invalid_parameter_exception(get_string('errorinvalidparamsdesc', 'artefact.webservice'));
+        }
+    }
+
+    /**
+     * Clean response
+     * If a response attribute is unknown from the description, we just ignore the attribute.
+     * If a response attribute is incorrect, invalid_response_exception is thrown.
+     * Note: this function is similar to validate parameters, however it is distinct because
+     * parameters validation must be distinct from cleaning return values.
+     * @param external_description $description description of the return values
+     * @param mixed $response the actual response
+     * @return mixed response with added defaults for optional items, invalid_response_exception thrown if any problem found
+     */
+    public static function clean_returnvalue(external_description $description, $response) {
+        if ($description instanceof external_value) {
+            if (is_array($response) or is_object($response)) {
+                throw new invalid_response_exception(get_string('errorscalartype', 'artefact.webservice'));
+            }
+
+            if ($description->type == PARAM_BOOL) {
+                // special case for PARAM_BOOL - we want true/false instead of the usual 1/0 - we can not be too strict here ;-)
+                if (is_bool($response) or $response === 0 or $response === 1 or $response === '0' or $response === '1') {
+                    return (bool)$response;
+                }
+            }
+            return validate_param($response, $description->type, $description->allownull, get_string('errorinvalidresponseapi', 'artefact.webservice'));
+
+        } else if ($description instanceof external_single_structure) {
+            if (!is_array($response)) {
+                throw new invalid_response_exception(get_string('erroronlyarray', 'artefact.webservice'));
+            }
+            $result = array();
+            foreach ($description->keys as $key=>$subdesc) {
+                if (!array_key_exists($key, $response)) {
+                    if ($subdesc->required == VALUE_REQUIRED) {
+                        throw new webservice_parameter_exception('errorresponsemissingkey', $key);
+                    }
+                    if ($subdesc instanceof external_value) {
+                        if ($subdesc->required == VALUE_DEFAULT) {
+                            try {
+                                $result[$key] = self::clean_returnvalue($subdesc, $subdesc->default);
+                            } catch (Exception $e) {
+                                throw new webservice_parameter_exception('invalidextresponse',$key . " (" . $e->debuginfo . ")");
+                            }
+                        }
+                    }
+                } else {
+                    try {
+                        $result[$key] = self::clean_returnvalue($subdesc, $response[$key]);
+                    } catch (Exception $e) {
+                        //it's ok to display debug info as here the information is useful for ws client/dev
+                        throw new webservice_parameter_exception('invalidextresponse', $key . " (" . $e->debuginfo . ")");
+                    }
+                }
+                unset($response[$key]);
+            }
+
+            return $result;
+
+        } else if ($description instanceof external_multiple_structure) {
+            if (!is_array($response)) {
+                throw new invalid_response_exception(get_string('erroronlyarray', 'artefact.webservice'));
+            }
+            $result = array();
+            foreach ($response as $param) {
+                $result[] = self::clean_returnvalue($description->content, $param);
+            }
+            return $result;
+
+        } else {
+            throw new invalid_response_exception(get_string('errorinvalidresponsedesc', 'artefact.webservice'));
+        }
+    }
+}
+
+/**
+ * Common ancestor of all parameter description classes
+ */
+abstract class external_description {
+    /** @property string $description description of element */
+    public $desc;
+    /** @property bool $required element value required, null not allowed */
+    public $required;
+    /** @property mixed $default default value */
+    public $default;
+
+    /**
+     * Contructor
+     * @param string $desc
+     * @param bool $required
+     * @param mixed $default
+     */
+    public function __construct($desc, $required, $default) {
+        $this->desc = $desc;
+        $this->required = $required;
+        $this->default = $default;
+    }
+}
+
+/**
+ * Scalar alue description class
+ */
+class external_value extends external_description {
+    /** @property mixed $type value type PARAM_XX */
+    public $type;
+    /** @property bool $allownull allow null values */
+    public $allownull;
+
+    /**
+     * Constructor
+     * @param mixed $type
+     * @param string $desc
+     * @param bool $required
+     * @param mixed $default
+     * @param bool $allownull
+     */
+    public function __construct($type, $desc='', $required=VALUE_REQUIRED,
+    $default=null, $allownull=NULL_ALLOWED) {
+        parent::__construct($desc, $required, $default);
+        $this->type      = $type;
+        $this->allownull = $allownull;
+    }
+}
+
+/**
+ * Associative array description class
+ */
+class external_single_structure extends external_description {
+    /** @property array $keys description of array keys key=>external_description */
+    public $keys;
+
+    /**
+     * Constructor
+     * @param array $keys
+     * @param string $desc
+     * @param bool $required
+     * @param array $default
+     */
+    public function __construct(array $keys, $desc='',
+    $required=VALUE_REQUIRED, $default=null) {
+        parent::__construct($desc, $required, $default);
+        $this->keys = $keys;
+    }
+}
+
+/**
+ * Bulk array description class.
+ */
+class external_multiple_structure extends external_description {
+    /** @property external_description $content */
+    public $content;
+
+    /**
+     * Constructor
+     * @param external_description $content
+     * @param string $desc
+     * @param bool $required
+     * @param array $default
+     */
+    public function __construct(external_description $content, $desc='',
+    $required=VALUE_REQUIRED, $default=null) {
+        parent::__construct($desc, $required, $default);
+        $this->content = $content;
+    }
+}
+
+/**
+ * Description of top level - PHP function parameters.
+ * @author skodak
+ *
+ */
+class external_function_parameters extends external_single_structure {
+}
+
+/**
+ * Web service parameter exception class
+ *
+ * This exception must be thrown to the web service client when a web service parameter is invalid
+ * The error string is gotten from webservice.php
+ */
+class webservice_parameter_exception extends mahara_ws_exception {
+    /**
+     * Constructor
+     * @param string $errorcode The name of the string from webservice.php to print
+     * @param string $a The name of the parameter
+     */
+    function __construct($errorcode=null, $debuginfo = '') {
+        parent::__construct($errorcode, 'artefact.webservice', '', '', $debuginfo);
+    }
+}
+
+/**
+ * Exception indicating programming error, must be fixed by a programer. For example
+ * a core API might throw this type of exception if a plugin calls it incorrectly.
+ *
+ * @package    core
+ * @subpackage lib
+ * @copyright  2008 Petr Skoda  {@link http://skodak.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class coding_exception extends mahara_ws_exception {
+    /**
+     * Constructor
+     * @param string $hint short description of problem
+     * @param string $debuginfo detailed information how to fix problem
+     */
+    function __construct($hint, $debuginfo=null) {
+        parent::__construct('codingerror', 'debug', '', $hint, $debuginfo);
+    }
+}
+
+/**
+ * Exception indicating malformed parameter problem.
+ * This exception is not supposed to be thrown when processing
+ * user submitted data in forms. It is more suitable
+ * for WS and other low level stuff.
+ *
+ * @package    core
+ * @subpackage lib
+ * @copyright  2009 Petr Skoda  {@link http://skodak.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class invalid_parameter_exception extends mahara_ws_exception {
+    /**
+     * Constructor
+     * @param string $debuginfo some detailed information
+     */
+    function __construct($debuginfo=null) {
+        parent::__construct('invalidparameter', 'debug', '', null, $debuginfo);
+    }
+}
+
+/**
+ * Exception indicating malformed response problem.
+ * This exception is not supposed to be thrown when processing
+ * user submitted data in forms. It is more suitable
+ * for WS and other low level stuff.
+ */
+class invalid_response_exception extends mahara_ws_exception {
+    /**
+     * Constructor
+     * @param string $debuginfo some detailed information
+     */
+    function __construct($debuginfo=null) {
+        parent::__construct('invalidresponse', 'debug', '', null, $debuginfo);
+    }
+}
+
+/**
+ * An exception that indicates something really weird happened. For example,
+ * if you do switch ($context->contextlevel), and have one case for each
+ * CONTEXT_... constant. You might throw an invalid_state_exception in the
+ * default case, to just in case something really weird is going on, and
+ * $context->contextlevel is invalid - rather than ignoring this possibility.
+ *
+ * @package    core
+ * @subpackage lib
+ * @copyright  2009 onwards Martin Dougiamas  {@link http://moodle.com}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class invalid_state_exception extends mahara_ws_exception {
+    /**
+     * Constructor
+     * @param string $hint short description of problem
+     * @param string $debuginfo optional more detailed information
+     */
+    function __construct($hint, $debuginfo=null) {
+        parent::__construct('invalidstatedetected', 'debug', '', $hint, $debuginfo);
     }
 }
 
@@ -651,7 +1673,7 @@ abstract class webservice_server implements webservice_server_interface {
             $auth = new AuthWebservice($auth_instance->id);
             if (!$auth->authenticate_user_account($user, $this->password, 'webservice')) {
                 // log failed login attempts
-                ws_add_to_log(0, 'webservice', get_string('simpleauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . $this->username . "/" . $this->password . " - " . getremoteaddr() , 0);
+                ws_add_to_log('webservice', get_string('simpleauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . $this->username . "/" . $this->password . " - " . getremoteaddr() , 0);
                 throw new webservice_access_exception(get_string('wrongusernamepassword', 'artefact.webservice'));
             }
 
@@ -708,7 +1730,7 @@ abstract class webservice_server implements webservice_server_interface {
         }
         if (!$token) {
             // log failed login attempts
-            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' . $tokentype , get_string('failedtolog', 'artefact.webservice') . ": " . $this->token . " - " . getremoteaddr() , 0);
+            ws_add_to_log('webservice', get_string('tokenauthlog', 'artefact.webservice'), '' . $tokentype , get_string('failedtolog', 'artefact.webservice') . ": " . $this->token . " - " . getremoteaddr() , 0);
             throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
         }
         // tidy up the uath method - this could be user token or session token
@@ -733,7 +1755,7 @@ abstract class webservice_server implements webservice_server_interface {
         }
 
         if ($token->iprestriction and !address_in_subnet(getremoteaddr(), $token->iprestriction)) {
-            ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . getremoteaddr() , 0);
+            ws_add_to_log('webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . getremoteaddr() , 0);
             throw new webservice_access_exception(get_string('invalidiptoken', 'artefact.webservice'));
         }
 
@@ -850,7 +1872,7 @@ abstract class webservice_zend_server extends webservice_server {
         $this->session_cleanup();
 
         // allready all done if we were doing wsdl
-        if (optional_param('wsdl', 0, PARAM_BOOL)) {
+        if (param_variable('wsdl', 0)) {
             die;
         }
 
@@ -880,7 +1902,7 @@ abstract class webservice_zend_server extends webservice_server {
                                    'uri' => $_SERVER['REQUEST_URI'],
                                    'info' => ($this->info ? $this->info : ''),
                                    'ip' => getremoteaddr());
-            ws_add_to_log(0, 'webservice', $WEBSERVICE_FUNCTION_RUN, '', getremoteaddr() , 0, $this->userid);
+            ws_add_to_log('webservice', $WEBSERVICE_FUNCTION_RUN, '', getremoteaddr() , 0, $this->userid);
             insert_record('external_services_logs', $log, 'id', true);
         }
         else {

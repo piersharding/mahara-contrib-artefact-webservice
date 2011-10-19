@@ -148,7 +148,7 @@ class webservice_soap_server extends webservice_zend_server {
         require_once 'Zend/Soap/Server.php';
         require_once 'Zend/Soap/AutoDiscover.php';
 
-        if (optional_param('wsdl', 0, PARAM_BOOL)) {
+        if (param_boolean('wsdl', 0)) {
             parent::__construct($authmethod, 'Zend_Soap_AutoDiscover');
         } else {
             parent::__construct($authmethod, 'Zend_Soap_Server_Local');
@@ -166,21 +166,21 @@ class webservice_soap_server extends webservice_zend_server {
         parent::init_zend_server();
 
         if ($this->authmethod == WEBSERVICE_AUTHMETHOD_USERNAME) {
-            $username = optional_param('wsusername', '', PARAM_RAW);
-            $password = optional_param('wspassword', '', PARAM_RAW);
+            $username = param_variable('wsusername', '');
+            $password = param_variable('wspassword', '');
             // aparently some clients and zend soap server does not work well with "&" in urls :-(
             //TODO: the zend error has been fixed in the last Zend SOAP version, check that is fixed and remove obsolete code
             $url = get_config('wwwroot') . 'artefact/webservice/soap/server.php/' . urlencode($username) . '/' . urlencode($password);
             // the Zend server is using this uri directly in xml - weird :-(
             $this->zend_server->setUri(htmlentities($url));
         } else {
-            $wstoken = optional_param('wstoken', '', PARAM_RAW);
+            $wstoken = param_variable('wstoken', '');
             $url = get_config('wwwroot') . 'artefact/webservice/soap/server.php?wstoken=' . urlencode($wstoken);
             // the Zend server is using this uri directly in xml - weird :-(
             $this->zend_server->setUri(htmlentities($url));
         }
 
-        if (!optional_param('wsdl', 0, PARAM_BOOL)) {
+        if (!param_boolean('wsdl', 0)) {
             $this->zend_server->setReturnResponse(true);
             //TODO: the error handling in Zend Soap server is useless, XML-RPC is much, much better :-(
             $this->zend_server->registerFaultException('MaharaException');
@@ -209,7 +209,7 @@ class webservice_soap_server extends webservice_zend_server {
         $xml = null;
 
         // don't do any of this if we are in the WSDL phase
-        if (optional_param('wsdl', 0, PARAM_BOOL)) {
+        if (param_boolean('wsdl', 0)) {
             return $xml;
         }
 
@@ -218,7 +218,7 @@ class webservice_soap_server extends webservice_zend_server {
             // we need the token so that we can find the key
             if (!$dbtoken = get_record('external_tokens', 'token', $this->token, 'tokentype', EXTERNAL_TOKEN_PERMANENT)) {
                 // log failed login attempts
-                ws_add_to_log(0, 'webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . $this->token . " - " . getremoteaddr() , 0);
+                ws_add_to_log('webservice', get_string('tokenauthlog', 'artefact.webservice'), '' , get_string('failedtolog', 'artefact.webservice') . ": " . $this->token . " - " . getremoteaddr() , 0);
                 throw new webservice_access_exception(get_string('invalidtoken', 'artefact.webservice'));
             }
             // is WS-Security active ?

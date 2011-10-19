@@ -47,7 +47,7 @@ if (!webservice_protocol_is_enabled('soap')) {
     header("HTTP/1.0 404 Not Found");
     die;
 }
-if (!optional_param('wstoken', null, PARAM_RAW) || optional_param('wsservice', null, PARAM_RAW)) {
+if (!param_variable('wstoken', null) || param_variable('wsservice', null)) {
     $authmethod = WEBSERVICE_AUTHMETHOD_USERNAME;
 }
 else {
