@@ -34,7 +34,8 @@
 require_once(get_config('docroot') . '/artefact/webservice/lib.php');
 require_once(get_config('docroot') . '/lib/user.php');
 require_once(get_config('docroot') . '/lib/group.php');
-require_once('institution.php');
+require_once(get_config('docroot') . '/lib/institution.php');
+require_once(get_config('docroot') . '/lib/searchlib.php');
 
 /**
  * Check that a user is in the institution

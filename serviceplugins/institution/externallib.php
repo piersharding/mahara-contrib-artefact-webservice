@@ -30,9 +30,7 @@
  * @author     Piers Harding
  */
 
-require_once(get_config('docroot') . '/lib/institution.php');
-require_once(get_config('docroot') . '/lib/searchlib.php');
-require_once(get_config('docroot') . '/lib/user.php');
+require_once(get_config('docroot') . "/artefact/webservice/serviceplugins/lib.php");
 
 global $WEBSERVICE_OAUTH_USER;
 
