@@ -23,9 +23,16 @@
  * Test the different web service protocols.
  *
  * @author     Piers Harding
- * @license http://www.gnu.org/copyleft/gpl.html GNU Public License
- * @package web service
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU Public License
+ * @package    webservice
  * @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
+ */
+
+/**
+ * This is the base libarary of functions for running each example from the
+ * command line.
+ * handles command line options, and interactive choices, and then
+ * runs the main loop for the chosen example cluster: group, user, institution
  */
 
 // must be run from the command line
@@ -173,7 +180,7 @@ print "basic auth username; $bausername\n";
 print "basic auth password: $bapassword\n";
 
 // keep looping until user exits
-while (1==1) {
+while (1) {
     // now select a function to execute
     print "Select one of functions to execute:\n";
     $cnt = 0;

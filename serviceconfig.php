@@ -29,6 +29,7 @@
 define('INTERNAL', 1);
 define('ADMIN', 1);
 define('MENUITEM', 'configextensions/pluginadminwebservices');
+// XXX what is required if in core
 // define('MENUITEM', 'webservice/config');
 // define('SECTION_PLUGINTYPE', 'core');
 // define('SECTION_PLUGINNAME', 'admin');

@@ -34,11 +34,17 @@ require_once(get_config('docroot') . "/artefact/webservice/serviceplugins/lib.ph
 
 global $WEBSERVICE_OAUTH_USER;
 
+/**
+ * Class container for core Mahara group related API calls
+ */
 class mahara_group_external extends external_api {
 
+    // possible membership roles
     private static $member_roles = array('admin', 'tutor', 'member');
 
     /**
+     * parameter definition for input of create_groups method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -218,6 +224,8 @@ class mahara_group_external extends external_api {
     }
 
    /**
+     * parameter definition for output of create_groups method
+     *
      * Returns description of method result value
      * @return external_description
      */
@@ -233,6 +241,8 @@ class mahara_group_external extends external_api {
     }
 
     /**
+     * parameter definition for input of delete_groups method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -307,14 +317,18 @@ class mahara_group_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of delete_groups method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function delete_groups_returns() {
         return null;
     }
 
     /**
+     * parameter definition for input of update_groups method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -500,14 +514,18 @@ class mahara_group_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of update_groups method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function update_groups_returns() {
         return null;
     }
 
     /**
+     * parameter definition for input of update_group_members method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -657,14 +675,18 @@ class mahara_group_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of update_group_members method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function update_group_members_returns() {
         return null;
     }
 
     /**
+     * parameter definition for input of get_groups_by_id method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -685,7 +707,7 @@ class mahara_group_external extends external_api {
     }
 
     /**
-     * Get user information
+     * Get user information for one or more groups
      *
      * @param array $groups  array of groups
      * @return array An array of arrays describing groups
@@ -769,6 +791,8 @@ class mahara_group_external extends external_api {
     }
 
     /**
+     * parameter definition for output of get_groups_by_id method
+     *
      * Returns description of method result value
      * @return external_description
      */
@@ -807,6 +831,8 @@ class mahara_group_external extends external_api {
     }
 
     /**
+     * parameter definition for input of get_groups method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -815,7 +841,7 @@ class mahara_group_external extends external_api {
     }
 
     /**
-     * Get group information
+     * Get group information for all groups
      *
      * @param array $groupids  array of group ids
      * @return array An array of arrays describing groups
@@ -825,6 +851,8 @@ class mahara_group_external extends external_api {
     }
 
     /**
+     * parameter definition for output of get_groups method
+     *
      * Returns description of method result value
      * @return external_description
      */

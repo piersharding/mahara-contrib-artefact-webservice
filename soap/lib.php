@@ -82,7 +82,10 @@ class webservice_soap_client extends Zend_Soap_Client {
 
 }
 
-
+/**
+ * Extended SOAP client class to handle WSSE authentication extension
+ *
+ */
 class webservice_soap_client_wsse extends Zend_Soap_Client_Common {
 
     private $username;
@@ -168,6 +171,11 @@ class webservice_soap_client_wsse extends Zend_Soap_Client_Common {
         return $result;
     }
 
+    /**
+     * internal callback overridden with one_way set to 0
+     *
+     * @see Zend_Soap_Client_Common::__doRequest()
+     */
     public function __doRequest($request,$location,$action,$version,$one_way = 0) {
         return parent::__doRequest($request,$location,$action,$version,$one_way);
     }

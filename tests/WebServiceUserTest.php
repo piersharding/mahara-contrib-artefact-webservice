@@ -32,8 +32,16 @@
 
 require_once 'TestBase.class.php';
 
+/**
+ * funcitonal tests for user API
+ */
 class WebServiceUserTest extends TestBase {
 
+    /**
+    * local setup - outline the test functions in the framework
+    *
+    * @see TestBase::setUp()
+    */
     function setUp() {
         // default current user to admin
         parent::setUp();

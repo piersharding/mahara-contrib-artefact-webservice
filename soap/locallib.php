@@ -36,6 +36,9 @@ ini_set('soap.wsdl_cache_enabled', '0');
 require_once 'Zend/Soap/Server.php';
 require_once 'Zend/Soap/AutoDiscover.php';
 
+/**
+ * extend SOAP Server to add logging and error handling
+ */
 class Zend_Soap_Server_Local extends Zend_Soap_Server {
 
     /**
@@ -188,7 +191,7 @@ class webservice_soap_server extends webservice_zend_server {
             $this->zend_server->registerFaultException('InvalidArgumentException');
             $this->zend_server->registerFaultException('AccessDeniedException');
             $this->zend_server->registerFaultException('ParameterException');
-            $this->zend_server->registerFaultException('mahara_ws_exception');
+            $this->zend_server->registerFaultException('mahara_webservice_exception');
             $this->zend_server->registerFaultException('webservice_parameter_exception');
             $this->zend_server->registerFaultException('invalid_parameter_exception');
             $this->zend_server->registerFaultException('invalid_response_exception');
@@ -346,12 +349,58 @@ class webservice_soap_server extends webservice_zend_server {
 
         if (!$this->username or !$this->password) {
             //note: this is the workaround for the trouble with & in soap urls
-            $authdata = get_file_argument();
+            $authdata = self::get_file_argument();
             $authdata = explode('/', trim($authdata, '/'));
             if (count($authdata) == 2) {
                 list($this->username, $this->password) = $authdata;
             }
         }
+    }
+
+    /**
+     * Extracts file argument either from file parameter or PATH_INFO
+     * Note: $scriptname parameter is not needed anymore
+     *
+     * @global string
+     * @uses $_SERVER
+     * @uses PARAM_PATH
+     * @return string file path (only safe characters)
+     */
+    static function get_file_argument() {
+        global $SCRIPT;
+
+        $relativepath = clean_param(param_variable('file', FALSE), PARAM_PATH);
+
+        if ($relativepath !== false and $relativepath !== '') {
+            return $relativepath;
+        }
+        $relativepath = false;
+
+        // then try extract file from the slasharguments
+        if (stripos($_SERVER['SERVER_SOFTWARE'], 'iis') !== false) {
+            // NOTE: ISS tends to convert all file paths to single byte DOS encoding,
+            //       we can not use other methods because they break unicode chars,
+            //       the only way is to use URL rewriting
+            if (isset($_SERVER['PATH_INFO']) and $_SERVER['PATH_INFO'] !== '') {
+                // check that PATH_INFO works == must not contain the script name
+                if (strpos($_SERVER['PATH_INFO'], $SCRIPT) === false) {
+                    $relativepath = clean_param(urldecode($_SERVER['PATH_INFO']), PARAM_PATH);
+                }
+            }
+        } else {
+            // all other apache-like servers depend on PATH_INFO
+            if (isset($_SERVER['PATH_INFO'])) {
+                if (isset($_SERVER['SCRIPT_NAME']) and strpos($_SERVER['PATH_INFO'], $_SERVER['SCRIPT_NAME']) === 0) {
+                    $relativepath = substr($_SERVER['PATH_INFO'], strlen($_SERVER['SCRIPT_NAME']));
+                } else {
+                    $relativepath = $_SERVER['PATH_INFO'];
+                }
+                $relativepath = clean_param($relativepath, PARAM_PATH);
+            }
+        }
+
+
+        return $relativepath;
     }
 
     /**
@@ -412,6 +461,12 @@ class webservice_soap_server extends webservice_zend_server {
         return $response;
     }
 
+    /**
+     * Dynamically build a container class for the callback of SOAP API
+     * funcitons.
+     *
+     * @see webservice_zend_server::generate_simple_struct_class()
+     */
     protected function generate_simple_struct_class(external_single_structure $structdesc) {
         global $USER;
         // let's use unique class name, there might be problem in unit tests

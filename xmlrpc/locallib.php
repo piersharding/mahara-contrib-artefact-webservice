@@ -33,6 +33,10 @@ require_once(get_config('docroot') . "/artefact/webservice/locallib.php");
 
 require_once 'Zend/XmlRpc/Server.php';
 
+/**
+* extend XML-RPC Server to add specific functions expected to support
+* MNet
+*/
 class Zend_XmlRpc_Server_Local extends Zend_XmlRpc_Server {
 
     /**
@@ -257,6 +261,7 @@ function webservice_mnet_search_folders_and_files($username, $search) {
 }
 
 /**
+ * list available methods
  *
  * @param string $xmlrpc_method_name
  * @param string $args
@@ -270,6 +275,7 @@ function webservice_list_methods($xmlrpc_method_name, $args) {
 }
 
 /**
+ * get signature of method
  *
  * @param string $xmlrpc_method_name
  * @param string $methodname
@@ -296,7 +302,7 @@ function webservice_method_help($xmlrpc_method_name, $methodname) {
 }
 
 /**
- * serach folders and files
+ * search folders and files
  *
  * @param string $wwwroot
  * @param string $pubkey
@@ -310,6 +316,8 @@ function webservice_keyswap($wwwroot = '', $pubkey = '', $application = '') {
 }
 
 /**
+ * list available services
+ *
  * @return array
  */
 function webservice_list_services() {
@@ -340,7 +348,6 @@ class webservice_xmlrpc_server extends webservice_zend_server {
 
     /**
      * Chance for each protocol to modify the function processing list
-     *
      */
     protected function fixup_functions() {
         // tell server what extra functions are available
@@ -371,13 +378,14 @@ class webservice_xmlrpc_server extends webservice_zend_server {
     }
 
     /**
-     * Set up zend service class
+     * Set up zend service class - mainly about fault handling
+     *
      * @return void
      */
     protected function init_zend_server() {
         parent::init_zend_server();
         // this exception indicates request failed
-        Zend_XmlRpc_Server_Fault::attachFaultException('mahara_ws_exception');
+        Zend_XmlRpc_Server_Fault::attachFaultException('mahara_webservice_exception');
         Zend_XmlRpc_Server_Fault::attachFaultException('MaharaException');
         Zend_XmlRpc_Server_Fault::attachFaultException('UserException');
         Zend_XmlRpc_Server_Fault::attachFaultException('NotFoundException');

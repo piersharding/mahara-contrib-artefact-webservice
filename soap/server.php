@@ -29,6 +29,11 @@
  * @author     Piers Harding
  */
 
+/**
+ * This is the universal server API enpoint for SOAP based calls - no matter
+ * what the authentication type offered
+ */
+
 define('INTERNAL', 1);
 define('PUBLIC', 1);
 define('XMLRPC', 1);
@@ -47,6 +52,8 @@ if (!webservice_protocol_is_enabled('soap')) {
     header("HTTP/1.0 404 Not Found");
     die;
 }
+
+// make a guess as to what the auth method is - this gets refined later
 if (!param_variable('wstoken', null) || param_variable('wsservice', null)) {
     $authmethod = WEBSERVICE_AUTHMETHOD_USERNAME;
 }
@@ -54,6 +61,7 @@ else {
     $authmethod = WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN;
 }
 
+// run the dispatcher
 $server = new webservice_soap_server($authmethod);
 $server->run();
 die;

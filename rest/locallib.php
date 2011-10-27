@@ -205,7 +205,7 @@ class webservice_rest_server extends webservice_base_server {
      * Internal implementation - recursive function producing XML markup.
      * @param mixed $returns
      * @param $desc
-     * @return unknown_type
+     * @return string XML result
      */
     protected static function xmlize_result($returns, $desc) {
         if ($desc === null) {
@@ -265,10 +265,10 @@ class webservice_rest_test_client implements webservice_test_client_interface {
      * @param string $serverurl
      * @param string $function
      * @param array $params
-     * @return mixed
+     * @return mixed webservice call return values
      */
     public function simpletest($serverurl, $function, $params) {
-        return download_file_content($serverurl . '&wsfunction=' . $function, null, $params);
+        return webservice_download_file_content($serverurl . '&wsfunction=' . $function, null, $params);
     }
 }
 
@@ -340,7 +340,7 @@ function format_postdata_for_curlcall($postdata) {
  *   filesize and appropriately larger timeout based on get_config('curltimeoutkbitrate')
  * @return mixed false if request failed or content of the file as string if ok. True if file downloaded into $tofile successfully.
  */
-function download_file_content($url, $headers=null, $postdata=null, $fullresponse=false, $timeout=300, $connecttimeout=20, $skipcertverify=false, $tofile=NULL, $calctimeout=false) {
+function webservice_download_file_content($url, $headers=null, $postdata=null, $fullresponse=false, $timeout=300, $connecttimeout=20, $skipcertverify=false, $tofile=NULL, $calctimeout=false) {
     // some extra security
     $newlines = array("\r", "\n");
     if (is_array($headers) ) {
@@ -617,7 +617,7 @@ function is_proxybypass( $url ) {
 }
 
 /**
- * internal implementation
+ * CURL callback handler for HTTP headers
  */
 function download_file_content_header_handler($received, $ch, $header) {
     $received->headers[] = $header;
@@ -625,7 +625,7 @@ function download_file_content_header_handler($received, $ch, $header) {
 }
 
 /**
- * internal implementation
+ * CURL callback handler for writing to HTTP connection
  */
 function download_file_content_write_handler($received, $ch, $data) {
     if (!$received->fh) {

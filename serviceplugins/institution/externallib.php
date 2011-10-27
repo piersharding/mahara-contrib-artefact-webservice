@@ -40,6 +40,9 @@ if ($WEBSERVICE_OAUTH_USER) {
     throw new Exception('Not enabled for OAuth');
 }
 
+/**
+* Class container for core Mahara institution related API calls
+*/
 class mahara_institution_external extends external_api {
 
     /**
@@ -75,6 +78,8 @@ class mahara_institution_external extends external_api {
     }
 
     /**
+     * parameter definition for input of add_members method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -95,7 +100,7 @@ class mahara_institution_external extends external_api {
     }
 
     /**
-     * Add one or more users
+     * Add one or more members to an institution
      *
      * @param array $users
      */
@@ -142,6 +147,8 @@ class mahara_institution_external extends external_api {
     }
 
    /**
+    * parameter definition for output of add_members method
+    *
      * Returns description of method result value
      * @return external_description
      */
@@ -150,6 +157,8 @@ class mahara_institution_external extends external_api {
     }
 
     /**
+     * parameter definition for input of invite_members method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -170,7 +179,7 @@ class mahara_institution_external extends external_api {
     }
 
     /**
-     * Invite one or more users
+     * Invite one or more users to an institution
      *
      * @param array $users
      */
@@ -218,14 +227,18 @@ class mahara_institution_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of invite_members method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function invite_members_returns() {
         return null;
     }
 
     /**
+     * parameter definition for input of remove_members method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -246,7 +259,7 @@ class mahara_institution_external extends external_api {
     }
 
     /**
-     * remove one or more users
+     * remove one or more users from an institution
      *
      * @param array $users
      */
@@ -288,14 +301,18 @@ class mahara_institution_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of remove_members method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function remove_members_returns() {
         return null;
     }
 
     /**
+     * parameter definition for input of decline_members method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -316,7 +333,7 @@ class mahara_institution_external extends external_api {
     }
 
     /**
-     * decline one or more users
+     * decline one or more users request for membership to an institution
      *
      * @param array $users
      */
@@ -358,14 +375,18 @@ class mahara_institution_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of decline_members method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function decline_members_returns() {
         return null;
     }
 
     /**
+     * parameter definition for input of get_members method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -409,9 +430,11 @@ class mahara_institution_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of get_members method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function get_members_returns() {
         return new external_multiple_structure(
                 new external_single_structure(
@@ -424,6 +447,8 @@ class mahara_institution_external extends external_api {
     }
 
     /**
+     * parameter definition for input of get_requests method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -468,9 +493,11 @@ class mahara_institution_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of get_requests method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function get_requests_returns() {
         return new external_multiple_structure(
                 new external_single_structure(

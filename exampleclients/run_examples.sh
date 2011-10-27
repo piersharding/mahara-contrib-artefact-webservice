@@ -1,4 +1,16 @@
 #!/bin/sh
+
+# Test the different web service protocols.
+#
+# @author     Piers Harding
+# @license    http://www.gnu.org/copyleft/gpl.html GNU Public License
+# @package    web service
+# @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
+#
+
+# Example of running the example PHP clients for the
+# different core API services: user, group, institution
+
 # protect against execution
 if [ -n "$GATEWAY_INTERFACE" ]; then
   echo "Content-type: text/html"
@@ -27,7 +39,7 @@ for i in $EXAMPLES
 do
     if [ "$j" = "$opt" ]; then
         echo "running: $i"
-        php example_${i}_api.php --username=blah3 --password=blahblah --url=http://mahara.local.net/maharadev/artefact/webservice/soap/simpleserver.php
+        php example_${i}_api.php --username=blah3 --password=blahblah --url=http://mahara.local.net/maharadev/artefact/webservice/soap/server.php
         exit 0
     fi
     j=`expr $j + 1`

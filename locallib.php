@@ -33,65 +33,6 @@ set_include_path($path . PATH_SEPARATOR . get_include_path());
 require_once(get_config('docroot') . '/artefact/webservice/libs/externallib.php');
 
 /**
- *  is debugging switched on for Web Services
- */
-function ws_debugging() {
-    if (defined('DEBUG_DEVELOPER')) {
-        return true;
-    }
-    return false;
-}
-
-/**
- * Add an entry to the log table.
- *
- * Add an entry to the log table.  These are "action" focussed rather
- * than web server hits, and provide a way to easily reconstruct what
- * any particular student has been doing.
- *
- * @param    string  $module  The module name - e.g. forum, journal, resource, course, user etc
- * @param    string  $action  'view', 'update', 'add' or 'delete', possibly followed by another word to clarify.
- * @param    string  $url     The file and parameters used to see the results of the action
- * @param    string  $info    Additional description information
- * @param    string  $cm      The course_module->id if there is one
- * @param    string  $user    If log regards $user other than $USER
- * @return void
- */
-function ws_add_to_log($module, $action, $url='', $info='', $cm=0, $user=0) {
-    error_log("module: $module action: $action ($url) info: $info");
-}
-
-/**
- * validate the user for webservices access
- * the account must use the webservice auth plugin
- * the account must have membership for the selected auth_instance
- *
- * @param object $dbuser
- */
-function webservices_validate_user($dbuser) {
-    global $SESSION;
-    if (!empty($dbuser)) {
-        $auth_instance = get_record('auth_instance', 'id', $dbuser->authinstance);
-        if ($auth_instance->authname == 'webservice') {
-            $memberships = count_records('usr_institution', 'usr', $dbuser->id);
-            if ($memberships == 0) {
-                // auth instance should be a mahara one
-                if ($auth_instance->institution == 'mahara') {
-                    return $auth_instance;
-                }
-            }
-            else {
-                $membership = get_record('usr_institution', 'usr', $dbuser->id, 'institution', $auth_instance->institution);
-                if (!empty($membership)) {
-                    return $auth_instance;
-                }
-            }
-        }
-    }
-    return NULL;
-}
-
-/**
  * Security token used for allowing access
  * from external application such as web services.
  * Scripts do not use any session, performance is relatively
@@ -156,49 +97,62 @@ define('GETREMOTEADDR_SKIP_HTTP_CLIENT_IP', '1');
 define('GETREMOTEADDR_SKIP_HTTP_X_FORWARDED_FOR', '2');
 
 /**
- * Extracts file argument either from file parameter or PATH_INFO
- * Note: $scriptname parameter is not needed anymore
- *
- * @global string
- * @uses $_SERVER
- * @uses PARAM_PATH
- * @return string file path (only safe characters)
+ *  is debugging switched on for Web Services
  */
-function get_file_argument() {
-    global $SCRIPT;
-
-    $relativepath = clean_param(param_variable('file', FALSE), PARAM_PATH);
-
-    if ($relativepath !== false and $relativepath !== '') {
-        return $relativepath;
+function ws_debugging() {
+    if (defined('DEBUG_DEVELOPER')) {
+        return true;
     }
-    $relativepath = false;
+    return false;
+}
 
-    // then try extract file from the slasharguments
-    if (stripos($_SERVER['SERVER_SOFTWARE'], 'iis') !== false) {
-        // NOTE: ISS tends to convert all file paths to single byte DOS encoding,
-        //       we can not use other methods because they break unicode chars,
-        //       the only way is to use URL rewriting
-        if (isset($_SERVER['PATH_INFO']) and $_SERVER['PATH_INFO'] !== '') {
-            // check that PATH_INFO works == must not contain the script name
-            if (strpos($_SERVER['PATH_INFO'], $SCRIPT) === false) {
-                $relativepath = clean_param(urldecode($_SERVER['PATH_INFO']), PARAM_PATH);
+/**
+ * Add an entry to the log table.
+ *
+ * Add an entry to the log table.  These are "action" focussed rather
+ * than web server hits, and provide a way to easily reconstruct what
+ * any particular student has been doing.
+ *
+ * @param    string  $module  The module name - e.g. forum, journal, resource, course, user etc
+ * @param    string  $action  'view', 'update', 'add' or 'delete', possibly followed by another word to clarify.
+ * @param    string  $url     The file and parameters used to see the results of the action
+ * @param    string  $info    Additional description information
+ * @param    string  $cm      The course_module->id if there is one
+ * @param    string  $user    If log regards $user other than $USER
+ * @return void
+ */
+function ws_add_to_log($module, $action, $url='', $info='', $cm=0, $user=0) {
+    error_log("module: $module action: $action ($url) info: $info");
+}
+
+/**
+ * validate the user for webservices access
+ * the account must use the webservice auth plugin
+ * the account must have membership for the selected auth_instance
+ *
+ * @param object $dbuser
+ */
+function webservice_validate_user($dbuser) {
+    global $SESSION;
+    if (!empty($dbuser)) {
+        $auth_instance = get_record('auth_instance', 'id', $dbuser->authinstance);
+        if ($auth_instance->authname == 'webservice') {
+            $memberships = count_records('usr_institution', 'usr', $dbuser->id);
+            if ($memberships == 0) {
+                // auth instance should be a mahara one
+                if ($auth_instance->institution == 'mahara') {
+                    return $auth_instance;
+                }
+            }
+            else {
+                $membership = get_record('usr_institution', 'usr', $dbuser->id, 'institution', $auth_instance->institution);
+                if (!empty($membership)) {
+                    return $auth_instance;
+                }
             }
         }
-    } else {
-        // all other apache-like servers depend on PATH_INFO
-        if (isset($_SERVER['PATH_INFO'])) {
-            if (isset($_SERVER['SCRIPT_NAME']) and strpos($_SERVER['PATH_INFO'], $_SERVER['SCRIPT_NAME']) === 0) {
-                $relativepath = substr($_SERVER['PATH_INFO'], strlen($_SERVER['SCRIPT_NAME']));
-            } else {
-                $relativepath = $_SERVER['PATH_INFO'];
-            }
-            $relativepath = clean_param($relativepath, PARAM_PATH);
-        }
     }
-
-
-    return $relativepath;
+    return NULL;
 }
 
 /**
@@ -668,7 +622,7 @@ function cleanremoteaddr($addr, $compress=false) {
     return implode('.', $parts);
 }
 
-function external_generate_token($tokentype, $serviceorid, $userid, $institution = 'mahara',  $validuntil=0, $iprestriction=''){
+function webservice_generate_token($tokentype, $serviceorid, $userid, $institution = 'mahara',  $validuntil=0, $iprestriction=''){
     global $USER;
     // make sure the token doesn't exist (even if it should be almost impossible with the random generation)
     $numtries = 0;
@@ -676,7 +630,7 @@ function external_generate_token($tokentype, $serviceorid, $userid, $institution
         $numtries ++;
         $generatedtoken = md5(uniqid(rand(),1));
         if ($numtries > 5){
-            throw new mahara_ws_exception('tokengenerationfailed');
+            throw new mahara_webservice_exception('tokengenerationfailed');
         }
     } while (record_exists('external_tokens', 'token', $generatedtoken));
     $newtoken = new stdClass();
@@ -716,9 +670,9 @@ function external_generate_token($tokentype, $serviceorid, $userid, $institution
  * @param int $context context within which the web service can operate.
  * @return int returns token id.
  */
-function external_create_service_token($servicename, $userid, $institution = 'mahara',  $validuntil=0, $iprestriction=''){
+function webservice_create_service_token($servicename, $userid, $institution = 'mahara',  $validuntil=0, $iprestriction=''){
     $service = get_record('external_services', 'name', $servicename, '*');
-    return external_generate_token(EXTERNAL_TOKEN_EMBEDDED, $service, $userid, $institution,  $validuntil, $iprestriction);
+    return webservice_generate_token(EXTERNAL_TOKEN_EMBEDDED, $service, $userid, $institution,  $validuntil, $iprestriction);
 }
 
 /**
@@ -728,7 +682,7 @@ function external_create_service_token($servicename, $userid, $institution = 'ma
  *                        MUST_EXIST means throw exception if no record or multiple records found
  * @return object description or false if not found or exception thrown
  */
-function external_function_info($function, $strictness=MUST_EXIST) {
+function webservice_function_info($function, $strictness=MUST_EXIST) {
     if (!is_object($function)) {
         if (!$function = get_record('external_functions', 'name', $function, NULL, NULL, NULL, NULL, '*')) {
             return false;
@@ -738,7 +692,7 @@ function external_function_info($function, $strictness=MUST_EXIST) {
     //first find and include the ext implementation class
     $function->classpath = empty($function->classpath) ? get_component_directory($function->component) : get_config('docroot')  .'/' . $function->classpath;
     if (!file_exists($function->classpath . '/externallib.php')) {
-        throw new coding_exception('Can not find file with external function implementation');
+        throw new webservice_coding_exception('Can not find file with external function implementation');
     }
     require_once($function->classpath . '/externallib.php');
 
@@ -747,26 +701,26 @@ function external_function_info($function, $strictness=MUST_EXIST) {
 
     // make sure the implementaion class is ok
     if (!method_exists($function->classname, $function->methodname)) {
-        throw new coding_exception('Missing implementation method of ' . $function->classname . '::' . $function->methodname);
+        throw new webservice_coding_exception('Missing implementation method of ' . $function->classname . '::' . $function->methodname);
     }
     if (!method_exists($function->classname, $function->parameters_method)) {
-        throw new coding_exception('Missing parameters description');
+        throw new webservice_coding_exception('Missing parameters description');
     }
     if (!method_exists($function->classname, $function->returns_method)) {
-        throw new coding_exception('Missing returned values description');
+        throw new webservice_coding_exception('Missing returned values description');
     }
 
     // fetch the parameters description
     $function->parameters_desc = call_user_func(array($function->classname, $function->parameters_method));
     if (!($function->parameters_desc instanceof external_function_parameters)) {
-        throw new coding_exception('Invalid parameters description');
+        throw new webservice_coding_exception('Invalid parameters description');
     }
 
     // fetch the return values description
     $function->returns_desc = call_user_func(array($function->classname, $function->returns_method));
     // null means void result or result is ignored
     if (!is_null($function->returns_desc) and !($function->returns_desc instanceof external_description)) {
-        throw new coding_exception('Invalid return description');
+        throw new webservice_coding_exception('Invalid return description');
     }
 
     //now get the function description
@@ -982,7 +936,7 @@ class webservice {
     /**
      * Get a user token by token
      * @param string $token
-     * @throws mahara_ws_exception if there is multiple result
+     * @throws mahara_webservice_exception if there is multiple result
      */
     public function get_user_ws_token($token) {
         return get_record('external_tokens', 'token', $token);
@@ -1113,7 +1067,7 @@ class webservice {
 /**
  * Base Mahara WS Exception class
  *
- * Although this class is defined here, you cannot throw a mahara_ws_exception until
+ * Although this class is defined here, you cannot throw a mahara_webservice_exception until
  * after moodlelib.php has been included (which will happen very soon).
  *
  * @package    core
@@ -1121,7 +1075,7 @@ class webservice {
  * @copyright  2008 Petr Skoda  {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mahara_ws_exception extends Exception {
+class mahara_webservice_exception extends Exception {
     public $errorcode;
     public $module;
     public $a;
@@ -1155,7 +1109,7 @@ class mahara_ws_exception extends Exception {
  * Exception indicating access control problem in web service call
  * @author Petr Skoda (skodak)
  */
-class webservice_access_exception extends mahara_ws_exception {
+class webservice_access_exception extends mahara_webservice_exception {
     /**
      * Constructor
      */
@@ -1443,7 +1397,7 @@ class external_function_parameters extends external_single_structure {
  * This exception must be thrown to the web service client when a web service parameter is invalid
  * The error string is gotten from webservice.php
  */
-class webservice_parameter_exception extends mahara_ws_exception {
+class webservice_parameter_exception extends mahara_webservice_exception {
     /**
      * Constructor
      * @param string $errorcode The name of the string from webservice.php to print
@@ -1463,7 +1417,7 @@ class webservice_parameter_exception extends mahara_ws_exception {
  * @copyright  2008 Petr Skoda  {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class coding_exception extends mahara_ws_exception {
+class webservice_coding_exception extends mahara_webservice_exception {
     /**
      * Constructor
      * @param string $hint short description of problem
@@ -1485,7 +1439,7 @@ class coding_exception extends mahara_ws_exception {
  * @copyright  2009 Petr Skoda  {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class invalid_parameter_exception extends mahara_ws_exception {
+class invalid_parameter_exception extends mahara_webservice_exception {
     /**
      * Constructor
      * @param string $debuginfo some detailed information
@@ -1501,7 +1455,7 @@ class invalid_parameter_exception extends mahara_ws_exception {
  * user submitted data in forms. It is more suitable
  * for WS and other low level stuff.
  */
-class invalid_response_exception extends mahara_ws_exception {
+class invalid_response_exception extends mahara_webservice_exception {
     /**
      * Constructor
      * @param string $debuginfo some detailed information
@@ -1523,7 +1477,7 @@ class invalid_response_exception extends mahara_ws_exception {
  * @copyright  2009 onwards Martin Dougiamas  {@link http://moodle.com}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class invalid_state_exception extends mahara_ws_exception {
+class invalid_state_exception extends mahara_webservice_exception {
     /**
      * Constructor
      * @param string $hint short description of problem
@@ -1659,7 +1613,7 @@ abstract class webservice_server implements webservice_server_interface {
             }
 
             // user account is nolonger validly configured
-            if (!$auth_instance = webservices_validate_user($user)) {
+            if (!$auth_instance = webservice_validate_user($user)) {
                 throw new webservice_access_exception(get_string('invalidaccount', 'artefact.webservice'));
             }
             // set the global for the web service users defined institution
@@ -2078,7 +2032,7 @@ class ' . $classname . ' {
      * @return string PHP code
      */
     protected function get_virtual_method_code($function) {
-        $function = external_function_info($function);
+        $function = webservice_function_info($function);
 
         //arguments in function declaration line with defaults.
         $paramanddefaults      = array();
@@ -2108,7 +2062,7 @@ class ' . $classname . ' {
                 } else if ($keydesc->required == VALUE_OPTIONAL) {
                     //it does make sens to declare a parameter VALUE_OPTIONAL
                     //VALUE_OPTIONAL is used only for array/object key
-                    throw new mahara_ws_exception('parametercannotbevalueoptional');
+                    throw new mahara_webservice_exception('parametercannotbevalueoptional');
                 }
             //for the moment we do not support default for other structure types
             } else {
@@ -2118,11 +2072,11 @@ class ' . $classname . ' {
                              and empty($keydesc->default)) {
                          $paramanddefault .= '=array()';
                      } else {
-                        throw new mahara_ws_exception('errornotemptydefaultparamarray', 'artefact.webservice', '', $name);
+                        throw new mahara_webservice_exception('errornotemptydefaultparamarray', 'artefact.webservice', '', $name);
                      }
                  }
                  if ($keydesc->required == VALUE_OPTIONAL) {
-                     throw new mahara_ws_exception('erroroptionalparamarray', 'artefact.webservice', '', $name);
+                     throw new mahara_webservice_exception('erroroptionalparamarray', 'artefact.webservice', '', $name);
                  }
             }
             $params[] = $param;
@@ -2504,7 +2458,7 @@ abstract class webservice_base_server extends webservice_server {
         }
 
         // function must exist
-        $function = external_function_info($this->functionname);
+        $function = webservice_function_info($this->functionname);
         if (!$function) {
             throw new webservice_access_exception('Access to external function not configured');
         }

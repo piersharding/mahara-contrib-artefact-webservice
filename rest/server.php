@@ -29,6 +29,11 @@
  * @author     Piers Harding
  */
 
+/**
+ * This is the universal server API enpoint for REST based calls - no matter
+ * what the authentication type offered
+ */
+
 define('INTERNAL', 1);
 define('PUBLIC', 1);
 define('XMLRPC', 1);
@@ -46,17 +51,22 @@ if (!webservice_protocol_is_enabled('rest')) {
     die;
 }
 
+// if we should have one - setup the OAuth server handler
 global $OAUTH_SERVER;
 if (webservice_protocol_is_enabled('oauth')) {
     OAuthStore::instance('Mahara');
     $OAUTH_SERVER = new OAuthServer();
 }
+
+// make a guess as to what the auth method is - this gets refined later
 if (param_variable('wsusername', null) || param_variable('wspassword', null)) {
     $authmethod = WEBSERVICE_AUTHMETHOD_USERNAME;
 }
 else {
     $authmethod = WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN;
 }
+
+// run the dispatcher
 $server = new webservice_rest_server($authmethod);
 $server->run();
 die;

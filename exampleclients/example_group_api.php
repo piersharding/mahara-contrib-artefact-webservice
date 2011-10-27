@@ -23,8 +23,8 @@
  * Test the different web service protocols.
  *
  * @author     Piers Harding
- * @license http://www.gnu.org/copyleft/gpl.html GNU Public License
- * @package web service
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU Public License
+ * @package    web service
  * @copyright  Copyright (C) 2011 Catalyst IT Ltd (http://www.catalyst.net.nz)
  */
 

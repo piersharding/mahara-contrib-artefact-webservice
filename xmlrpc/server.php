@@ -29,6 +29,11 @@
  * @author     Piers Harding
  */
 
+/**
+ * This is the universal server API enpoint for XML-RPC based calls - no matter
+ * what the authentication type offered
+ */
+
 define('INTERNAL', 1);
 define('PUBLIC', 1);
 define('XMLRPC', 1);
@@ -46,12 +51,15 @@ if (!webservice_protocol_is_enabled('xmlrpc')) {
     die;
 }
 
+// make a guess as to what the auth method is - this gets refined later
 if (param_variable('wsusername', null) || param_variable('wspassword', null)) {
     $authmethod = WEBSERVICE_AUTHMETHOD_USERNAME;
 }
 else {
     $authmethod = WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN;
 }
+
+// run the dispatcher
 $server = new webservice_xmlrpc_server($authmethod);
 $server->run();
 die;

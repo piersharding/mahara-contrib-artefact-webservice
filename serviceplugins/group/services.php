@@ -30,6 +30,9 @@
  * @author     Piers Harding
  */
 
+/*
+ * The function descriptions for the mahara_group_* functions
+ */
 $functions = array(
 
     // === group related functions ===
@@ -83,7 +86,9 @@ $functions = array(
     ),
 );
 
-
+/**
+ * Prepopulated service groups that propose units of access
+ */
 $services = array(
         'Group Provisioning' => array(
                 'functions' => array ('mahara_group_get_groups', 'mahara_group_get_groups_by_id', 'mahara_group_create_groups', 'mahara_group_delete_groups', 'mahara_group_update_groups', 'mahara_group_update_group_members'),

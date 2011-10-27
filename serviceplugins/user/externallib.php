@@ -32,6 +32,9 @@
 
 require_once(get_config('docroot') . '/artefact/webservice/serviceplugins/lib.php');
 
+/**
+* Class container for core Mahara user related API calls
+*/
 class mahara_user_external extends external_api {
 
     static private $ALLOWEDKEYS = array(
@@ -59,6 +62,8 @@ class mahara_user_external extends external_api {
         );
 
     /**
+     * parameter definition for input of create_users method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -109,7 +114,7 @@ class mahara_user_external extends external_api {
     }
 
     /**
-     * Create one or more users
+     * Create one or more users in the authorised institution
      *
      * @param array $users  An array of users to create.
      * @return array An array of arrays
@@ -151,6 +156,7 @@ class mahara_user_external extends external_api {
                 }
             }
 
+            // build up the user object to create
             $new_user = new StdClass;
             $new_user->authinstance = $authinstance->id;
             $new_user->username     = $user['username'];
@@ -172,6 +178,7 @@ class mahara_user_external extends external_api {
                 $new_user->preferredname = $user['preferredname'];
             }
 
+            // handle profile fields
             $profilefields = new StdClass;
             $remoteuser = null;
             foreach (self::$ALLOWEDKEYS as $field) {
@@ -193,9 +200,11 @@ class mahara_user_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of create_users method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function create_users_returns() {
         return new external_multiple_structure(
             new external_single_structure(
@@ -208,6 +217,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for input of delete_users method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -275,14 +286,18 @@ class mahara_user_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of delete_users method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function delete_users_returns() {
         return null;
     }
 
     /**
+     * parameter definition for input of update_users method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -411,14 +426,18 @@ class mahara_user_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of update_users method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function update_users_returns() {
         return null;
     }
 
     /**
+     * parameter definition for input of get_users_by_id method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -481,7 +500,7 @@ class mahara_user_external extends external_api {
     }
 
     /**
-     * Get user information
+     * Get user information for one or more users
      *
      * @param array $users  array of users
      * @return array An array of arrays describing users
@@ -561,6 +580,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for output of get_users_by_id method
+     *
      * Returns description of method result value
      * @return external_description
      */
@@ -610,6 +631,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for input of get_users method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -618,7 +641,7 @@ class mahara_user_external extends external_api {
     }
 
     /**
-     * Get user information
+     * Get user information for all users
      *
      * @param array $userids  array of user ids
      * @return array An array of arrays describing users
@@ -628,6 +651,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for output of get_users method
+     *
      * Returns description of method result value
      * @return external_description
      */
@@ -636,6 +661,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for input of get_my_users method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -644,7 +671,7 @@ class mahara_user_external extends external_api {
     }
 
     /**
-     * Get my user information
+     * Get my user information - the currently connected user
      *
      * @param array $userids  array of user ids
      * @return array An array of arrays describing users
@@ -655,6 +682,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for output of get_my_users method
+     *
      * Returns description of method result value
      * @return external_description
      */
@@ -702,6 +731,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for input of get_context method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -710,10 +741,9 @@ class mahara_user_external extends external_api {
     }
 
     /**
-     * Get my user information
+     * Get the current institution context - this is like a test call
      *
-     * @param array $userids  array of user ids
-     * @return array An array of arrays describing users
+     * @return string the connected institution
      */
     public static function get_context() {
         global $WEBSERVICE_INSTITUTION;
@@ -721,6 +751,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for output of get_context method
+     *
      * Returns description of method result value
      * @return external_description
      */
@@ -729,6 +761,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for input of get_extended_context method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -739,8 +773,10 @@ class mahara_user_external extends external_api {
     /**
      * Get my user information
      *
-     * @param array $userids  array of user ids
-     * @return array An array of arrays describing users
+     * @return array of connection context information including:
+     *   currently connected institution
+     *   the current user - like get_my_user
+     *   list of functions that this user/connection can execute
      */
     public static function get_extended_context() {
         global $USER, $WEBSERVICE_INSTITUTION, $WS_FUNCTIONS;
@@ -762,6 +798,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for output of get_extended_context method
+     *
      * Returns description of method result value
      * @return external_description
      */
@@ -790,6 +828,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for input of update_favourites method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -875,14 +915,18 @@ class mahara_user_external extends external_api {
     }
 
    /**
-     * Returns description of method result value
-     * @return external_description
-     */
+    * parameter definition for output of update_favourites method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
     public static function update_favourites_returns() {
         return null;
     }
 
     /**
+     * parameter definition for input of get_favourites method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -903,7 +947,7 @@ class mahara_user_external extends external_api {
     }
 
     /**
-     * Get user favourites
+     * Get user favourites for one or more users
      *
      * @param array $userids  array of user ids
      * @return array An array of arrays describing users favourites
@@ -950,6 +994,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for output of get_favourites method
+     *
      * Returns description of method result value
      * @return external_description
      */
@@ -974,6 +1020,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     * parameter definition for input of get_all_favourites method
+     *
      * Returns description of method parameters
      * @return external_function_parameters
      */
@@ -1028,6 +1076,8 @@ class mahara_user_external extends external_api {
     }
 
     /**
+     *  parameter definition for output of get_all_favourites method
+     *
      * Returns description of method result value
      * @return external_description
      */

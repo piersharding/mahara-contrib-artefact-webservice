@@ -108,6 +108,7 @@ class webservice_rest_client {
             }
         }
         else {
+            // do a JSON based call - just soooo easy compared to XML/SOAP
             if ($json) {
                 $data = json_encode($params);
                 $url = $this->serverurl . '?' . $this->auth . '&wsfunction=' . $functionname . '&alt=json';
@@ -119,13 +120,14 @@ class webservice_rest_client {
                 return $values;
             }
 
-            $result = download_file_content($this->serverurl
-                            . '?'.$this->auth . '&wsfunction='
-                            . $functionname, null, $params);
+            // default to parsing HTTP parameters
+            $result = webservice_download_file_content($this->serverurl
+                                                        . '?'.$this->auth . '&wsfunction='
+                                                        . $functionname, null, $params);
         }
 
-
-        //TODO : transform the XML result into PHP values - MDL-22965
+        //after the call, for those not using JSON, parseout the results
+        // from REST XML response to PHP
         $xml2array = new webservice_xml2array($result);
         $raw = $xml2array->getResult();
 
@@ -152,6 +154,12 @@ class webservice_rest_client {
         return $result;
     }
 
+    /**
+     * function for walking down the peculiar nested structure of
+     * the REST response XML
+     *
+     * @param array $node
+     */
     private static function recurse_structure($node) {
         $result = array();
         if (isset($node['SINGLE']['KEY'])) {
@@ -188,22 +196,32 @@ class webservice_rest_client {
 }
 
 /**
- * class for converting XML document to PHP array
+ * class for converting the REST XML response document to PHP array
  *
- * @author A K Chauhan <- thanks!
+ * @author A K Chauhan <- thanks for the example!
  *
  */
 class webservice_xml2array {
 
+    /**
+     * Constructor for XML parser
+     * @return boolean
+     */
     function webservice_xml2array($xml) {
         if (is_string($xml)) {
             $this->dom = new DOMDocument;
             $this->dom->loadXml($xml);
         }
-
         return FALSE;
     }
 
+    /**
+     * Starting point for recursive routine that accumulates PHP values out of
+     * the XML document
+     *
+     * @param object $node of XML
+     * @return array
+     */
     function _process($node) {
         $occurance = array();
         $result = array();
@@ -260,6 +278,11 @@ class webservice_xml2array {
         return $result;
     }
 
+    /**
+     * sort of wrapper for the mainline
+     *
+     * @return array PHP values parsed out of XML
+     */
     function getResult() {
         return $this->_process($this->dom);
     }

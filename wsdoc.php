@@ -29,6 +29,7 @@ define('MENUITEM', 'settings/apps');
 define('SECTION_PLUGINTYPE', 'artefact');
 define('SECTION_PLUGINNAME', 'webservice');
 define('SECTION_PAGE', 'pluginconfig');
+// XXX what is required if in core
 // define('MENUITEM', 'webservice/config');
 // define('SECTION_PLUGINTYPE', 'core');
 // define('SECTION_PLUGINNAME', 'admin');
@@ -44,7 +45,7 @@ if (empty($dbfunction)) {
     $SESSION->add_error_msg(get_string('invalidfunction', 'artefact.webservice'));
     redirect('/artefact/webservice/pluginconfig.php');
 }
-$fdesc = external_function_info($dbfunction->name);
+$fdesc = webservice_function_info($dbfunction->name);
 
 $smarty = smarty(array(), array('<link rel="stylesheet" type="text/css" href="' . get_config('wwwroot') . 'artefact/webservice/theme/raw/static/style/style.css">',));
 $smarty->assign('function', $dbfunction);

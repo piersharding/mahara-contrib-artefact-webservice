@@ -29,6 +29,11 @@
 define('INTERNAL', 1);
 define('ADMIN', 1);
 define('MENUITEM', 'configextensions/pluginadminwebservices');
+// XXX what is required if in core
+// define('MENUITEM', 'webservice/testclient');
+// define('SECTION_PLUGINTYPE', 'core');
+// define('SECTION_PLUGINNAME', 'admin');
+// define('SECTION_PAGE', 'wstestclient');
 
 require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 require_once(get_config('docroot') . '/artefact/webservice/lib.php');
@@ -198,7 +203,7 @@ die;
  * @param string $functionname
  */
 function testclient_get_interface($functionname) {
-    $fdesc = external_function_info($functionname);
+    $fdesc = webservice_function_info($functionname);
     $strs = explode('|', testclient_parameters($fdesc->parameters_desc, ''));
     $vars = array();
     foreach ($strs as $str) {

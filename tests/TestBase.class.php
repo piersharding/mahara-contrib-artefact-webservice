@@ -45,9 +45,8 @@ define('TESTSRUNNING', 1);
 define('INTERNAL', 1);
 define('PUBLIC', 1);
 
-// necessary since we're running in a limited scope
+// these globals are necessary since we're running in a limited scope
 global $CFG, $db, $SESSION, $USER, $THEME;
-
 require(dirname(dirname(dirname(dirname(__FILE__)))) . '/init.php');
 require_once(get_config('libroot') . 'ddl.php');
 require_once(get_config('libroot') . 'upgrade.php');
@@ -80,7 +79,13 @@ require_once('group.php');
  * 3- write the function  - Do not prefix the function name by 'test'
  */
 
-
+/**
+ * Test base class that contains the setUp/tearDown functions common to all
+ * tests
+ *
+ * Also, the testRun framework that runs the list of tests in each specific class
+ * against all the protocols and auth methods
+ */
 class TestBase extends PHPUnit_Framework_TestCase {
 
     public $testtoken;
@@ -103,6 +108,9 @@ class TestBase extends PHPUnit_Framework_TestCase {
     public $request_token;
     public $access_token;
 
+    /**
+     * Setup test data
+     */
     protected function setUp() {
         // default current user to admin
         global $USER;
@@ -193,7 +201,7 @@ class TestBase extends PHPUnit_Framework_TestCase {
         $this->access_token  = $store->exchangeConsumerRequestForAccessToken($this->request_token['token'], $options);
 
         // generate a test token
-        $token = external_generate_token(EXTERNAL_TOKEN_PERMANENT, $dbservice, $dbuser->id);
+        $token = webservice_generate_token(EXTERNAL_TOKEN_PERMANENT, $dbservice, $dbuser->id);
         $dbtoken = get_record('external_tokens', 'token', $token);
         $this->testtoken = $dbtoken->token;
 
@@ -287,7 +295,12 @@ class TestBase extends PHPUnit_Framework_TestCase {
         $this->timersoap = 0;
     }
 
+    /**
+     * common test framework for all tests - cycles through the number
+     * of iterations, auth types, and protocols
+     */
     function testRun() {
+        // do we have any tests
         if (!$this->testrest and !$this->testxmlrpc and !$this->testsoap) {
             print_r("Web service unit tests are not run as not setup.
                             (see /artefact/webservice/simpletest/testwebservice.php)");
@@ -405,8 +418,10 @@ class TestBase extends PHPUnit_Framework_TestCase {
         }
     }
 
-    public function clean_institution() {
-
+    /**
+     * reset a test institution
+     */
+    protected function clean_institution() {
         // clean down the institution
         $dbinstitution = get_record('institution', 'name', $this->testinstitution);
         if (!empty($dbinstitution)) {
@@ -432,6 +447,9 @@ class TestBase extends PHPUnit_Framework_TestCase {
         }
     }
 
+    /**
+     * clean out all the test data
+     */
     protected function tearDown() {
 
         // clean down the institution
@@ -481,6 +499,13 @@ class TestBase extends PHPUnit_Framework_TestCase {
         }
     }
 
+    /**
+     * password encryption copied from auth/internal - needed for comparison
+     * when setting passwords
+     * @param string $password
+     * @param string $salt
+     * @return string hashed password
+     */
     protected static function encrypt_password($password, $salt='') {
         if ($salt == '') {
             $salt = substr(md5(rand(1000000, 9999999)), 2, 8);
@@ -574,6 +599,7 @@ class TestBase extends PHPUnit_Framework_TestCase {
      * get rid of a zero id record that I created and cannot easily delete
      *
      * @param array $favs
+     * @return array $favs
      */
     protected static function prune_nasty_zero($favs) {
         $zero = false;
@@ -594,6 +620,7 @@ class TestBase extends PHPUnit_Framework_TestCase {
      * Find the non-admin userid
      *
      * @param array $favs
+     * @return int $fav
      */
     protected static function find_new_fav($favs) {
         foreach ($favs as $k => $fav) {

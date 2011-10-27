@@ -32,7 +32,21 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
 
     $status = true;
 
+    /**
+     * Ensure that all the Web Services tables have been created - even if we
+     * are transitioning from artefact/webservice to webservice
+     */
     if ($oldversion < 2010012710) {
+        // ensure that redundant tables are removed from early days of artefact/webservice
+        $table = new XMLDBTable('oauth_consumer_registry');
+        if (!table_exists($table)) {
+            drop_table($table);
+        }
+            $table = new XMLDBTable('oauth_consumer_token');
+        if (!table_exists($table)) {
+            drop_table($table);
+        }
+        // Create the core services tables
         $table = new XMLDBTable('external_services');
         if (!table_exists($table)) {
             $table->addFieldInfo('id', XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null, null, null);
@@ -134,6 +148,8 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
             $table->addIndexInfo('timelogged', XMLDB_INDEX_NOTUNIQUE, array('timelogged'));
             create_table($table);
         }
+
+        // Create the OAuth server authentication tables
         $table = new XMLDBTable('oauth_server_registry');
         if (!table_exists($table)) {
             $table->addFieldInfo('id', XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null, null, null);

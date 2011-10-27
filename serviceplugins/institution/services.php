@@ -30,6 +30,10 @@
  * @author     Piers Harding
  */
 
+
+/*
+ * The function descriptions for the mahara_institution_* functions
+ */
 $functions = array(
 
     // === institution related functions ===
@@ -83,7 +87,9 @@ $functions = array(
     ),
 );
 
-
+/**
+* Prepopulated service groups that propose units of access
+*/
 $services = array(
         'Institution Provisioning' => array(
                 'functions' => array ('mahara_institution_add_members', 'mahara_institution_remove_members', 'mahara_institution_invite_members', 'mahara_institution_decline_members',),

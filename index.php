@@ -31,6 +31,7 @@ define('ADMIN', 1);
 define('MENUITEM', 'configextensions/pluginadminwebservices');
 require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 
+// XXX what is required if in core
 // define('MENUITEM', 'webservice/config');
 // define('SECTION_PLUGINTYPE', 'core');
 // define('SECTION_PLUGINNAME', 'admin');
@@ -150,7 +151,7 @@ function webservices_token_submit(Pieform $form, $values) {
                 else {
                     // just pass the first one for the moment
                     $service = array_shift($services);
-                    $token = external_generate_token(EXTERNAL_TOKEN_PERMANENT, $service, $dbuser->id);
+                    $token = webservice_generate_token(EXTERNAL_TOKEN_PERMANENT, $service, $dbuser->id);
                     $dbtoken = get_record('external_tokens', 'token', $token);
                     redirect('/artefact/webservice/tokenconfig.php?token=' . $dbtoken->id);
                 }
@@ -189,7 +190,7 @@ function webservices_user_submit(Pieform $form, $values) {
     if ($values['action'] == 'add') {
         if (isset($values['username'])) {
             $dbuser = get_record('usr', 'username', $values['username']);
-            if ($auth_instance = webservices_validate_user($dbuser)) {
+            if ($auth_instance = webservice_validate_user($dbuser)) {
                 // make sure that this account is not already in use
                 $existing = get_record('external_services_users', 'userid', $dbuser->id);
                 if (empty($existing)) {
