@@ -449,6 +449,7 @@ class mahara_user_external extends external_api {
                         array(
                             'id'              => new external_value(PARAM_NUMBER, 'ID of the favourites owner', VALUE_OPTIONAL),
                             'username'        => new external_value(PARAM_RAW, 'Username of the favourites owner', VALUE_OPTIONAL),
+                            'remoteuser'      => new external_value(PARAM_RAW, 'Remote username of the favourites owner', VALUE_OPTIONAL),
                             )
                         )
                     )
@@ -463,6 +464,8 @@ class mahara_user_external extends external_api {
      * @return array() of user
      */
     private static function checkuser($user) {
+        global $WEBSERVICE_INSTITUTION;
+
         if (isset($user['id'])) {
             $id = $user['id'];
         }
@@ -473,6 +476,21 @@ class mahara_user_external extends external_api {
             $dbuser = get_record('usr', 'username', $user['username']);
             if (empty($dbuser)) {
                 throw new invalid_parameter_exception('Invalid username: ' . $user['username']);
+            }
+            $id = $dbuser->id;
+        }
+        else if (isset($user['remoteuser'])) {
+            $dbinstances = get_records_array('auth_instance', 'institution', $WEBSERVICE_INSTITUTION);
+            $dbuser = false;
+            foreach ($dbinstances as $dbinstance) {
+               $user_factory = new User;
+               $dbuser = $user_factory->find_by_instanceid_username($dbinstance->id, $user['remoteuser'], true);
+               if ($dbuser) {
+                   break;
+               }
+            }
+            if (empty($dbuser)) {
+                throw new invalid_parameter_exception('Invalid remote username: ' . $user['username']);
             }
             $id = $dbuser->id;
         }
