@@ -43,6 +43,9 @@ class webservice_rest_server extends webservice_base_server {
     /** @property mixed $format results format - xml or json */
     protected $format = 'xml';
 
+    /** @property mixed $oauth_server  */
+    protected $oauth_server = null;
+
     /**
      * Contructor
      */
@@ -61,11 +64,9 @@ class webservice_rest_server extends webservice_base_server {
      * @return void
      */
     protected function parse_request() {
-        global $OAUTH_SERVER;
         // determine the request/response format
         if ((isset($_REQUEST['alt']) && trim($_REQUEST['alt']) == 'json') ||
             (isset($_GET['alt']) && trim($_GET['alt']) == 'json') ||
-            (isset($_REQUEST['alt']) && trim($_REQUEST['alt']) == 'json') ||
             (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == 'application/json') ||
             (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == 'application/jsonrequest') ||
             $_SERVER['CONTENT_TYPE'] == 'application/json' ||
@@ -78,11 +79,15 @@ class webservice_rest_server extends webservice_base_server {
         unset($_REQUEST['alt']);
 
         $this->parameters = $_REQUEST;
-        if ($OAUTH_SERVER) {
+
+        // if we should have one - setup the OAuth server handler
+        if (webservice_protocol_is_enabled('oauth')) {
+            OAuthStore::instance('Mahara');
+            $this->oauth_server = new OAuthServer();
             $oauth_token = null;
             $headers = OAuthRequestLogger::getAllHeaders();
             try {
-                $oauth_token = $OAUTH_SERVER->verifyExtended();
+                $oauth_token = $this->oauth_server->verifyExtended();
             }
             catch (OAuthException2 $e) {
                 // let all others fail
@@ -93,10 +98,10 @@ class webservice_rest_server extends webservice_base_server {
             }
             if ($oauth_token) {
                 $this->authmethod = WEBSERVICE_AUTHMETHOD_OAUTH_TOKEN;
-                $token = $OAUTH_SERVER->getParam('oauth_token');
+                $token = $this->oauth_server->getParam('oauth_token');
                 $store = OAuthStore::instance();
                 $secrets = $store->getSecretsForVerify($oauth_token['consumer_key'],
-                                                       $OAUTH_SERVER->urldecode($token),
+                                                       $this->oauth_server->urldecode($token),
                                                        'access');
                $this->oauth_token_details = $secrets;
 
