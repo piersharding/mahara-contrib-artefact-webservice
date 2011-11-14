@@ -169,7 +169,7 @@ if (!empty($dbservices)) {
                                     'successcallback' => 'webservices_user_token_submit',
                                     'class'           => 'oneline inline',
                                     'jsform'          => false,
-                                    'action'          => get_config('wwwroot') . 'artefact/webservice/pluginconfig.php',
+                                    'action'          => get_config('wwwroot') . 'artefact/webservice/index.php',
                                     'elements' => array(
                                         'service'    => array('type' => 'hidden', 'value' => $service->id),
                                         'action'     => array('type' => 'hidden', 'value' => 'generate'),

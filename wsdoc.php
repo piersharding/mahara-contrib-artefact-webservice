@@ -43,7 +43,7 @@ $function  = param_integer('id', 0);
 $dbfunction = get_record('external_functions', 'id', $function);
 if (empty($dbfunction)) {
     $SESSION->add_error_msg(get_string('invalidfunction', 'artefact.webservice'));
-    redirect('/artefact/webservice/pluginconfig.php');
+    redirect('/artefact/webservice/index.php');
 }
 $fdesc = webservice_function_info($dbfunction->name);
 

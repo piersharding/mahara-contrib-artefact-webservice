@@ -72,7 +72,7 @@ function build_webservice_user_search_results($search, $offset, $limit, $sortby,
     }
     else if ($suid) {
         if ($suid == 'add') {
-            $url = get_config('wwwroot') . 'artefact/webservice/pluginconfig.php?';
+            $url = get_config('wwwroot') . 'artefact/webservice/index.php?';
         }
         else {
             $url = get_config('wwwroot') . 'artefact/webservice/userconfig.php?searchreturn=1&suid=' . $suid;
@@ -80,7 +80,7 @@ function build_webservice_user_search_results($search, $offset, $limit, $sortby,
     }
     else {
         if ($token == 'add') {
-            $url = get_config('wwwroot') . 'artefact/webservice/pluginconfig.php?';
+            $url = get_config('wwwroot') . 'artefact/webservice/index.php?';
         }
         else {
             $url = get_config('wwwroot') . 'artefact/webservice/tokenconfig.php?searchreturn=1&token=' . $token;
