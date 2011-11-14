@@ -93,15 +93,15 @@ $server = new OAuthServer();
 
 // Now - what kind of OAuth interaction are we handling?
 if ($_SERVER['PATH_INFO'] == '/request_token') {
-    	$server->requestToken();
-    	exit;
+        $server->requestToken();
+        exit;
 }
 else if ($_SERVER['PATH_INFO'] == '/access_token') {
-    	$server->accessToken();
-    	exit;
+        $server->accessToken();
+        exit;
 }
 else if ($_SERVER['PATH_INFO'] == '/authorize') {
-    	# logon
+        # logon
         require_once('pieforms/pieform.php');
         if (!$USER->is_logged_in()) {
             $form = new Pieform(auth_get_login_form());
