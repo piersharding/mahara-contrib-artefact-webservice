@@ -202,22 +202,6 @@ define('NULL_ALLOWED', true);
 /// Functions
 
 /**
- * Validates an email to make sure it makes sense.
- *
- * @param string $address The email address to validate.
- * @return boolean
- */
-function validate_email($address) {
-
-    return (preg_match('#^[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+' .
-                 '(\.[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+)*' .
-                  '@' .
-                  '[-!\#$%&\'*+\\/0-9=?A-Z^_`a-z{|}~]+\.' .
-                  '[-!\#$%&\'*+\\./0-9=?A-Z^_`a-z{|}~]+$#',
-                  $address));
-}
-
-/**
  * Replaces non-standard HTML entities
  *
  * @param string $string
@@ -572,7 +556,8 @@ function clean_param($param, $type) {
             }
 
         case PARAM_EMAIL:
-            if (validate_email($param)) {
+            require_once('phpmailer/class.phpmailer.php');
+            if (PHPMailer::ValidateAddress($param)) {
                 return $param;
             } else {
                 return '';
