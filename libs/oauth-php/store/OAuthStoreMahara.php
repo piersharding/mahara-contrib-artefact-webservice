@@ -674,7 +674,7 @@ class OAuthStoreMahara extends OAuthStoreAbstract {
         // Clean up all timestamps older than the one we just received
         $low_water = date("Y-m-d H:i:s", ($timestamp - $this->max_timestamp_skew));
         delete_records_sql('
-                DELETE FROM oauth_server_nonce
+                DELETE FROM {oauth_server_nonce}
                 WHERE consumer_key  = ?
                   AND token         = ?
                   AND timestamp     < ?
