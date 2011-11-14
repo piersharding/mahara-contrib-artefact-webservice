@@ -163,9 +163,9 @@ function webservice_validate_user($dbuser) {
  * @return string full path to component directory; NULL if not found
  */
 function get_component_directory($component) {
-    $subsystems = get_core_subsystems();
+    $subsystems = get_ws_subsystems();
     if (isset($subsystems[$component])) {
-        $path = get_config('docroot') . '/' . $subsystems[$component];
+        $path = get_config('docroot') . $subsystems[$component];
     } else {
         $path = NULL;
     }
@@ -180,16 +180,42 @@ function get_component_directory($component) {
  *
  * @return array of (string)name => (string|null)location
  */
-function get_core_subsystems() {
+function get_ws_subsystems() {
     static $info = null;
 
     if (!$info) {
-        $info = array(
-            'webservice'  => 'artefact/webservice',
-            'admin'       => 'admin',
-            'api'         => 'api',
-            'local'       => 'local',
+        $plugins = array(
+            'webservice'   => 'webservice',
+            'local'        => 'local',
+            'artefact'     => 'admin',
+            'auth'         => 'auth',
+            'blocktype'    => 'blocktype',
+            'export'       => 'export',
+            'import'       => 'import',
+            'interaction'  => 'interaction',
+            'notification' => 'notification',
+            'search'       => 'search',
         );
+        // collect plugins and sub-plugins
+        $info = array();
+        foreach ($plugins as $plugin) {
+            $info[$plugin] = $plugin;
+            $items = new DirectoryIterator(get_component_directory($plugin));
+            foreach ($items as $item) {
+                if ($item->isDot() or !$item->isDir()) {
+                    continue;
+                }
+                $pluginname = $item->getFilename();
+                if (!preg_match('/^[a-zA-Z0-9]+$/', $pluginname)) {
+                    // better ignore plugins with problematic names here
+                    continue;
+                }
+                $subpluginname = $plugin . '/' . $pluginname;
+                $info[$subpluginname] = $subpluginname;
+                unset($item);
+            }
+            unset($items);
+        }
     }
 
     return $info;
@@ -451,32 +477,6 @@ function is_number($value) {
 }
 
 /**
- * Is current ip in give list?
- *
- * @param string $list
- * @return bool
- */
-function remoteip_in_list($list){
-    $inlist = false;
-    $client_ip = getremoteaddr(null);
-
-    if(!$client_ip){
-        // ensure access on cli
-        return true;
-    }
-
-    $list = explode("\n", $list);
-    foreach($list as $subnet) {
-        $subnet = trim($subnet);
-        if (address_in_subnet($client_ip, $subnet)) {
-            $inlist = true;
-            break;
-        }
-    }
-    return $inlist;
-}
-
-/**
  * Returns most reliable client address
  *
  * @global object
@@ -690,7 +690,7 @@ function webservice_function_info($function, $strictness=MUST_EXIST) {
     }
 
     //first find and include the ext implementation class
-    $function->classpath = empty($function->classpath) ? get_component_directory($function->component) : get_config('docroot')  .'/' . $function->classpath;
+    $function->classpath = empty($function->classpath) ? get_component_directory($function->component) : get_config('docroot') . $function->classpath;
     if (!file_exists($function->classpath . '/externallib.php')) {
         throw new webservice_coding_exception('Can not find file with external function implementation');
     }

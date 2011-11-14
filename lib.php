@@ -51,16 +51,14 @@ function external_delete_descriptions($component) {
 }
 
 /**
- * Upgrade the webservice descriptions for all plugins
+ * Reload the webservice descriptions for all plugins
  *
  * @return bool true = success
  */
 
-function external_upgrade_webservices() {
+function external_reload_webservices() {
 
-    $ignored = array('CVS', '_vti_cnf', 'tests', 'db', 'yui', 'phpunit');
-
-    foreach (array_keys(get_core_subsystems()) as $component) {
+    foreach (array_keys(get_ws_subsystems()) as $component) {
         // are there service plugins
         $basepath = get_component_directory($component) . '/serviceplugins';
 
@@ -75,10 +73,7 @@ function external_upgrade_webservices() {
                 continue;
             }
             $pluginname = $item->getFilename();
-            if (in_array($pluginname, $ignored)) {
-                continue;
-            }
-            if ($pluginname !== clean_param($pluginname, PARAM_SAFEDIR)) {
+            if (!preg_match('/^[a-zA-Z0-9]+$/', $pluginname)) {
                 // better ignore plugins with problematic names here
                 continue;
             }
