@@ -39,7 +39,7 @@ require(dirname(dirname(dirname(__FILE__))) . '/init.php');
 
 $path = get_config('docroot') . 'artefact/webservice/libs/zend';
 set_include_path($path . PATH_SEPARATOR . get_include_path());
-require_once(get_config('docroot') . '/artefact/webservice/locallib.php');
+require_once(get_config('docroot') . '/artefact/webservice/lib.php');
 require_once(get_config('docroot') . 'api/xmlrpc/lib.php');
 define('TITLE', get_string('webservices_title', 'artefact.webservice'));
 require_once('pieforms/pieform.php');
@@ -89,6 +89,11 @@ function activate_webservices_submit(Pieform $form, $values) {
 
     $enabled = $values['enabled'] ? 0 : 1;
     set_config_plugin('artefact', 'webservice', 'enabled', $enabled);
+
+    // reload/upgrade the web services configuration
+    if ($enabled) {
+        external_reload_webservices();
+    }
     redirect('/admin/extensions/pluginconfig.php?plugintype=artefact&pluginname=webservice&type=webservice');
 }
 
