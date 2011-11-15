@@ -79,6 +79,14 @@ $functions = array(
         'type'        => 'read',
     ),
 
+    'mahara_user_get_online_users' => array(
+            'classname'   => 'mahara_user_external',
+            'methodname'  => 'get_online_users',
+            'classpath'   => 'artefact/webservice/serviceplugins/user',
+            'description' => 'Get the current list of online users',
+            'type'        => 'read',
+    ),
+
     'mahara_user_get_context' => array(
         'classname'   => 'mahara_user_external',
         'methodname'  => 'get_context',
@@ -134,20 +142,20 @@ $functions = array(
 */
 $services = array(
         'User Provisioning' => array(
-                'functions' => array ('mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_update_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_create_users', 'mahara_user_delete_users', 'mahara_user_update_users', 'mahara_user_get_context', 'mahara_user_get_extended_context'),
+                'functions' => array ('mahara_user_get_online_users', 'mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_update_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_create_users', 'mahara_user_delete_users', 'mahara_user_update_users', 'mahara_user_get_context', 'mahara_user_get_extended_context'),
                 'enabled'=>1,
         ),
         'User Query' => array(
-                'functions' => array ('mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_get_context', 'mahara_user_get_extended_context'),
+                'functions' => array ('mahara_user_get_online_users', 'mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_get_context', 'mahara_user_get_extended_context'),
                 'enabled'=>1,
         ),
         'Simple User Provisioning' => array(
-                'functions' => array ('mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_update_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_create_users', 'mahara_user_delete_users', 'mahara_user_update_users', 'mahara_user_get_context', 'mahara_user_get_extended_context'),
+                'functions' => array ('mahara_user_get_online_users', 'mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_update_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_create_users', 'mahara_user_delete_users', 'mahara_user_update_users', 'mahara_user_get_context', 'mahara_user_get_extended_context'),
                 'enabled'=>1,
                 'restrictedusers'=>1,
         ),
         'Simple User Query' => array(
-                'functions' => array ('mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_get_context', 'mahara_user_get_extended_context'),
+                'functions' => array ('mahara_user_get_online_users', 'mahara_user_get_all_favourites', 'mahara_user_get_favourites', 'mahara_user_get_users', 'mahara_user_get_users_by_id', 'mahara_user_get_context', 'mahara_user_get_extended_context'),
                 'enabled'=>1,
                 'restrictedusers'=>1,
         ),

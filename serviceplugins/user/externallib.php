@@ -679,6 +679,63 @@ class mahara_user_external extends external_api {
     }
 
     /**
+    * parameter definition for input of get_online_users method
+     *
+    * Returns description of method parameters
+    * @return external_function_parameters
+    */
+    public static function get_online_users_parameters() {
+        return new external_function_parameters(array());
+    }
+
+    /**
+    * Get user information for online users
+    *
+     * @return array An array of arrays describing an atom feed
+     */
+     public static function get_online_users() {
+         global $USER;
+
+         // last 10 active users
+         $users = get_onlineusers();
+
+         // now format ready for atom
+         $results = array(
+                     'title'   => 'Get Online Users by ' . $USER->username . ' at ' . webservice_rest_server::format_rfc3339_date(time()),
+                     'name'    => 'mahara_user_external_get_online_users',
+                     'updated' => webservice_rest_server::format_rfc3339_date(time()),
+                     'entries' => array(),
+         );
+
+         foreach ($users['data'] as $user) {
+             $user = get_record('usr', 'id', $user);
+             if (empty($user)) {
+                 continue;
+             }
+             $results['entries'][] = array(
+                                 'id'        => get_config('wwwroot') . 'user/view.php?id=' . $user->id,
+                                 'link'      => get_config('wwwroot') . 'user/view.php?id=' . $user->id,
+                                 'email'     => $user->email,
+                                 'name'      => display_name($user),
+                                 'updated'   => webservice_rest_server::format_rfc3339_date(strtotime($user->lastaccess)),
+                                 'published' => webservice_rest_server::format_rfc3339_date(time()),
+                                 'title'     => 'last_access',
+             );
+         }
+         return $results;
+    }
+
+    /**
+    * parameter definition for output of get_online_users method
+    *
+    * Returns description of method result value
+    * @return external_description
+    */
+    public static function get_online_users_returns() {
+        return mahara_external_atom_returns();
+    }
+
+    /**
      * parameter definition for input of get_my_users method
      *
      * Returns description of method parameters

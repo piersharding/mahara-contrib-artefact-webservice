@@ -54,3 +54,37 @@ function mahara_external_in_institution($user, $institution) {
     return true;
 }
 
+
+/**
+* parameter definition for output of any Atom generator
+ *
+* Returns description of method result value
+* @return external_description
+*/
+function mahara_external_atom_returns() {
+    return new external_single_structure(
+            array(
+            'id'      => new external_value(PARAM_RAW, 'Atom document Id'),
+            'title'   => new external_value(PARAM_RAW, 'Atom document Title'),
+            'link'    => new external_value(PARAM_RAW, 'Atom document Link'),
+            'email'   => new external_value(PARAM_RAW, 'Atom document Author Email'),
+            'name'    => new external_value(PARAM_RAW, 'Atom document Author Name'),
+            'updated' => new external_value(PARAM_RAW, 'AAtom document Updated date'),
+            'uri'     => new external_value(PARAM_RAW, 'Atom document URI'),
+            'entries' => new external_multiple_structure(
+                                new external_single_structure(
+                                        array(
+                                                'id'        => new external_value(PARAM_RAW, 'Atom entry Id'),
+                                                'link'      => new external_value(PARAM_RAW, 'Atom entry Link'),
+                                                'email'     => new external_value(PARAM_RAW, 'Atom entry Author Link'),
+                                                'name'      => new external_value(PARAM_RAW, 'Atom entry Author Name'),
+                                                'updated'   => new external_value(PARAM_RAW, 'Atom entry updated date'),
+                                                'published' => new external_value(PARAM_RAW, 'Atom entry published date'),
+                                                'title'     => new external_value(PARAM_RAW, 'Atom entry Title'),
+                                                'summary'   => new external_value(PARAM_RAW, 'Atom entry Summary'),
+                                                'content'   => new external_value(PARAM_RAW, 'Atom entry Content'),
+                                               ), 'Atom entry')
+                            ),
+                    )
+            );
+}

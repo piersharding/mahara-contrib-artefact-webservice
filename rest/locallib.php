@@ -40,7 +40,7 @@ require_once(dirname(dirname(__FILE__)) . '/libs/oauth-php/OAuthStore.php');
  */
 class webservice_rest_server extends webservice_base_server {
 
-    /** @property mixed $format results format - xml or json */
+    /** @property mixed $format results format - xml, atom or json */
     protected $format = 'xml';
 
     /** @property mixed $oauth_server  */
@@ -69,9 +69,15 @@ class webservice_rest_server extends webservice_base_server {
             (isset($_GET['alt']) && trim($_GET['alt']) == 'json') ||
             (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == 'application/json') ||
             (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == 'application/jsonrequest') ||
-            $_SERVER['CONTENT_TYPE'] == 'application/json' ||
-            $_SERVER['CONTENT_TYPE'] == 'application/jsonrequest' ){
+            (isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] == 'application/json') ||
+            (isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] == 'application/jsonrequest') ){
             $this->format = 'json';
+        }
+        else if ((isset($_REQUEST['alt']) && trim($_REQUEST['alt']) == 'atom') ||
+            (isset($_GET['alt']) && trim($_GET['alt']) == 'atom') ||
+            (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == 'application/atom+xml') ||
+            $_SERVER['CONTENT_TYPE'] == 'application/atom+xml' ){
+            $this->format = 'atom';
         }
         else {
             $this->format = 'xml';
@@ -152,9 +158,24 @@ class webservice_rest_server extends webservice_base_server {
      * @return void
      */
     protected function send_response() {
+        global $USER;
+
         $this->send_headers($this->format);
         if ($this->format == 'json') {
             echo json_encode($this->returns) . "\n";
+        }
+        else if ($this->format == 'atom') {
+            $smarty = smarty_core();
+            $smarty->assign_by_ref('results', $this->returns);
+            $smarty->assign('entries', $this->returns['entries']);
+            $smarty->assign('USER', $USER);
+            $smarty->assign('functionname', $this->functionname);
+            $smarty->assign('version', get_config('version'));
+            $smarty->assign('updated', self::format_rfc3339_date(time()));
+            $function = get_record('external_functions', 'name', $this->functionname);
+            $smarty->assign('id', (isset($results->id) ? $reults->id : get_config('wwwroot').'artefact/webservice/wsdoc.php?id=' . $function->id));
+            $smarty->assign('title', (isset($results->title) ? $results->title : $function->name . ' by ' . $USER->username . ' at ' . self::format_rfc3339_date(time())));
+            echo $smarty->fetch('artefact:webservice:atom.tpl');
         }
         else {
             $xml = '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
@@ -163,6 +184,17 @@ class webservice_rest_server extends webservice_base_server {
             $xml .= '</RESPONSE>' . "\n";
             echo $xml;
         }
+    }
+
+    /**
+    * format a date to the w3 datetime format
+     *
+    * @param integer unix timestamp to format
+    * @return string W3 Date format
+    */
+    public static function format_rfc3339_date($date) {
+        $d = format_date($date, 'strftimew3cdatetime');
+        return substr($d, 0, -2) . ':' . substr($d, -2);
     }
 
     /**
@@ -193,12 +225,15 @@ class webservice_rest_server extends webservice_base_server {
      * @return void
      */
     protected function send_headers($type='xml') {
-        if ($type == 'xml') {
+        if ($type == 'json') {
+            header('Content-Type: application/jsonrequest; charset=utf-8');
+        }
+        else if ($this->format == 'atom') {
+            header('Content-Type: application/atom+xml; charset=utf-8');
+            header('Content-Disposition: inline; filename="response.xml"');        }
+        else {
             header('Content-Type: application/xml; charset=utf-8');
             header('Content-Disposition: inline; filename="response.xml"');
-        }
-        else {
-            header('Content-Type: application/jsonrequest; charset=utf-8');
         }
         header('Cache-Control: private, must-revalidate, pre-check=0, post-check=0, max-age=0');
         header('Expires: '. gmdate('D, d M Y H:i:s', 0) . ' GMT');
