@@ -52,6 +52,6 @@ ob_end_clean();
 require_once(get_config('docroot') . '/artefact/webservice/lib.php');
 
 // reload/upgrade the web services configuration
-external_upgrade_webservices();
+external_reload_webservices();
 
 error_log('web service plugins reloaded');

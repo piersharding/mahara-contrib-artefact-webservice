@@ -223,7 +223,7 @@ function xmldb_artefact_webservice_upgrade($oldversion=0) {
     }
 
     // sweep for webservice updates everytime
-    $status = external_upgrade_webservices();
+    $status = external_reload_webservices();
 
     return $status;
 }

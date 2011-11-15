@@ -157,18 +157,17 @@ function webservice_validate_user($dbuser) {
 
 /**
  * Return exact absolute path to a plugin directory,
- * this method support "simpletest_" prefix designed for unit testing.
  *
- * @param string $component name such as 'moodle', 'mod_forum' or special simpletest value
+ * @param string $component name
  * @return string full path to component directory; NULL if not found
  */
 function get_component_directory($component) {
-    $subsystems = get_ws_subsystems();
-    if (isset($subsystems[$component])) {
-        $path = get_config('docroot') . $subsystems[$component];
-    } else {
-        $path = NULL;
+
+    // special case
+    if ($component == 'webservice') {
+        $component = 'artefact/'.$component;
     }
+    $path = get_config('docroot') . $component;
 
     return $path;
 }
